@@ -9,6 +9,7 @@ pair.comp.ten = array(NA, dim = c(N0, N0, M)) ## get pairwise comparison matrice
 for(j in 1:M){
   pair.comp.ten[,,j] = FullRankToPairComp( fullrank.real0[,j] )
 }
+X.mat.sd = t( (t( X.mat ) - colMeans(X.mat)) / apply(X.mat, 2, sd) )  ## standardized covariates
 X.mat.sd0 = t( (t( X.mat0 ) - colMeans(X.mat)) / apply(X.mat, 2, sd) )  ## standardized covariates
 X.mat.sd1 = t( (t( X.mat1 ) - colMeans(X.mat)) / apply(X.mat, 2, sd) )  ## standardized covariates
 iter.max = 1000   ## Gibbs sampler total iterations
