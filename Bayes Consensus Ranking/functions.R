@@ -65,7 +65,7 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
 ### para.expan: whether use parameter expansion ###
 GibbsUpMuGivenLatentGroup <- function(Z.mat0, Z.mat1, X.mat = matrix(NA, nrow = nrow(Z.mat0) + nrow(Z.mat1), ncol = 0), weight.vec = rep(1, ncol(Z.mat0)), sigma2.alpha = 2, sigma2.beta = 1, n.ranker = ncol(Z.mat0), n.item =nrow(Z.mat0) + nrow(Z.mat1), p.cov = ncol(X.mat), para.expan = FALSE){
-  Z.mat <- rbind(Z.mat1, Z.mat0) #'training', 'testing'
+  Z.mat <-Z.mat0
   diagLambda = c( rep(sigma2.alpha, n.item), rep(sigma2.beta, p.cov) )
   V <- cbind( diag(n.item), X.mat )
   
