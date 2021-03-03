@@ -10,6 +10,8 @@ install_github("li-xinran/BayesRankAnalysis")
 
 #### simulate inidividual ranking lists
 ```{r}
+library(truncnorm)
+library(mvtnorm)
 M = 10  ## number of rankers
 N = 50  ## number of ranked items
 L = 3   ## number of covariates
