@@ -12,10 +12,14 @@ install_github("li-xinran/BayesRankAnalysis")
 ```{r}
 library(truncnorm)
 library(mvtnorm)
-M = 10  ## number of rankers
-N = 50  ## number of ranked items
-L = 3   ## number of covariates
+R = 10  ## number of rankers
+A = 1   ## number of aggregate/community-level variables captured
+M = 2 ## number of micro-level variables captured
+N0 = 100 ##number of unranked/training items
+N1 = 50  ## number of ranked/test items
+P = 3   ## number of covariates
 rho=0.5   ## correlation for covariates
+
 CovMat=diag(L) ## covariance matrix for the covariates
 for(i in 1:(L-1)){
   for(j in (i+1):L){
