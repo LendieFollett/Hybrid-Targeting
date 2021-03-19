@@ -1,5 +1,5 @@
 #--calculate pair.comp_{ij} = 1{Y_i < Y_j} --------------------------------
-
+library(MASS) #for mvrnorm
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
 #' Compute the pairwise comparison matrix from the ranking lists of the ranked entities.
@@ -68,14 +68,23 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
 ### omega_rank[r] = weight of r^th ranker###
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
 ### para.expan: whether use parameter expansion  LRF: FALSE???###
-GibbsUpMuGivenLatentGroup <- function(Z.mat, X_comm, X_micro, X1, Y_comm, Y_micro, weight.vec = rep(1, ncol(Z.mat) + ncol(Y_comm), ncol(Y_micro)), 
+GibbsUpMuGivenLatentGroup <- function(Z.mat, Y_comm=NA, Y_micro=NA, #<-- 3 "response" matrices
+                                      X_comm=NA, X_micro=NA, X1, 
+                                      omega_comm = rep(1,ncol(Y_comm)), 
+                                      omega_micro = rep(1, ncol(Y_micro)),
+                                      omega_rank = ncol(Z.mat),
                                       sigma2.alpha = 2, sigma2.beta = 1, R = ncol(Z.mat), 
                                       n.item =nrow(Z.mat), p.cov = ncol(X.mat), para.expan = FALSE){
   
+  #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
+  #                same logic for corresponding x matrices
+  #X_comm isn't just for training... need to fix that
+  
   #Complete 'data' vector
   u <- rbind(as.vector(Y_comm), #KxA --> (AK)x1
-             rbind(Y_micro), #N0xM --> (M*N0)x1
-             rbind(Z.mat)) #N1xR --> (R*N1)x1
+             as.vector(Y_micro), #N0xM --> (M*N0)x1
+             as.vector(Z.mat)) #N1xR --> (R*N1)x1
+
   
   ### X.mat it full, standardized X matrix with training first, then testing - constructed by kroneker products ###
   ### X.mat is a (A*K + M*N0 +R*N1)x(P+1) matrix ###
@@ -83,29 +92,24 @@ GibbsUpMuGivenLatentGroup <- function(Z.mat, X_comm, X_micro, X1, Y_comm, Y_micr
                  kronecker(rep(1, M), X_micro),#(M*N0)xP
                  kronecker(rep(1, R), X_1))#(R*N1)xP
   
-  diagLambda = c( rep(sigma2.alpha, n.item), rep(sigma2.beta, p.cov) )
-  V <- cbind( diag(n.item), X.mat )
+  Sigma_inv_diag <- 1/c(rep(omega_comm, each = K), 
+                      rep(omega_micro, each = N0),
+                      rep(omega_rank, each = N1))
   
-  # Sigma.old = solve( diag(1/diagLambda, nrow = n.item + p.cov) + sum(weight.vec) * t(V) %*% V )
+  #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
+  pt1 <- u^T%*%diag(Sigma_inv_diag)%*%X.mat
   
-  Sigma.inv.eigen = eigen( diag(1/diagLambda, nrow = n.item + p.cov) + sum(weight.vec) * t(V) %*% V )
-  Sigma = Sigma.inv.eigen$vectors %*% diag(1/Sigma.inv.eigen$values, nrow = n.item + p.cov, ncol = n.item + p.cov) %*% t(Sigma.inv.eigen$vectors)
+  pt2 <- t(X.mat)%*%diag(Sigma_inv_diag)%*%X.mat + diag(A*K + M*N0 +R*N1)/sigma2.beta
   
-  lambda = t(V) %*% rowSums( t( t(Z.mat) * weight.vec ) )
-  eta = Sigma %*%  lambda
+  pt2_inv <- solve(pt2)
+  
+  alpha_beta <- mvrnorm(1, mu = pt1%*%pt2_inv, Sigma = pt2_inv)
+  
+  alpha <- alpha_beta[1]
+  beta <- alpha_beta[-1]
   
 
-  # alpha.beta = as.vector( rmvnorm(1, mean = eta/theta, sigma = Sigma) )
-  alpha.beta = as.vector( eta/theta + Sigma.inv.eigen$vectors %*% diag(1/sqrt(Sigma.inv.eigen$values), nrow = n.item + p.cov, ncol = n.item + p.cov) %*% rnorm(n.item + p.cov) )
-  
-  
-  alpha = alpha.beta[c(1:n.item)]
-  beta = alpha.beta[-c(1:n.item)]
-  
-  ### parameter move
-  # alpha = alpha - mean(alpha) + mean( rnorm(n.item, mean = 0, sd = sqrt(sigma2.alpha)) )
-  
-  return(list(alpha = alpha, beta = beta, theta = theta))
+  return(list(alpha = alpha, beta = beta))
 }
 
 
