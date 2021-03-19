@@ -59,13 +59,30 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
 # Gibbs update for (alpha, beta) given Z.mat---------------------
 
 ### Gibbs update for the shared mean mu ###
-### Z.mat[,j]: latent variable vector for jth ranker ###
-###X.mat it full, standardized X matrix with training first, then testing
-### weight.vec[j]: weight for jth ranker ###
+### Z.mat is a N1 x R matrix ###
+### Z.mat[,j]: latent variable vector for jth ranker j = 1, ..., R ###
+### X_comm is a KxP matrix (training dataset, aggregated by community)###
+### X_micro is a N0xP matrix (training dataset, on the household level) ###
+### X_micro is a N1xP matrix (testing dataset, on the household level) ###
+### weight.vec: (A + M + R)x1 vector of weights omega_rank, omega_comm, omega_micro###
+### omega_rank[r] = weight of r^th ranker###
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
-### para.expan: whether use parameter expansion ###
-GibbsUpMuGivenLatentGroup <- function(Z.mat0, Z.mat1, X.mat = matrix(NA, nrow = nrow(Z.mat0) + nrow(Z.mat1), ncol = 0), weight.vec = rep(1, ncol(Z.mat0)), sigma2.alpha = 2, sigma2.beta = 1, n.ranker = ncol(Z.mat0), n.item =nrow(Z.mat0) + nrow(Z.mat1), p.cov = ncol(X.mat), para.expan = FALSE){
-  Z.mat <-Z.mat0
+### para.expan: whether use parameter expansion  LRF: FALSE???###
+GibbsUpMuGivenLatentGroup <- function(Z.mat, X_comm, X_micro, X1, Y_comm, Y_micro, weight.vec = rep(1, ncol(Z.mat) + ncol(Y_comm), ncol(Y_micro)), 
+                                      sigma2.alpha = 2, sigma2.beta = 1, R = ncol(Z.mat), 
+                                      n.item =nrow(Z.mat), p.cov = ncol(X.mat), para.expan = FALSE){
+  
+  #Complete 'data' vector
+  u <- rbind(as.vector(Y_comm), #KxA --> (AK)x1
+             rbind(Y_micro), #N0xM --> (M*N0)x1
+             rbind(Z.mat)) #N1xR --> (R*N1)x1
+  
+  ### X.mat it full, standardized X matrix with training first, then testing - constructed by kroneker products ###
+  ### X.mat is a (A*K + M*N0 +R*N1)x(P+1) matrix ###
+  X.mat <- rbind(kronecker(rep(1, A), X_comm), #(A*K)xP
+                 kronecker(rep(1, M), X_micro),#(M*N0)xP
+                 kronecker(rep(1, R), X_1))#(R*N1)xP
+  
   diagLambda = c( rep(sigma2.alpha, n.item), rep(sigma2.beta, p.cov) )
   V <- cbind( diag(n.item), X.mat )
   
@@ -77,13 +94,7 @@ GibbsUpMuGivenLatentGroup <- function(Z.mat0, Z.mat1, X.mat = matrix(NA, nrow = 
   lambda = t(V) %*% rowSums( t( t(Z.mat) * weight.vec ) )
   eta = Sigma %*%  lambda
   
-  if(para.expan){
-    S = sum( colSums(Z.mat^2) * weight.vec ) - as.vector( t(lambda) %*% Sigma %*% lambda )
-    theta = as.vector( sqrt( S/rchisq(1, df = n.item * n.ranker) ) )
-  }else{
-    theta = 1
-  }
-  
+
   # alpha.beta = as.vector( rmvnorm(1, mean = eta/theta, sigma = Sigma) )
   alpha.beta = as.vector( eta/theta + Sigma.inv.eigen$vectors %*% diag(1/sqrt(Sigma.inv.eigen$values), nrow = n.item + p.cov, ncol = n.item + p.cov) %*% rnorm(n.item + p.cov) )
   
