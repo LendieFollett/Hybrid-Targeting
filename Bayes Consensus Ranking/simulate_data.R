@@ -1,31 +1,37 @@
 
-#M = 10  ## number of rankers of 'testing' sample (not CBT response, e.g., consumption)
-#N0 = 50  ## number of ranked items (number of entities in 'test' sample)
-#N1 = 70 ## number of items involved in PMT sample (in 'training' sample)
-#N = N0 + N1 ## total number of sampled individuals
-#L = 3   ## number of covariates
+library(mvtnorm)
 
 R = 10  ## number of rankers
 A = 2   ## number of aggregate/community-level variables captured
+K = 3 ## number of communities
 M = 2   ## number of micro-level variables captured
 N0 = 100## number of unranked/training items
 N1 = 50 ## number of ranked/test items
 P = 3   ## number of covariates
 rho=0.5 ## correlation for covariates
 
-CovMat=diag(L) ## covariance matrix for the covariates
-for(i in 1:(L-1)){
-  for(j in (i+1):L){
+community <- rep(1:K, (N0+N1)/K) #each training + testing household assigned to a community
+
+CovMat=diag(P) ## covariance matrix for the covariates
+for(i in 1:(P-1)){
+  for(j in (i+1):P){
     CovMat[i,j]=rho^(abs(i-j))
     CovMat[j,i]=rho^(abs(i-j))
   }
 }
-X.mat = rmvnorm(N, mean = rep(0, L), sigma = CovMat) ## covariate matrix for ALL sampled individuals
-X.mat1 = X.mat[1:N0,] ## covariate matrix for ALL sampled individuals
-X.mat0 = X.mat[-c(1:N0),]
+# X_MICRO - both training and testing has same micro covariate information
+X.mat = rmvnorm(N0 + N1, mean = rep(0, P), sigma = CovMat) ## covariate matrix for ALL sampled individuals
+X.mat1 = X.mat[1:N1,] ## covariate matrix for ALL sampled individuals
+X.mat0 = X.mat[-c(1:N1),]
+
+X_comm <- aggregate(X.mat, list(community), mean)
+
+Y_comm <- array(NA, dim = c(K, A))
+Y_micro <- array(NA, dim = c(N0, A)) #only training has micro response (e.g., consumption)
+
 beta.true = c(3,2,1)
-mu.true0 = rowSums( X.mat0^2 ) + as.vector(  X.mat0 %*% beta.true )  ## true evaluation score
-mu.true1 = rowSums( X.mat1^2 ) + as.vector(  X.mat1 %*% beta.true )  ## true evaluation score
+mu.true0 =  as.vector(  X.mat0 %*% beta.true )  ## true evaluation score
+mu.true1 =  as.vector(  X.mat1 %*% beta.true )  ## true evaluation score
 rank.true0 = rank(mu.true0)  ## true ranking list
 rank.true1 = rank(mu.true1)  ## true ranking list
 sigma.true = 5  ## noise level

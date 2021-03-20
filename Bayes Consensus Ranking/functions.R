@@ -69,7 +69,7 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
 ### para.expan: whether use parameter expansion  LRF: FALSE???###
 GibbsUpMuGivenLatentGroup <- function(Z.mat, Y_comm=NA, Y_micro=NA, #<-- 3 "response" matrices
-                                      X_comm=NA, X_micro=NA, X1, 
+                                      X_comm=NA, X_micro=NA, X_1, 
                                       omega_comm = rep(1,ncol(Y_comm)), 
                                       omega_micro = rep(1, ncol(Y_micro)),
                                       omega_rank = ncol(Z.mat),
@@ -79,6 +79,13 @@ GibbsUpMuGivenLatentGroup <- function(Z.mat, Y_comm=NA, Y_micro=NA, #<-- 3 "resp
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
   #X_comm isn't just for training... need to fix that
+  #dimensions
+  A <- ncol(Y_comm)
+  M <- ncol(Y_micro)
+  R <- ncol(Z.mat)
+  K <- nrow(Y_comm)
+  N0 <- nrow(Y_micro)
+  N1 <- nrow(Z.mat)
   
   #Complete 'data' vector
   u <- rbind(as.vector(Y_comm), #KxA --> (AK)x1
