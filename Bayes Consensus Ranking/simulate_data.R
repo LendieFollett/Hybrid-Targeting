@@ -53,3 +53,12 @@ for (r in 1:R){ #fill latent Z scores
 
 Tau <- apply(Z, 2, rank) #R rankings (what we actually observe)
 
+pair.comp.ten = array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
+for(r in 1:R){
+  pair.comp.ten[,,r] = FullRankToPairComp( Tau[,r] )
+}
+
+
+iter.max = 1000   ## Gibbs sampler total iterations
+iter.burn = 200   ## Gibbs sampler burn-in iterations
+print.opt = 100  ## print a message every print.opt steps

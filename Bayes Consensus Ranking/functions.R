@@ -1,5 +1,6 @@
 #--calculate pair.comp_{ij} = 1{Y_i < Y_j} --------------------------------
 library(MASS) #for mvrnorm
+library(truncnorm)
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
 #' Compute the pairwise comparison matrix from the ranking lists of the ranked entities.
@@ -20,13 +21,13 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
 ### Gibbs update Z.mat given (alpha, beta)--------------------------
 ### pair.comp.ten[,,j]: pairwise comparison matrix for jth ranker ###
 ### Z.mat[,j]: latent variable vector for jth ranker ###
-### mu: shared mean vector for this group of rankers ###
+### mu: shared mean vector for testing sample N1 x 1 ###
 ### weight.vec[j]: weight for jth ranker ###
-GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z.mat, mu, weight.vec = rep(1, ncol(Z.mat)), n.ranker = ncol(Z.mat) ){
-  for(j in 1:n.ranker){ #loop over rankers (e.g., CBT, geography, etc...)
-    Z.mat[,j] = GibbsUpLatentGivenRankInd(pair.comp.ten[,,j], Z.mat[,j], mu, weight = weight.vec[j])
+GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z, mu, omega_rank = rep(1, ncol(Z)), R = ncol(Z) ){
+  for(r in 1:R){ #loop over rankers (e.g., CBT, geography, etc...)
+    Z[,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[,,r], Z[,r], mu, weight = omega_rank[r])
   }
-  return(Z.mat)
+  return(Z)
 }
 
 
@@ -72,9 +73,8 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
                                       X_comm=NA, X_micro0=NA, X_micro1=NA, 
                                       omega_comm = rep(1,ncol(Y_comm)), 
                                       omega_micro = rep(1, ncol(Y_micro)),
-                                      omega_rank = ncol(Z),
-                                      sigma2.alpha = 2, sigma2.beta = 1, 
-                                      P = ncol(X.mat), para.expan = FALSE){
+                                      omega_rank = rep(1, ncol(Z)),
+                                      sigma2.beta = 1){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -114,12 +114,8 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
   pt2_inv <- solve(pt2)
   
   alpha_beta <- mvrnorm(1, mu = pt1%*%pt2_inv, Sigma = pt2_inv)
-  
-  alpha <- alpha_beta[1]
-  beta <- alpha_beta[-1]
-  
 
-  return(list(alpha = alpha, beta = beta))
+  return(alpha_beta)
 }
 
 
@@ -164,22 +160,20 @@ BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.
   
   if(is.null(initial.list)){
     ## initial values for Z
-    Z.mat = matrix(NA, nrow = n.item, ncol = n.ranker)
-    for(j in 1:n.ranker){
-      Z.mat[sort( rowSums( pair.comp.ten[,,j], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix, j] = (c(n.item : 1) - (1+n.item)/2)/sd(c(n.item : 1))
+    Z = matrix(NA, nrow = N1, ncol = R)
+    for(j in 1:R){
+      Z[sort( rowSums( pair.comp.ten[,,j], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix, j] = (c(N1 : 1) - (1+N1)/2)/sd(c(N1 : 1))
     }
     
     ## initial values for alpha, beta and thus mu
-    alpha = rep(0, n.item)
-    beta = rep(0, p.cov)
-    mu = as.vector( alpha + X.mat %*% beta )
+    beta = rep(0, P+1)
+    mu = as.vector(X_micro1 %*% beta )
     
     ## initial values for weights
-    weight.vec = rep(1, n.ranker)
+    weight.vec = rep(1, R)
     
     ## initial values for sigma2
-    sigma2.alpha = tau2.alpha
-    sigma2.beta = tau2.beta
+    sigma2.beta = 2.5
   }else{
     
     Z.mat = initial.list$Z.mat
@@ -193,8 +187,7 @@ BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.
   }
   
   ## store initial value
-  draw$Z.mat[,,1] = Z.mat
-  draw$alpha[,1] = alpha
+  draw$Z[,,1] = Z
   draw$beta[,1] = beta
   draw$mu[,1] = mu
   draw$weight.vec[,1] = weight.vec
@@ -203,26 +196,30 @@ BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.
   for(iter in 2:iter.max){
     
     # update Z.mat given (alpha, beta) or equivalently mu
-    Z.mat = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z.mat = Z.mat, mu = mu, weight.vec = weight.vec, n.ranker = n.ranker )
+    Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
     
     # update (alpha, beta) or equivalently mu given Z.mat
-    mean.para.update = GibbsUpMuGivenLatentGroup(Z.mat = Z.mat, X.mat = X.mat, weight.vec = weight.vec, sigma2.alpha = sigma2.alpha, sigma2.beta = sigma2.beta, n.ranker = n.ranker, n.item = n.item, p.cov = p.cov, para.expan = para.expan)
+    mean.para.update = GibbsUpMuGivenLatentGroup(Z = Z, Y_comm = Y_comm, 
+                                                 X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+                                                 omega_comm=omega_comm, omega_micro = omega_micro, omega_rank = omega_rank,
+                                                 sigma2.beta = 2.5)
     
     ### for check only
     #Z.mat = Z.mat/mean.para.update$theta
     
     alpha = mean.para.update$alpha
     beta = mean.para.update$beta
-    mu = as.vector( alpha + X.mat %*% beta )
+    #sample from posterior of mu for the testing sample
+    mu = as.vector( X_micro1 %*% beta )
     
     ### update weight
-    weight.vec = GibbsUpWeightGroup(Z.mat = Z.mat, mu = mu, weight.prior.value = weight.prior.value, weight.prior.prob = weight.prior.prob, n.item = n.item, n.ranker = n.ranker)
+    #weight.vec = GibbsUpWeightGroup(Z.mat = Z.mat, mu = mu, weight.prior.value = weight.prior.value, weight.prior.prob = weight.prior.prob, n.item = n.item, n.ranker = n.ranker)
     
     ### update sigma2
-    sigma2.alpha = GibbsUpsigma2(alpha, nu.alpha, tau2.alpha)
-    if(p.cov > 0){
-      sigma2.beta = GibbsUpsigma2(beta, nu.beta, tau2.beta)
-    }
+    #sigma2.alpha = GibbsUpsigma2(alpha, nu.alpha, tau2.alpha)
+    #if(p.cov > 0){
+    #  sigma2.beta = GibbsUpsigma2(beta, nu.beta, tau2.beta)
+    #}
     
     # store value at this iteration
     draw$Z.mat[,,iter] = Z.mat
