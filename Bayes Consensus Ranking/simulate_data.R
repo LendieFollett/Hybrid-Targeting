@@ -1,9 +1,9 @@
 
 library(mvtnorm)
-
-R = 10  ## number of rankers
+library(dplyr)
+R = 8  ## number of rankers
 A = 2   ## number of aggregate/community-level variables captured
-K = 3 ## number of communities
+K = 10 ## number of communities
 M = 2   ## number of micro-level variables captured
 N0 = 100## number of unranked/training items
 N1 = 50 ## number of ranked/test items
@@ -20,22 +20,36 @@ for(i in 1:(P-1)){
   }
 }
 # X_MICRO - both training and testing has same micro covariate information
-X.mat = rmvnorm(N0 + N1, mean = rep(0, P), sigma = CovMat) ## covariate matrix for ALL sampled individuals
-X.mat1 = X.mat[1:N1,] ## covariate matrix for ALL sampled individuals
-X.mat0 = X.mat[-c(1:N1),]
+X_micro = rmvnorm(N0 + N1, mean = rep(0, P), sigma = CovMat) ## covariate matrix for ALL sampled individuals
+X_micro <- cbind(1, X_micro)
+X_micro1 = X_micro[1:N1,] ## covariate matrix for ALL sampled individuals
+X_micro0 = X_micro[-c(1:N1),]
 
-X_comm <- aggregate(X.mat, list(community), mean)
+X_comm <- aggregate(X_micro, list(community), mean)[,-1] %>%
+  as.matrix()
 
-Y_comm <- array(NA, dim = c(K, A))
-Y_micro <- array(NA, dim = c(N0, A)) #only training has micro response (e.g., consumption)
+Y_comm <- array(NA, dim = c(K, A)) 
+Y_micro <- array(NA, dim = c(N0, M)) #only training has micro response (e.g., consumption)
+Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption)
 
-beta.true = c(3,2,1)
-mu.true0 =  as.vector(  X.mat0 %*% beta.true )  ## true evaluation score
-mu.true1 =  as.vector(  X.mat1 %*% beta.true )  ## true evaluation score
-rank.true0 = rank(mu.true0)  ## true ranking list
-rank.true1 = rank(mu.true1)  ## true ranking list
-sigma.true = 5  ## noise level
-Z.real1 = t( rmvnorm(M, mean = mu.true1, sigma = sigma.true^2 * diag(N1) ) ) ## scores for test rankers (wouldn't observe in real life)
-#Z_obs1 = rmvnorm(1, mean = mu.true0, sigma = sigma.true^2 * diag(N0) ) #OBSERVED scores. e.g., consumption for 'training' sample
-fullrank.real0 = apply(Z.real1, 2, rank)  ## OBSERVED ranking lists for 'testing' individuals
+#parameter values
+omega_comm_true <- rep(.5, A)
+omega_micro_true <- rep(2, M)
+omega_rank_true <- rep(1, R)
+beta_true = c(0,rep(1, P)) #first column is intercept
+
+#Fill "responses"
+for (a in 1:A){ #fill community measures
+  Y_comm[,a] <-  rnorm(K, X_comm %*% beta_true, omega_comm_true[a])
+}
+
+for (m in 1:M){ #fill micro-data
+  Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, omega_micro_true[m])
+}
+
+for (r in 1:R){ #fill latent Z scores
+  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, omega_rank_true[r])  
+}
+
+Tau <- apply(Z, 2, rank) #R rankings (what we actually observe)
 
