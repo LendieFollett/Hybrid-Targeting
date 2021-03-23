@@ -33,9 +33,9 @@ Y_micro <- array(NA, dim = c(N0, M)) #only training has micro response (e.g., co
 Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption)
 
 #parameter values
-omega_comm_true <- rep(.5, A)
+omega_comm_true <- rep(1, A)
 omega_micro_true <- rep(2, M)
-omega_rank_true <- rep(1, R)
+omega_rank_true <- rep(.5, R)
 beta_true = c(0,rep(1, P)) #first column is intercept
 
 #Fill "responses"
@@ -65,11 +65,18 @@ print.opt = 100  ## print a message every print.opt steps
 
 
 
-BayesRankCovWeight(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+temp <- BayesRankCovWeight(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
                                sigma_beta = 2.5,
                                weight.prior.value = c(0.5, 1, 2), 
                                weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
                                N1 = dim(pair.comp.ten)[1], 
                                R = dim(pair.comp.ten)[3], 
-                               iter.max = 5000, para.expan = TRUE, print.opt = 100,
+                               iter.max = iter.max, para.expan = TRUE, print.opt = 100,
                                initial.list = NULL)
+
+mu_mean <- apply(temp$mu, 2, mean)
+qplot(rank(apply(Z, 1, mean)), rank(mu_mean)) + geom_abline(aes(intercept = 0, slope = 1))
+
+#you can see how the relationship changes depending on what you set omega_rank to be
+#in the future, omega_rank will be sampled, not set
+
