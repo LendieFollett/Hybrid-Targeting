@@ -75,7 +75,23 @@ temp <- BayesRankCovWeight(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro
                                initial.list = NULL)
 
 mu_mean <- apply(temp$mu, 2, mean)
-qplot(rank(apply(Z, 1, mean)), rank(mu_mean)) + geom_abline(aes(intercept = 0, slope = 1))
+
+tau_post <-apply(temp$mu, 1, rank)
+tau_post_summary <- data.frame(
+  mean = apply(tau_post, 1, mean),
+  min = apply(tau_post, 1, min),
+  max = apply(tau_post, 1, max),
+  quantile = apply(tau_post, 1, quantile, .75)
+)
+tau_post_summary$naive_agg <- apply(Tau, 1, mean)
+
+
+ggplot(data = tau_post_summary) +
+  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = quantile)) +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+
+
 
 #you can see how the relationship changes depending on what you set omega_rank to be
 #in the future, omega_rank will be sampled, not set
