@@ -68,13 +68,13 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
 ### omega_rank[r] = weight of r^th ranker###
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
 ### para.expan: whether use parameter expansion  LRF: FALSE???###
-GibbsUpMuGivenLatentGroup <- function(Z.mat, Y_comm=NA, Y_micro=NA, #<-- 3 "response" matrices
-                                      X_comm=NA, X_micro=NA, X_1, 
+GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response" matrices
+                                      X_comm=NA, X_micro0=NA, X_micro1=NA, 
                                       omega_comm = rep(1,ncol(Y_comm)), 
                                       omega_micro = rep(1, ncol(Y_micro)),
-                                      omega_rank = ncol(Z.mat),
-                                      sigma2.alpha = 2, sigma2.beta = 1, R = ncol(Z.mat), 
-                                      n.item =nrow(Z.mat), p.cov = ncol(X.mat), para.expan = FALSE){
+                                      omega_rank = ncol(Z),
+                                      sigma2.alpha = 2, sigma2.beta = 1, 
+                                      P = ncol(X.mat), para.expan = FALSE){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -82,31 +82,34 @@ GibbsUpMuGivenLatentGroup <- function(Z.mat, Y_comm=NA, Y_micro=NA, #<-- 3 "resp
   #dimensions
   A <- ncol(Y_comm)
   M <- ncol(Y_micro)
-  R <- ncol(Z.mat)
+  R <- ncol(Z)
   K <- nrow(Y_comm)
   N0 <- nrow(Y_micro)
-  N1 <- nrow(Z.mat)
+  N1 <- nrow(Z)
+  
+  #prior on beta vector - mean = 0, variance = sigma2.beta
+  sigma2.beta <- 2.5 
   
   #Complete 'data' vector
-  u <- rbind(as.vector(Y_comm), #KxA --> (AK)x1
+  u <- c(as.vector(Y_comm), #KxA --> (AK)x1
              as.vector(Y_micro), #N0xM --> (M*N0)x1
-             as.vector(Z.mat)) #N1xR --> (R*N1)x1
-
+             as.vector(Z)) #N1xR --> (R*N1)x1
+#length(u) == A*K + M*N0 +R*N1 check
   
   ### X.mat it full, standardized X matrix with training first, then testing - constructed by kroneker products ###
   ### X.mat is a (A*K + M*N0 +R*N1)x(P+1) matrix ###
-  X.mat <- rbind(kronecker(rep(1, A), X_comm), #(A*K)xP
-                 kronecker(rep(1, M), X_micro),#(M*N0)xP
-                 kronecker(rep(1, R), X_1))#(R*N1)xP
+  X <- rbind(kronecker(rep(1, A), X_comm), #(A*K)xP
+                 kronecker(rep(1, M), X_micro0),#(M*N0)xP
+                 kronecker(rep(1, R), X_micro1))#(R*N1)xP
   
   Sigma_inv_diag <- 1/c(rep(omega_comm, each = K), 
                       rep(omega_micro, each = N0),
                       rep(omega_rank, each = N1))
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
-  pt1 <- u^T%*%diag(Sigma_inv_diag)%*%X.mat
+  pt1 <- u^T%*%diag(Sigma_inv_diag)%*%X
   
-  pt2 <- t(X.mat)%*%diag(Sigma_inv_diag)%*%X.mat + diag(A*K + M*N0 +R*N1)/sigma2.beta
+  pt2 <- t(X)%*%diag(Sigma_inv_diag)%*%X + diag(P+1)/sigma2.beta
   
   pt2_inv <- solve(pt2)
   
