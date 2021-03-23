@@ -62,3 +62,14 @@ for(r in 1:R){
 iter.max = 1000   ## Gibbs sampler total iterations
 iter.burn = 200   ## Gibbs sampler burn-in iterations
 print.opt = 100  ## print a message every print.opt steps
+
+
+
+BayesRankCovWeight(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+                               sigma_beta = 2.5,
+                               weight.prior.value = c(0.5, 1, 2), 
+                               weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                               N1 = dim(pair.comp.ten)[1], 
+                               R = dim(pair.comp.ten)[3], 
+                               iter.max = 5000, para.expan = TRUE, print.opt = 100,
+                               initial.list = NULL)

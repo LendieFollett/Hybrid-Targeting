@@ -140,21 +140,29 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
 #' @param para.expan Logical variable for whether using parameter expansion in the Gibbs sampler.
 #' @return A list containing posterior samples of all the missing evaluation scores for all rankers and all the model parameters.
 #' @export
-BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.comp.ten)[1], ncol = 0),
-                               tau2.alpha = 5^2, nu.alpha = 3,
-                               tau2.beta = 5^2, nu.beta = 3,
-                               weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
-                               n.item = dim(pair.comp.ten)[1], n.ranker = dim(pair.comp.ten)[3], p.cov = ncol(X.mat),
+BayesRankCovWeight <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
+                               sigma_beta = 5^2,
+                               weight.prior.value = c(0.5, 1, 2), 
+                               weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                               N1 = dim(pair.comp.ten)[1], 
+                               R = dim(pair.comp.ten)[3], 
                                iter.max = 5000, para.expan = TRUE, print.opt = 100,
                                initial.list = NULL){
+  
+  if(all(X_comm[,1]==1)){
+    P <- ncol(X_comm)-1
+  }else{
+    P <- ncol(X_comm)
+  }
+
   ## store MCMC draws
   draw = list(
-    Z.mat = array(NA, dim = c(n.item, n.ranker, iter.max)),
-    alpha = array(NA, dim = c(n.item, iter.max)),
-    beta = array(NA, dim = c(p.cov, iter.max)),
-    mu = array(NA, dim = c(n.item, iter.max)),
-    weight.vec = array(NA, dim = c(n.ranker, iter.max) ),
-    sigma2.alpha = rep(NA, iter.max),
+    Z = array(NA, dim = c( iter.max,N1, R)),
+    beta = array(NA, dim = c(iter.max,P+1)),
+    mu = array(NA, dim = c(iter.max,N1)),
+    omega_comm = array(NA, dim = c(iter.max, A) ),
+    omega_micro = array(NA, dim = c(iter.max, M) ),
+    omega_rank = array(NA, dim = c(iter.max, R) ),
     sigma2.beta = rep(NA, iter.max)
   )
   
@@ -176,21 +184,23 @@ BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.
     sigma2.beta = 2.5
   }else{
     
-    Z.mat = initial.list$Z.mat
-    alpha = initial.list$alpha
+    Z = initial.list$Z
     beta = initial.list$beta
-    mu = as.vector( alpha + X.mat %*% beta )
-    weight.vec = initial.list$weight.vec
-    sigma2.alpha = initial.list$sigma2.alpha
+    mu = as.vector( X_micro1 %*% beta )
+    omega_comm = initial.list$omega_comm
+    omega_micro = initial.list$omega_micro
+    omega_rank = initial.list$omega_rank
     sigma2.beta = initial.list$sigma2.beta
     
   }
   
   ## store initial value
-  draw$Z[,,1] = Z
-  draw$beta[,1] = beta
-  draw$mu[,1] = mu
-  draw$weight.vec[,1] = weight.vec
+  draw$Z[1,,] = Z
+  draw$beta[1,] = beta
+  draw$mu[1,] = mu
+  draw$omega_comm[1,] = omega_comm
+  draw$omega_micro[1,] = omega_micro
+  draw$omega_rank[1,] = omega_rank
   
   ## Gibbs iteration
   for(iter in 2:iter.max){
@@ -198,17 +208,14 @@ BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
     
-    # update (alpha, beta) or equivalently mu given Z.mat
-    mean.para.update = GibbsUpMuGivenLatentGroup(Z = Z, Y_comm = Y_comm, 
+    # update beta or equivalently mu given Z.mat
+    beta = GibbsUpMuGivenLatentGroup(Z = Z, Y_comm = Y_comm, Y_micro = Y_micro,
                                                  X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
                                                  omega_comm=omega_comm, omega_micro = omega_micro, omega_rank = omega_rank,
                                                  sigma2.beta = 2.5)
     
     ### for check only
     #Z.mat = Z.mat/mean.para.update$theta
-    
-    alpha = mean.para.update$alpha
-    beta = mean.para.update$beta
     #sample from posterior of mu for the testing sample
     mu = as.vector( X_micro1 %*% beta )
     
@@ -222,14 +229,12 @@ BayesRankCovWeight <- function(pair.comp.ten, X.mat = matrix(NA, nrow =dim(pair.
     #}
     
     # store value at this iteration
-    draw$Z.mat[,,iter] = Z.mat
-    draw$alpha[,iter] = alpha
-    draw$beta[,iter] = beta
-    draw$mu[,iter] = mu
-    draw$weight.vec[, iter] = weight.vec
-    draw$sigma2.alpha[iter] = sigma2.alpha
-    draw$sigma2.beta[iter] = sigma2.beta
-    
+    draw$Z[iter,,] = Z
+    draw$beta[iter,] = beta
+    draw$mu[iter,] = mu
+    draw$omega_micro[iter,] = omega_micro
+    draw$omega_comm[iter,] = omega_comm
+    draw$omega_rank[iter,] = omega_rank
     # print iteration number
     if(iter %% print.opt == 0){
       print(paste("Gibbs Iteration", iter))
