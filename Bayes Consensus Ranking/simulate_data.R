@@ -1,6 +1,7 @@
 
 library(mvtnorm)
 library(dplyr)
+library(ggplot2)
 source("Bayes Consensus Ranking/functions.R")
 R = 8  ## number of rankers
 A = 2   ## number of aggregate/community-level variables captured
@@ -37,7 +38,7 @@ Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption
 #parameter values
 omega_comm_true <- rep(1, A)
 omega_micro_true <- rep(2, M)
-omega_rank_true <- rep(.5, R)
+omega_rank_true <- rep(2, R)
 beta_true = c(0,rep(1, P)) #first column is intercept
 
 #Fill "responses"
