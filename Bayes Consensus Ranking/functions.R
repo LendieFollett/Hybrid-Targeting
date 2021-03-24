@@ -86,6 +86,11 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
   K <- nrow(Y_comm)
   N0 <- nrow(Y_micro)
   N1 <- nrow(Z)
+  if(all(X_comm[,1]==1)){
+    P <- ncol(X_micro)-1
+  }else{
+    P <- ncol(X_micro)
+  }
   
   #prior on beta vector - mean = 0, variance = sigma2.beta
   sigma2.beta <- 2.5 
@@ -120,6 +125,47 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
 
 
 
+### Gibbs update for individual weight ####
+GibbsUpWeightInd <- function(y, mu, weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)), Col = ncol(y), Row = nrow(y)  ){
+  n.value = length(weight.prior.value)
+  
+  log.post.prob = rep(NA, n.value)
+  for(k in 1:n.value){
+    for( col in 1:Col){
+    log.post.prob[k] = log( weight.prior.prob[k] ) + n.item/2 * log( weight.prior.value[k] ) - weight.prior.value[k]/2 * sum( (y - mu)^2 )
+    }
+    }
+  log.post.prob = log.post.prob - max(log.post.prob)
+  post.prob = exp(log.post.prob)
+  # post.prob/sum(post.prob)
+  
+  # post.prob = rep(NA, n.value)
+  # for(k in 1:n.value){
+  #   post.prob[k] = weight.prior.prob[k] * dmvnorm(Z, mean = mu, sigma = diag(n.item)/weight.prior.value[k] )
+  # }
+  # post.prob/sum(post.prob)
+  
+  weight <- weight.prior.value[ as.vector( rmultinom(1, 1, prob = post.prob) ) == 1 ]
+  
+  return(weight)
+}
+
+
+# Z = -1 * c(2, 1, 3.5, 1.5, 2.5)
+# mu = -Z
+# GibbsUpWeightInd(Z, mu, weight.prior.value = c(0.5, 1, 2) )
+
+### Gibbs update for weights of a group of rankers with shared mean ####
+GibbsUpWeightGroup <- function(Z.mat, mu, weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)), n.item = nrow(Z.mat), n.ranker = ncol(Z.mat)){
+  weight.vec = rep(NA, n.ranker)
+  
+  for(j in 1:n.ranker){
+    weight.vec[j] = GibbsUpWeightInd(Z.mat[,j], mu, weight.prior.value = weight.prior.value, weight.prior.prob = weight.prior.prob, n.item = n.item )
+  }
+  
+  return(weight.vec)
+}
+
 
 #--to run BARCW model MCMC--------------------------------
 
@@ -141,6 +187,7 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
 #' @return A list containing posterior samples of all the missing evaluation scores for all rankers and all the model parameters.
 #' @export
 BayesRankCovWeight <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
+                               Y_comm, Y_micro,
                                sigma_beta = 5^2,
                                weight.prior.value = c(0.5, 1, 2), 
                                weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
@@ -154,6 +201,15 @@ BayesRankCovWeight <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   }else{
     P <- ncol(X_comm)
   }
+  print(paste0("P is", P))
+  
+  A <- ncol(Y_comm)
+  M <- ncol(Y_micro)
+  R <- dim(pair.comp.ten)[3]
+  K <- nrow(Y_comm)
+  N0 <- nrow(Y_micro)
+  N1 <- dim(pair.comp.ten)[1]
+  
 
   ## store MCMC draws
   draw = list(

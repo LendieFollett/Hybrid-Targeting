@@ -1,4 +1,4 @@
-
+rm(list = ls())
 library(mvtnorm)
 library(dplyr)
 library(ggplot2)
@@ -38,20 +38,20 @@ Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption
 #parameter values
 omega_comm_true <- rep(1, A)
 omega_micro_true <- rep(2, M)
-omega_rank_true <- rep(2, R)
+omega_rank_true <- rep(.5, R)
 beta_true = c(0,rep(1, P)) #first column is intercept
 
 #Fill "responses"
 for (a in 1:A){ #fill community measures
-  Y_comm[,a] <-  rnorm(K, X_comm %*% beta_true, omega_comm_true[a])
+  Y_comm[,a] <-  rnorm(K, X_comm %*% beta_true, sqrt(1/omega_comm_true[a]))
 }
 
 for (m in 1:M){ #fill micro-data
-  Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, omega_micro_true[m])
+  Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, sqrt(1/omega_micro_true[m]))
 }
 
 for (r in 1:R){ #fill latent Z scores
-  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, omega_rank_true[r])  
+  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, sqrt(1/omega_rank_true[r]))  
 }
 
 Tau <- apply(Z, 2, rank) #R rankings (what we actually observe)
@@ -66,9 +66,15 @@ iter.max = 1000   ## Gibbs sampler total iterations
 iter.burn = 200   ## Gibbs sampler burn-in iterations
 print.opt = 100  ## print a message every print.opt steps
 
-
+rm(A)
+rm(N1)
+rm(N0)
+rm(R)
+rm(M)
+rm(P)
 
 temp <- BayesRankCovWeight(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+                           Y_comm = Y_comm, Y_micro = Y_micro,
                                sigma_beta = 2.5,
                                weight.prior.value = c(0.5, 1, 2), 
                                weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
