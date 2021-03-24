@@ -91,7 +91,8 @@ tau_post_summary$naive_agg <- apply(Tau, 1, mean)
 
 ggplot(data = tau_post_summary) +
   geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
-  geom_abline(aes(slope = 1, intercept = 0))
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
 
 
 
