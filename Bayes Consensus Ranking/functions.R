@@ -179,6 +179,9 @@ BayesRankCovWeight <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     
     ## initial values for weights
     weight.vec = rep(1, R)
+    omega_comm = rep(1, A) 
+    omega_micro = rep(1, M) 
+    omega_rank = rep(1, R)
     
     ## initial values for sigma2
     sigma2.beta = 2.5

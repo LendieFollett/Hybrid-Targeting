@@ -1,14 +1,16 @@
 
 library(mvtnorm)
 library(dplyr)
+source("Bayes Consensus Ranking/functions.R")
 R = 8  ## number of rankers
 A = 2   ## number of aggregate/community-level variables captured
-K = 10 ## number of communities
+K = 20 ## number of communities
 M = 2   ## number of micro-level variables captured
 N0 = 100## number of unranked/training items
-N1 = 50 ## number of ranked/test items
-P = 3   ## number of covariates
+N1 = 60 ## number of ranked/test items
+P = 13  ## number of covariates
 rho=0.5 ## correlation for covariates
+
 
 community <- rep(1:K, (N0+N1)/K) #each training + testing household assigned to a community
 
@@ -87,7 +89,7 @@ tau_post_summary$naive_agg <- apply(Tau, 1, mean)
 
 
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = quantile)) +
+  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0))
 
 
