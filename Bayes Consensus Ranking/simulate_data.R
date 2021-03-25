@@ -44,17 +44,22 @@ omega_rank_true <- rep(.5, R)
 beta_true = c(0,rep(1, P)) #first column is intercept
 
 #Fill "responses"
+gamma_comm_true <- rnorm(K, 0, 1) 
 for (a in 1:A){ #fill community measures
-  Y_comm[,a] <-  rnorm(K, X_comm %*% beta_true, sqrt(1/omega_comm_true[a]))
+  Y_comm[,a] <-  rnorm(K, X_comm %*% beta_true, sqrt(1/omega_comm_true[a])) +gamma_comm_true
 }
 
+
+gamma_micro_true <-  rnorm(N0, 0, 1)
 for (m in 1:M){ #fill micro-data
-  Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, sqrt(1/omega_micro_true[m]))
+  Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, sqrt(1/omega_micro_true[m])) + gamma_micro_true
 }
 
+gamma_rank_true <-  rnorm(N1, 0, 1)
 for (r in 1:R){ #fill latent Z scores
-  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, sqrt(1/omega_rank_true[r]))  
+  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, sqrt(1/omega_rank_true[r])) +gamma_rank_true
 }
+
 
 Tau <- apply(Z, 2, rank) #R rankings (what we actually observe)
 
@@ -64,8 +69,8 @@ for(r in 1:R){
 }
 
 
-iter.max = 1000   ## Gibbs sampler total iterations
-iter.burn = 200   ## Gibbs sampler burn-in iterations
+iter.max = 2000   ## Gibbs sampler total iterations
+iter.burn =1000   ## Gibbs sampler burn-in iterations
 print.opt = 100  ## print a message every print.opt steps
 
 rm(A)
@@ -88,25 +93,37 @@ temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micr
 
 mu_mean <- apply(temp$mu, 2, mean)
 
+#posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
 tau_post_summary <- data.frame(
-  mean = apply(tau_post, 1, mean),
-  min = apply(tau_post, 1, min),
-  max = apply(tau_post, 1, max),
+  mean =  rank(apply(temp$mu, 2, mean)),
+  min = (apply(tau_post, 1, min)),
+  max = (apply(tau_post, 1, max)),
   quantile = apply(tau_post, 1, quantile, .75)
 )
 tau_post_summary$naive_agg <- apply(Tau, 1, mean)
 
-
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
+  geom_pointrange(aes(x = naive_agg, y = (mean),ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
 
 
+data.frame(postmean =  (apply(tau_post, 1, median)), rank(apply(Tau, 1, mean)))
 
 #posteriors of quality weights - compare to truths
 apply(temp$omega_comm, 2, mean)
 apply(temp$omega_micro, 2, mean)
 apply(temp$omega_rank, 2, mean) 
+
+
+qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+
+
+plot(temp$sigma2_comm)
+plot(temp$sigma2_micro)
+plot(temp$sigma2_rank)
+
 

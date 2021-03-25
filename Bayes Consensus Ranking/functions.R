@@ -76,8 +76,6 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
-  #X_comm isn't just for training... need to fix that
-  #dimensions
   A <- ncol(Y_comm)
   M <- ncol(Y_micro)
   R <- ncol(Z)
@@ -105,7 +103,7 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
                  kronecker(rep(1, M), X_micro0),#(M*N0)xP
                  kronecker(rep(1, R), X_micro1))#(R*N1)xP
   
-  Sigma_inv_diag <- 1/c(rep(omega_comm, each = K), 
+  Sigma_inv_diag <- c(rep(omega_comm, each = K), 
                       rep(omega_micro, each = N0),
                       rep(omega_rank, each = N1))
   
@@ -119,6 +117,38 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
   alpha_beta <- mvrnorm(1, mu = pt1%*%pt2_inv, Sigma = pt2_inv)
 
   return(alpha_beta)
+}
+
+
+# Update random effects for comm, micro, Z
+#y is the appropriate matrix
+#mu is the corresponding mean
+#omega is the error variance of y
+#Sigma_gamma is the standard deviation on that source's random effect
+#LRF ADDRESS: add sampling steps for sigma_gamma parameters
+GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_gamma = 2.5){
+  
+  N <- nrow(y) #number of random effects to estimate = number of rows
+  #ISSUE: ONLY APPLIES WHEN MULTIPLE SOURCES OF SAME KIND AVAILABLE..
+  #Update conditionally if ncol > 1
+  Col <- ncol(y)
+  
+  #Complete 'data' vector
+  u <- as.vector(y)
+
+  Sigma_inv_diag <- c(rep(omega, each =nrow(y)))
+  
+  Xf <- rep(xbeta, Col)
+
+  pt1 <- (u-Xf)^T%*%diag(Sigma_inv_diag)%*%Xr
+  
+  pt2 <- t(Xr)%*%diag(Sigma_inv_diag)%*%Xr + diag(N)/(sigma_gamma^2)
+  
+  pt2_inv <- solve(pt2)
+  
+  gamma <- mvrnorm(1, mu = pt1%*%pt2_inv, Sigma = pt2_inv)
+  
+  return(gamma)
 }
 
 
@@ -147,6 +177,24 @@ for( col in 1:Col){ #over information source within y
 
   return(weight_samp)
 }
+
+### Gibbs update for variances on random effects
+### Gibbs update for sigma2, given prior sigma2 ~ Scale-Inv-chi2(nu, tau2) and data iid ~ N(0, sigma2)
+GibbsUpsigma2 <- function(x, nu, tau2){
+  if(nu < Inf){
+    n.x = length(x)
+    
+    nu.post = nu + n.x
+    tau2.post = ( nu * tau2 + sum(x^2) )/(nu + n.x)
+    
+    sigma2 = tau2.post * nu.post/rchisq(1, df = nu.post)
+  }else{
+    sigma2 = tau2
+  }
+  
+  return(sigma2)
+}
+
 
 
 #--to run BCRank model MCMC--------------------------------
@@ -191,7 +239,11 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   N0 <- nrow(Y_micro)
   N1 <- dim(pair.comp.ten)[1]
   
-
+  #construct random effect matrices
+  Xr_micro <-  kronecker(rep(1, M),diag(N0)) #for training micro set
+  Xr_comm<-  kronecker(rep(1, A),diag(K)) #for community agg set  
+  Xr_rank<-  kronecker(rep(1, R),diag(N1)) #for community agg set  
+  
   ## store MCMC draws
   draw = list(
     Z = array(NA, dim = c( iter.max,N1, R)),
@@ -200,7 +252,13 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     omega_comm = array(NA, dim = c(iter.max, A) ),
     omega_micro = array(NA, dim = c(iter.max, M) ),
     omega_rank = array(NA, dim = c(iter.max, R) ),
-    sigma2.beta = rep(NA, iter.max)
+    sigma2.beta = rep(NA, iter.max),
+    gamma_rank = array(NA, dim = c(iter.max, N1) ),
+    gamma_comm = array(NA, dim = c(iter.max, K) ),
+    gamma_micro = array(NA, dim = c(iter.max, N0) ),
+    sigma2_rank = rep(NA, iter.max),
+    sigma2_comm = rep(NA, iter.max),
+    sigma2_micro = rep(NA, iter.max)
   )
   
   if(is.null(initial.list)){
@@ -219,6 +277,13 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     omega_micro = rep(1, M) 
     omega_rank = rep(1, R)
     
+    gamma_comm <- rep(0, K)
+    gamma_micro <- rep(0, N0)
+    gamma_rank <- rep(0, N1)
+    
+    sigma2_comm= 1
+    sigma2_micro= 1
+    sigma2_rank= 1
     ## initial values for sigma2
     sigma2.beta = 2.5
   }else{
@@ -240,38 +305,46 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   draw$omega_comm[1,] = omega_comm
   draw$omega_micro[1,] = omega_micro
   draw$omega_rank[1,] = omega_rank
-  
-  
+  draw$gamma_rank[1,] = gamma_rank
+  draw$gamma_comm[1,] = gamma_comm
+  draw$gamma_micro[1,] = gamma_micro
+  draw$sigma2_comm[1] = sigma2_comm
+  draw$sigma2_micro[1] = sigma2_micro
+  draw$sigma2_rank[1] = sigma2_rank
   ## Gibbs iteration
   for(iter in 2:iter.max){
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
     
-    # update beta or equivalently mu given Z.mat
-    beta = GibbsUpMuGivenLatentGroup(Z = Z, Y_comm = Y_comm, Y_micro = Y_micro,
+    # update beta or equivalently mu given Z, random effects
+    #random effects subtracted off response matrices prior to posterior computations
+    beta = GibbsUpMuGivenLatentGroup(Z = Z - kronecker(t(rep(1, R)), gamma_rank), 
+                                     Y_comm = Y_comm-kronecker(t(rep(1, A)), gamma_comm), 
+                                     Y_micro = Y_micro-kronecker(t(rep(1, M)), gamma_micro),
                                                  X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
                                                  omega_comm=omega_comm, omega_micro = omega_micro, omega_rank = omega_rank,
                                                  sigma2.beta = 2.5)
     
+    
+    #update gamma, the random effects
+    gamma_rank <- GibbsUpGammaGivenLatentGroup(Z,      X_micro1 %*% beta, Xr_rank, omega_rank, sigma_gamma = sigma2_rank)
+    gamma_comm <- GibbsUpGammaGivenLatentGroup(Y_comm, X_comm %*% beta,   Xr_comm, omega_comm, sigma_gamma = sigma2_comm)
+    gamma_micro <-GibbsUpGammaGivenLatentGroup(Y_micro,X_micro0 %*% beta, Xr_micro,omega_micro, sigma_gamma = sigma2_micro)
+      
     # update quality weights
-    omega_comm <- GibbsUpQualityWeights(y=Y_comm, mu=X_comm %*% beta, weight.prior.value = c(0.5, 1, 2 ))
-    omega_micro <-GibbsUpQualityWeights(y=Y_micro, mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
-    omega_rank <- GibbsUpQualityWeights(y=Z, mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+    # LRF - INCLUDE RANDOM EFFECTS
+    omega_comm <- GibbsUpQualityWeights(y=Y_comm-kronecker(t(rep(1, A)), gamma_comm), mu=X_comm %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+    omega_micro <-GibbsUpQualityWeights(y=Y_micro-kronecker(t(rep(1, M)), gamma_micro), mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+    omega_rank <- GibbsUpQualityWeights(y=Z - kronecker(t(rep(1, R)),gamma_rank), mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
 
+    sigma2_comm <- GibbsUpsigma2(gamma_comm, nu=3, tau2=25)
+    sigma2_micro <- GibbsUpsigma2(gamma_micro, nu=3, tau2=25)
+    sigma2_rank <- GibbsUpsigma2(gamma_rank, nu=3, tau2=25)
     
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
-    mu = as.vector( X_micro1 %*% beta )
-    
-    ### update weight
-    #weight.vec = GibbsUpWeightGroup(Z.mat = Z.mat, mu = mu, weight.prior.value = weight.prior.value, weight.prior.prob = weight.prior.prob, n.item = n.item, n.ranker = n.ranker)
-    
-    ### update sigma2
-    #sigma2.alpha = GibbsUpsigma2(alpha, nu.alpha, tau2.alpha)
-    #if(p.cov > 0){
-    #  sigma2.beta = GibbsUpsigma2(beta, nu.beta, tau2.beta)
-    #}
-    
+    mu = as.vector( X_micro1 %*% beta + Xr_rank[1:N1,]%*%gamma_rank )
+
     # store value at this iteration
     draw$Z[iter,,] = Z
     draw$beta[iter,] = beta
@@ -279,6 +352,12 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     draw$omega_micro[iter,] = omega_micro
     draw$omega_comm[iter,] = omega_comm
     draw$omega_rank[iter,] = omega_rank
+    draw$gamma_rank[iter,] = gamma_rank
+    draw$gamma_comm[iter,] = gamma_comm
+    draw$gamma_micro[iter,] = gamma_micro
+    draw$sigma2_comm[iter] = sigma2_comm
+    draw$sigma2_micro[iter] = sigma2_micro
+    draw$sigma2_rank[iter] = sigma2_rank
     # print iteration number
     if(iter %% print.opt == 0){
       print(paste("Gibbs Iteration", iter))
