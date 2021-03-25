@@ -102,11 +102,17 @@ tau_post_summary <- data.frame(
   quantile = apply(tau_post, 1, quantile, .75)
 )
 tau_post_summary$naive_agg <- apply(Tau, 1, mean)
+tau_post_summary$PMT <- X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean)
 
 ggplot(data = tau_post_summary) +
   geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
+
+ggplot(data = tau_post_summary) +
+  geom_pointrange(aes(x = rank(PMT), y = mean,ymin = min, ymax = max)) +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "PMT-based ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
 
 
 data.frame(postmean =  (apply(tau_post, 1, median)), rank(apply(Tau, 1, mean)))
