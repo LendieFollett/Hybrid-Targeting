@@ -96,15 +96,15 @@ mu_mean <- apply(temp$mu, 2, mean)
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
 tau_post_summary <- data.frame(
-  mean =  rank(apply(temp$mu, 2, mean)),
-  min = (apply(tau_post, 1, min)),
-  max = (apply(tau_post, 1, max)),
+  mean =  rank(apply(temp$mu, 2, mean)),#Rank of posterior means of xbeta + gamma
+  min = (apply(tau_post, 1, min)), #minimum rank seen in MCMC draws
+  max = (apply(tau_post, 1, max)),#maximum rank seen in MCMC draws
   quantile = apply(tau_post, 1, quantile, .75)
 )
 tau_post_summary$naive_agg <- apply(Tau, 1, mean)
 
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = naive_agg, y = (mean),ymin = min, ymax = max)) +
+  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
 
