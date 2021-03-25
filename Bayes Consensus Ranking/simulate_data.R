@@ -73,7 +73,8 @@ rm(R)
 rm(M)
 rm(P)
 
-temp <- BayesRankCovWeight(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+#Run MCMC for Bayesian Consensus Targeting
+temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
                            Y_comm = Y_comm, Y_micro = Y_micro,
                                sigma_beta = 2.5,
                                weight.prior.value = c(0.5, 1, 2), 

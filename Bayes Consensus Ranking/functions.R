@@ -167,26 +167,25 @@ GibbsUpWeightGroup <- function(Z.mat, mu, weight.prior.value = c(0.5, 1, 2), wei
 }
 
 
-#--to run BARCW model MCMC--------------------------------
+#--to run BCRank model MCMC--------------------------------
 
-#' Bayesian Analysis of Rank data with entities' Covariates and rankers' Weights.
+#' Bayesian Consensus Targeting
 #'
-#' Implement the Bayesian model for rand data with ranked entities' covariates information and rankers' with varying qualities or weights.
+#' Implement the Bayesian model for mixed data inputs with covariate information and subjective + objective information with varying qualities or weights.
 #' @import truncnorm
 #' @import mvtnorm
-#' @param pair.com.ten An \eqn{N} by \eqn{N} by \eqn{M} pairwise comparison tensor for all \eqn{N} entities and \eqn{M} rankers, where the (\eqn{i},\eqn{j},\eqn{m}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{m}, 0 if \eqn{i} is ranker lower than \eqn{j}, and NA if the relation between \eqn{i} and \eqn{j} is missing. Note that the diagonal elements (\eqn{i},\eqn{i},\eqn{m})'s for all rankers should be set to NA as well.
-#' @param X.mat An \eqn{N} by \eqn{L} covariate matrix for the \eqn{N} entities with \eqn{L} covariates.
-#' @param tau2.alpha The scale parameter for the scaled inverse chi-squared prior on \eqn{\sigma^2_alpha}.
-#' @param nu.alpha The d.f. for the scaled inverse chi-squared prior on \eqn{\sigma^2_alpha}.
-#' @param tau2.beta The scale parameter for the scaled inverse chi-squared prior on \eqn{\sigma^2_beta}.
-#' @param nu.beta The d.f. for the scaled inverse chi-squared prior on \eqn{\sigma^2_beta}.
+#' @import MASS
+#' @param pair.com.ten An \eqn{N1} by \eqn{N1} by \eqn{R} pairwise comparison array for all \eqn{N1} entities and \eqn{R} rankers, where the (\eqn{i},\eqn{j},\eqn{r}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 0 if \eqn{i} is ranker lower than \eqn{j}, and NA if the relation between \eqn{i} and \eqn{j} is missing. Note that the diagonal elements (\eqn{i},\eqn{i},\eqn{r})'s for all rankers should be set to NA as well.
+#' @param X_micro0 An \eqn{N0} by \eqn{P+1} covariate matrix for the \eqn{N0} entities with \eqn{P} covariates. Assumes 1st col is 1's for intercept.
+#' @param X_micro1 An \eqn{N1} by \eqn{P+1} covariate matrix for the \eqn{N1} entities with \eqn{P} covariates. Assumes 1st col is 1's for intercept.
+#' @param X_comm An \eqn{K} by \eqn{P+1} covariate matrix. An aggregate of X_micro0 and X_micro 1. 
+#' @param sigma_beta Currently given/fixed. Prior variance on beta.
 #' @param weight.prior.value A vector for the support of the discrete prior on weight parameter.
-#' @param weight.prior.prob A vector for the probability mass of the discrete prior on weight parameter.
+#' @param weight.prior.prob A vector for the prior probability mass of the discrete prior on weight parameter.
 #' @param iter.max Number of iterations for Gibbs sampler.
-#' @param para.expan Logical variable for whether using parameter expansion in the Gibbs sampler.
-#' @return A list containing posterior samples of all the missing evaluation scores for all rankers and all the model parameters.
+#' @return A list containing posterior samples of mu, the shared 'wellness' mean, conditional on the test X_micro1.
 #' @export
-BayesRankCovWeight <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
+BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
                                Y_comm, Y_micro,
                                sigma_beta = 5^2,
                                weight.prior.value = c(0.5, 1, 2), 
