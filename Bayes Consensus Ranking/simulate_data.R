@@ -1,7 +1,9 @@
 rm(list = ls())
 library(mvtnorm)
+library(MASS)
 library(dplyr)
 library(ggplot2)
+library(truncnorm)
 source("Bayes Consensus Ranking/functions.R")
 R = 8  ## number of rankers
 A = 2   ## number of aggregate/community-level variables captured
@@ -103,7 +105,8 @@ ggplot(data = tau_post_summary) +
 
 
 
-
-#you can see how the relationship changes depending on what you set omega_rank to be
-#in the future, omega_rank will be sampled, not set
+#posteriors of quality weights - compare to truths
+apply(temp$omega_comm, 2, mean)
+apply(temp$omega_micro, 2, mean)
+apply(temp$omega_rank, 2, mean) 
 

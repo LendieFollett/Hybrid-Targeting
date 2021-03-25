@@ -1,6 +1,4 @@
 #--calculate pair.comp_{ij} = 1{Y_i < Y_j} --------------------------------
-library(MASS) #for mvrnorm
-library(truncnorm)
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
 #' Compute the pairwise comparison matrix from the ranking lists of the ranked entities.
@@ -18,7 +16,7 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
 }
 
 
-### Gibbs update Z.mat given (alpha, beta)--------------------------
+### Gibbs update Z given beta--------------------------
 ### pair.comp.ten[,,j]: pairwise comparison matrix for jth ranker ###
 ### Z.mat[,j]: latent variable vector for jth ranker ###
 ### mu: shared mean vector for testing sample N1 x 1 ###
@@ -57,7 +55,7 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
 
 
 
-# Gibbs update for (alpha, beta) given Z.mat---------------------
+# Gibbs update for beta (includes intercept) given Z, y_micro, y_comm---------------------
 
 ### Gibbs update for the shared mean mu ###
 ### Z.mat is a N1 x R matrix ###
@@ -125,45 +123,29 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
 
 
 
-### Gibbs update for individual weight ####
-GibbsUpWeightInd <- function(y, mu, weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)), Col = ncol(y), Row = nrow(y)  ){
-  n.value = length(weight.prior.value)
-  
-  log.post.prob = rep(NA, n.value)
-  for(k in 1:n.value){
-    for( col in 1:Col){
-    log.post.prob[k] = log( weight.prior.prob[k] ) + n.item/2 * log( weight.prior.value[k] ) - weight.prior.value[k]/2 * sum( (y - mu)^2 )
-    }
-    }
+### Gibbs update for information quality weights omega_comm, omega_micro, omega_rank---------
+#y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
+GibbsUpQualityWeights <- function(y, mu, weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)), Col = ncol(y), Row = nrow(y) ){
+  n.prior.value <- length(weight.prior.value)
+  weight_samp <- rep(NA, Col)
+
+for( col in 1:Col){ #over information source within y
+  log.post.prob = rep(0, n.prior.value) #re-initialize for next information source
+  for(k in 1:n.prior.value){ #over potential values
+    log.post.prob[k] = log.post.prob[k]+
+      log( weight.prior.prob[k] ) + Row/2 * log( weight.prior.value[k] ) - weight.prior.value[k]/2 * sum( (y[,col] - mu)^2 )
+    #log(prior value) - log(sigma) -(1/(2*sigma*sigma))*sum[(y-mu)^2]=
+    #log(prior value) - .5log(1/w) -(w/2)*sum[(y-mu)^2]
+  }
+
   log.post.prob = log.post.prob - max(log.post.prob)
   post.prob = exp(log.post.prob)
-  # post.prob/sum(post.prob)
   
-  # post.prob = rep(NA, n.value)
-  # for(k in 1:n.value){
-  #   post.prob[k] = weight.prior.prob[k] * dmvnorm(Z, mean = mu, sigma = diag(n.item)/weight.prior.value[k] )
-  # }
-  # post.prob/sum(post.prob)
+  weight_samp[col] <- weight.prior.value[ as.vector( rmultinom(1, 1, prob = post.prob) ) == 1 ]
   
-  weight <- weight.prior.value[ as.vector( rmultinom(1, 1, prob = post.prob) ) == 1 ]
-  
-  return(weight)
 }
 
-
-# Z = -1 * c(2, 1, 3.5, 1.5, 2.5)
-# mu = -Z
-# GibbsUpWeightInd(Z, mu, weight.prior.value = c(0.5, 1, 2) )
-
-### Gibbs update for weights of a group of rankers with shared mean ####
-GibbsUpWeightGroup <- function(Z.mat, mu, weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)), n.item = nrow(Z.mat), n.ranker = ncol(Z.mat)){
-  weight.vec = rep(NA, n.ranker)
-  
-  for(j in 1:n.ranker){
-    weight.vec[j] = GibbsUpWeightInd(Z.mat[,j], mu, weight.prior.value = weight.prior.value, weight.prior.prob = weight.prior.prob, n.item = n.item )
-  }
-  
-  return(weight.vec)
+  return(weight_samp)
 }
 
 
@@ -200,7 +182,7 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   }else{
     P <- ncol(X_comm)
   }
-  print(paste0("P is", P))
+
   
   A <- ncol(Y_comm)
   M <- ncol(Y_micro)
@@ -233,7 +215,6 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     mu = as.vector(X_micro1 %*% beta )
     
     ## initial values for weights
-    weight.vec = rep(1, R)
     omega_comm = rep(1, A) 
     omega_micro = rep(1, M) 
     omega_rank = rep(1, R)
@@ -260,6 +241,7 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   draw$omega_micro[1,] = omega_micro
   draw$omega_rank[1,] = omega_rank
   
+  
   ## Gibbs iteration
   for(iter in 2:iter.max){
     
@@ -272,9 +254,13 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
                                                  omega_comm=omega_comm, omega_micro = omega_micro, omega_rank = omega_rank,
                                                  sigma2.beta = 2.5)
     
-    ### for check only
-    #Z.mat = Z.mat/mean.para.update$theta
-    #sample from posterior of mu for the testing sample
+    # update quality weights
+    omega_comm <- GibbsUpQualityWeights(y=Y_comm, mu=X_comm %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+    omega_micro <-GibbsUpQualityWeights(y=Y_micro, mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+    omega_rank <- GibbsUpQualityWeights(y=Z, mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+
+    
+    #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_micro1 %*% beta )
     
     ### update weight
