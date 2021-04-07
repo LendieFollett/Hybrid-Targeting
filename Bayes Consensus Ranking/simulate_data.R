@@ -69,7 +69,7 @@ for(r in 1:R){
 }
 
 
-iter.max = 2000   ## Gibbs sampler total iterations
+iter.max = 5000   ## Gibbs sampler total iterations
 iter.burn =1000   ## Gibbs sampler burn-in iterations
 print.opt = 100  ## print a message every print.opt steps
 
@@ -102,7 +102,9 @@ tau_post_summary <- data.frame(
   quantile = apply(tau_post, 1, quantile, .75)
 )
 tau_post_summary$naive_agg <- apply(Tau, 1, mean)
-tau_post_summary$PMT <- X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean)
+tau_post_summary$PMT <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean))
+
+
 
 ggplot(data = tau_post_summary) +
   geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
@@ -110,9 +112,17 @@ ggplot(data = tau_post_summary) +
   labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
 
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = rank(PMT), y = mean,ymin = min, ymax = max)) +
+  geom_pointrange(aes(x = (PMT), y = mean,ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "PMT-based ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
+
+ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean)) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = naive_agg), colour = "tomato") +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = PMT), colour = "steelblue") +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "ID", y = "Different rankings")
+
 
 
 data.frame(postmean =  (apply(tau_post, 1, median)), rank(apply(Tau, 1, mean)))
@@ -128,8 +138,8 @@ qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean)) +geom_abline(aes(interc
 qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
 
 
-plot(temp$sigma2_comm)
-plot(temp$sigma2_micro)
-plot(temp$sigma2_rank)
+plot(temp$sigma2_comm%>%sqrt)
+plot(temp$sigma2_micro%>%sqrt)
+plot(temp$sigma2_rank%>%sqrt)
 
 
