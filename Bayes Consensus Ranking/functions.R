@@ -165,9 +165,9 @@ for( col in 1:Col){ #over information source within y
     log.post.prob[k] = log.post.prob[k]+
       log( weight.prior.prob[k] ) + Row/2 * log( weight.prior.value[k] ) - weight.prior.value[k]/2 * sum( (y[,col] - mu)^2 )
     #log(prior value) - log(sigma) -(1/(2*sigma*sigma))*sum[(y-mu)^2]=
-    #log(prior value) - .5log(1/w) -(w/2)*sum[(y-mu)^2]
+    #log(prior value) + .5log(w) -(w/2)*sum[(y-mu)^2]
   }
-
+#note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
   log.post.prob = log.post.prob - max(log.post.prob)
   post.prob = exp(log.post.prob)
   

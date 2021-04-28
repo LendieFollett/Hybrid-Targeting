@@ -1,29 +1,81 @@
 rm(list = ls())
 library(truncnorm)
 library(mvtnorm)
-
-source("Bayes Consensus Ranking/simulate_data.R")
 source("Bayes Consensus Ranking/functions.R")
-#Set up
-pair.comp.ten = array(NA, dim = c(N0, N0, M)) ## get pairwise comparison matrices from the ranking lists
-for(j in 1:M){
-  pair.comp.ten[,,j] = FullRankToPairComp( fullrank.real0[,j] )
-}
-X.mat.sd = t( (t( X.mat ) - colMeans(X.mat)) / apply(X.mat, 2, sd) )  ## standardized covariates
-X.mat.sd0 = t( (t( X.mat0 ) - colMeans(X.mat)) / apply(X.mat, 2, sd) )  ## standardized covariates
-X.mat.sd1 = t( (t( X.mat1 ) - colMeans(X.mat)) / apply(X.mat, 2, sd) )  ## standardized covariates
-iter.max = 1000   ## Gibbs sampler total iterations
-iter.burn = 200   ## Gibbs sampler burn-in iterations
-print.opt = 100  ## print a message every print.opt steps
 
-BARCW.fit = BayesRankCovWeight(pair.comp.ten = pair.comp.ten, 
-                               X.mat = X.mat.sd, 
-                               Z_obs = Z_obs,
-                               tau2.alpha = 1^2, nu.alpha = 3,
-                               tau2.beta = 10^2, nu.beta = 3,
-                               iter.max = iter.max, print.opt = print.opt)
+#parameters for simulation
+R = 15  ## number of rankers
+A = 2   ## number of aggregate/community-level variables captured
+K = 20 ## number of communities
+M = 2   ## number of micro-level variables captured
+N0 = 100## number of unranked/training items
+N1 = 60 ## number of ranked/test items
+P = 13  ## number of covariates
+rho=0.5 ## correlation for covariates
 
-BARCW.fit$agg.rank = apply(BARCW.fit$mu[, -c(1:iter.burn)], 1, mean)  ## aggregated ranking list
-RankDist(BARCW.fit$agg.rank, rank.true)   ## Kendall tau distance between estimated and true ranking lists
+#simulate data based on parameters
+source("Bayes Consensus Ranking/simulate_data.R")
 
-rowMeans( BARCW.fit$weight.vec )  ## posterior means of weights for all rankers
+#Run MCMC for Bayesian Consensus Targeting
+temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+                 Y_comm = Y_comm, Y_micro = Y_micro,
+                 sigma_beta = 2.5,
+                 weight.prior.value = c(0.5, 1, 2), 
+                 weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                 N1 = dim(pair.comp.ten)[1], 
+                 R = dim(pair.comp.ten)[3], 
+                 iter.max = iter.max, para.expan = TRUE, print.opt = 100,
+                 initial.list = NULL)
+
+mu_mean <- apply(temp$mu, 2, mean)
+
+#posterior summaries of ranks
+tau_post <-apply(temp$mu, 1, rank)
+tau_post_summary <- data.frame(
+  mean =  rank(apply(temp$mu, 2, mean)),#Rank of posterior means of xbeta + gamma
+  min = (apply(tau_post, 1, min)), #minimum rank seen in MCMC draws
+  max = (apply(tau_post, 1, max)),#maximum rank seen in MCMC draws
+  quantile = apply(tau_post, 1, quantile, .75)
+)
+tau_post_summary$naive_agg <- apply(Tau, 1, mean)
+tau_post_summary$PMT <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean))
+
+
+
+ggplot(data = tau_post_summary) +
+  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
+
+ggplot(data = tau_post_summary) +
+  geom_pointrange(aes(x = (PMT), y = mean,ymin = min, ymax = max)) +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "PMT-based ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
+
+ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean)) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = naive_agg), colour = "tomato") +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = PMT), colour = "steelblue") +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "ID", y = "Different rankings")
+
+
+
+data.frame(postmean =  (apply(tau_post, 1, median)), rank(apply(Tau, 1, mean)))
+
+#posteriors of quality weights - compare to truths
+apply(temp$omega_comm, 2, mean)
+apply(temp$omega_micro, 2, mean)
+apply(temp$omega_rank, 2, mean) 
+
+
+qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+
+
+plot(temp$sigma2_comm%>%sqrt)
+plot(temp$sigma2_micro%>%sqrt)
+plot(temp$sigma2_rank%>%sqrt)
+
+
