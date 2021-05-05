@@ -34,19 +34,21 @@ omega_micro_true <- rep(2, M)
 omega_rank_true <- rep(.5, R)
 beta_true = c(0,rep(1, P)) #first column is intercept
 
+#random effect variances
+sigma2_comm <- sigma2_micro <- sigma2_rank <- 1
 #Fill "responses"
-gamma_comm_true <- rnorm(K, 0, 1) 
+gamma_comm_true <- rnorm(K, 0, sigma2_comm^.5) 
 for (a in 1:A){ #fill community measures
   Y_comm[,a] <-  rnorm(K, X_comm %*% beta_true, sqrt(1/omega_comm_true[a])) +gamma_comm_true
 }
 
 
-gamma_micro_true <-  rnorm(N0, 0, 1)
+gamma_micro_true <-  rnorm(N0, 0, sigma2_micro^.5)
 for (m in 1:M){ #fill micro-data
   Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, sqrt(1/omega_micro_true[m])) + gamma_micro_true
 }
 
-gamma_rank_true <-  rnorm(N1, 0, 1)
+gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)
 for (r in 1:R){ #fill latent Z scores
   Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, sqrt(1/omega_rank_true[r])) +gamma_rank_true
 }

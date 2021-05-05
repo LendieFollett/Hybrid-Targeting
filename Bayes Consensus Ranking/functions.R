@@ -337,7 +337,8 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     omega_comm <- GibbsUpQualityWeights(y=Y_comm-kronecker(t(rep(1, A)), gamma_comm), mu=X_comm %*% beta, weight.prior.value = c(0.5, 1, 2 ))
     omega_micro <-GibbsUpQualityWeights(y=Y_micro-kronecker(t(rep(1, M)), gamma_micro), mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
     omega_rank <- GibbsUpQualityWeights(y=Z - kronecker(t(rep(1, R)),gamma_rank), mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
-
+    
+    # update random effect variances
     sigma2_comm <- GibbsUpsigma2(gamma_comm, nu=3, tau2=25)
     sigma2_micro <- GibbsUpsigma2(gamma_micro, nu=3, tau2=25)
     sigma2_rank <- GibbsUpsigma2(gamma_rank, nu=3, tau2=25)
