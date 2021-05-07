@@ -1,6 +1,7 @@
 rm(list = ls())
 library(truncnorm)
 library(mvtnorm)
+library(LaplacesDemon)
 source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
@@ -13,7 +14,7 @@ N1 = 60 ## number of ranked/test items
 P = 13  ## number of covariates
 rho=0.5 ## correlation for covariates
 
-iter.keep = 5000   ## Gibbs sampler kept iterations
+iter.keep = 10000   ## Gibbs sampler kept iterations (post burn-in)
 iter.burn =5000   ## Gibbs sampler burn-in iterations 
 print.opt = 100  ## print a message every print.opt steps
 
@@ -33,7 +34,7 @@ temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micr
                  para.expan = TRUE, print.opt = 100,
                  initial.list = NULL)
 
-mu_mean <- apply(temp$mu, 2, mean)
+mu_mean <- apply(temp$mu, 2, mean) # mu = X_micro1 %*% beta + Xr_rank[1:N1,]%*%gamma_rank
 
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
@@ -82,15 +83,25 @@ ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
 data.frame(postmean =  (apply(tau_post, 1, median)), rank(apply(Tau, 1, mean)))
 
 #posteriors of quality weights - compare to truths
-apply(temp$omega_comm, 2, mean)
-apply(temp$omega_micro, 2, mean)
-apply(temp$omega_rank, 2, mean) 
+apply(temp$omega_comm, 2, mean); omega_comm_true
+apply(temp$omega_micro, 2, mean);omega_micro_true
+apply(temp$omega_rank, 2, mean) ;omega_rank_true
 
 
-qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
-qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
-qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean)) +geom_abline(aes(intercept = 0, slope = 1))
+###convergence diagnostics------
+qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean), 
+      colour = apply(temp$gamma_rank, 2, ESS)) +
+  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
+  geom_abline(aes(intercept = 0, slope = 1))
 
+qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean),
+      colour = apply(temp$gamma_micro, 2, ESS)) +
+  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
+  geom_abline(aes(intercept = 0, slope = 1))
+qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean) ,
+      colour = apply(temp$gamma_comm, 2, ESS)) +
+  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
+  geom_abline(aes(intercept = 0, slope = 1))
 
 plot(temp$sigma2_comm%>%sqrt)
 plot(temp$sigma2_micro%>%sqrt)
@@ -98,3 +109,15 @@ plot(temp$sigma2_rank%>%sqrt)
 
 plot(temp$gamma_rank[,4])
 
+
+#do all ESS checks
+
+doESS <- function(x){
+  if(!is.null(dim(x))){ #if it's a data frame
+    return(apply(x, 2, ESS))
+  }else{
+    return(ESS(x))
+  }
+}
+
+lapply(temp[-c(1,7)], doESS) %>% str()
