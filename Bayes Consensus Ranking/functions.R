@@ -72,7 +72,7 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
                                       omega_comm = rep(1,ncol(Y_comm)), 
                                       omega_micro = rep(1, ncol(Y_micro)),
                                       omega_rank = rep(1, ncol(Z)),
-                                      sigma2.beta = 1){
+                                      sigma2_beta = 5^2){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -88,8 +88,6 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
     P <- ncol(X_micro)
   }
   
-  #prior on beta vector - mean = 0, variance = sigma2.beta
-  sigma2.beta <- 2.5 
   
   #Complete 'data' vector
   u <- c(as.vector(Y_comm), #KxA --> (AK)x1
@@ -110,7 +108,7 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
   pt1 <- u^T%*%diag(Sigma_inv_diag)%*%X
   
-  pt2 <- t(X)%*%diag(Sigma_inv_diag)%*%X + diag(P+1)/sigma2.beta
+  pt2 <- t(X)%*%diag(Sigma_inv_diag)%*%X + diag(P+1)/sigma2_beta
   
   pt2_inv <- solve(pt2)
   
@@ -218,7 +216,7 @@ GibbsUpsigma2 <- function(x, nu, tau2){
 #' @export
 BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
                                Y_comm, Y_micro,
-                               sigma_beta = 5^2,
+                               sigma2_beta = 5^2,
                                weight.prior.value = c(0.5, 1, 2), 
                                weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
                                N1 = dim(pair.comp.ten)[1], 
@@ -245,7 +243,10 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   #construct random effect matrices
   Xr_micro <-  kronecker(rep(1, M),diag(N0)) #for training micro set
   Xr_comm<-  kronecker(rep(1, A),diag(K)) #for community agg set  
-  Xr_rank<-  kronecker(rep(1, R),diag(N1)) #for community agg set  
+  Xr_rank<-  kronecker(rep(1, R),diag(N1)) #for rank set  
+  
+
+  
   
   ## store MCMC draws
   draw = list(
@@ -255,7 +256,6 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     omega_comm = array(NA, dim = c(iter.keep, A) ),
     omega_micro = array(NA, dim = c(iter.keep, M) ),
     omega_rank = array(NA, dim = c(iter.keep, R) ),
-    sigma2.beta = rep(NA, iter.keep),
     gamma_rank = array(NA, dim = c(iter.keep, N1) ),
     gamma_comm = array(NA, dim = c(iter.keep, K) ),
     gamma_micro = array(NA, dim = c(iter.keep, N0) ),
@@ -264,42 +264,36 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     sigma2_micro = rep(NA, iter.keep)
   )
   
-  if(is.null(initial.list)){
-    ## initial values for Z
+  ## set initial values for parameters, where given
+  if(is.null(initial.list$Z)){
     Z = matrix(NA, nrow = N1, ncol = R)
     for(j in 1:R){
       Z[sort( rowSums( pair.comp.ten[,,j], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix, j] = (c(N1 : 1) - (1+N1)/2)/sd(c(N1 : 1))
+    }}else{
+      Z <- initial.list$Z
     }
     
+  if(is.null(initial.list$beta)){beta <- rep(0, P+1)}else{  beta <-  initial.list$beta} 
+  if(is.null(initial.list$gamma_rank)){gamma_rank <- rep(0, N1)}else{  gamma_rank <-  initial.list$gamma_rank} 
+  if(is.null(initial.list$gamma_comm)){gamma_comm <- rep(0, K)}else{  gamma_comm <-  initial.list$gamma_comm} 
+  if(is.null(initial.list$gamma_micro)){gamma_micro <- rep(0, N0)}else{  gamma_micro <-  initial.list$gamma_micro} 
+
+    
     ## initial values for alpha, beta and thus mu
-    beta = rep(0, P+1)
-    mu = as.vector(X_micro1 %*% beta )
+    print(beta)
+    print(dim(X_micro1))
+    mu <- as.vector(X_micro1 %*% beta )
     
     ## initial values for weights
     omega_comm = rep(1, A) 
     omega_micro = rep(1, M) 
     omega_rank = rep(1, R)
     
-    gamma_comm <- rep(0, K)
-    gamma_micro <- rep(0, N0)
-    gamma_rank <- rep(0, N1)
-    
     sigma2_comm= 1
     sigma2_micro= 1
     sigma2_rank= 1
     ## initial values for sigma2
-    sigma2.beta = 2.5
-  }else{
-    
-    Z = initial.list$Z
-    beta = initial.list$beta
-    mu = as.vector( X_micro1 %*% beta )
-    omega_comm = initial.list$omega_comm
-    omega_micro = initial.list$omega_micro
-    omega_rank = initial.list$omega_rank
-    sigma2.beta = initial.list$sigma2.beta
-    
-  }
+
   
   ## Gibbs iteration
   for(iter in 1:(iter.burn + iter.keep)){
@@ -314,7 +308,7 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
                                      Y_micro = Y_micro-kronecker(t(rep(1, M)), gamma_micro),
                                                  X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
                                                  omega_comm=omega_comm, omega_micro = omega_micro, omega_rank = omega_rank,
-                                                 sigma2.beta = 2.5)
+                                                 sigma2_beta = 5^2)
     
     
     #update gamma, the random effects
