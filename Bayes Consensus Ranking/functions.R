@@ -135,7 +135,7 @@ GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_gamma = 2.5)
   
   #Complete 'data' vector
   u <- as.vector(y)
-
+#LRF - 
   Sigma_inv_diag <- c(rep(omega, each =nrow(y)))
   
   Xf <- rep(xbeta, Col)
@@ -163,7 +163,7 @@ for( col in 1:Col){ #over information source within y
   log.post.prob = rep(0, n.prior.value) #re-initialize for next information source
   for(k in 1:n.prior.value){ #over potential values
     log.post.prob[k] = log.post.prob[k]+
-      log( weight.prior.prob[k] ) + Row/2 * log( weight.prior.value[k] ) - weight.prior.value[k]/2 * sum( (y[,col] - mu)^2 )
+      log( weight.prior.prob[k] ) + (Row/2) * log( weight.prior.value[k] ) - (weight.prior.value[k]/2) * sum( (y[,col] - mu)^2 )
     #log(prior value) - log(sigma) -(1/(2*sigma*sigma))*sum[(y-mu)^2]=
     #log(prior value) + .5log(w) -(w/2)*sum[(y-mu)^2]
   }
@@ -316,7 +316,7 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
-    
+
     # update beta or equivalently mu given Z, random effects
     #random effects subtracted off response matrices prior to posterior computations
     beta = GibbsUpMuGivenLatentGroup(Z = Z - kronecker(t(rep(1, R)), gamma_rank), 
