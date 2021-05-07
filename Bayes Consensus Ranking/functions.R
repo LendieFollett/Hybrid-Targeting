@@ -302,7 +302,7 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   }
   
   ## Gibbs iteration
-  for(iter in 1:(iter.keep + iter.keep)){
+  for(iter in 1:(iter.burn + iter.keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )

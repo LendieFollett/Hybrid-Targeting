@@ -12,7 +12,7 @@ M = 2   ## number of micro-level variables captured
 N0 = 100## number of unranked/training items
 N1 = 60 ## number of ranked/test items
 P = 13  ## number of covariates
-rho=0.5 ## correlation for covariates
+rho=0 ## correlation for covariates
 
 iter.keep = 10000   ## Gibbs sampler kept iterations (post burn-in)
 iter.burn =5000   ## Gibbs sampler burn-in iterations 
@@ -52,7 +52,8 @@ tau_post_summary$PMT <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micr
 ggplot(data = tau_post_summary) +
   geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
+  labs(x = "Mean Aggregation of R Ranks", 
+       y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
 
 
 ggplot(data = tau_post_summary) +
@@ -103,9 +104,9 @@ qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean) ,
   scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
   geom_abline(aes(intercept = 0, slope = 1))
 
-plot(temp$sigma2_comm%>%sqrt)
-plot(temp$sigma2_micro%>%sqrt)
-plot(temp$sigma2_rank%>%sqrt)
+plot(temp$sigma2_comm%>%sqrt); sigma2_comm %>%sqrt
+plot(temp$sigma2_micro%>%sqrt); sigma2_micro%>%sqrt
+plot(temp$sigma2_rank%>%sqrt); sigma2_rank%>%sqrt
 
 plot(temp$gamma_rank[,4])
 
@@ -120,4 +121,6 @@ doESS <- function(x){
   }
 }
 
-lapply(temp[-c(1,7)], doESS) %>% str()
+effectiv_ss <- lapply(temp[-c(1,7)], doESS) 
+
+effectiv_ss%>% str()
