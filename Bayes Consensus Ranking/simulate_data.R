@@ -67,9 +67,7 @@ for(r in 1:R){
 }
 
 
-iter.max = 5000   ## Gibbs sampler total iterations
-iter.burn =1000   ## Gibbs sampler burn-in iterations
-print.opt = 100  ## print a message every print.opt steps
+
 
 #remove parameters we wouldn't have
 rm(A)

@@ -212,7 +212,8 @@ GibbsUpsigma2 <- function(x, nu, tau2){
 #' @param sigma_beta Currently given/fixed. Prior variance on beta.
 #' @param weight.prior.value A vector for the support of the discrete prior on weight parameter.
 #' @param weight.prior.prob A vector for the prior probability mass of the discrete prior on weight parameter.
-#' @param iter.max Number of iterations for Gibbs sampler.
+#' @param iter.keep Number of iterations kept for Gibbs sampler after burn-in.
+#' @param iter.burn Number of iterations for burn in (discarded)
 #' @return A list containing posterior samples of mu, the shared 'wellness' mean, conditional on the test X_micro1.
 #' @export
 BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
@@ -222,7 +223,9 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
                                weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
                                N1 = dim(pair.comp.ten)[1], 
                                R = dim(pair.comp.ten)[3], 
-                               iter.max = 5000, para.expan = TRUE, print.opt = 100,
+                               iter.keep = 5000, 
+                               iter.burn = 5000,
+                               para.expan = TRUE, print.opt = 100,
                                initial.list = NULL){
   
   if(all(X_comm[,1]==1)){
@@ -246,19 +249,19 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   
   ## store MCMC draws
   draw = list(
-    Z = array(NA, dim = c( iter.max,N1, R)),
-    beta = array(NA, dim = c(iter.max,P+1)),
-    mu = array(NA, dim = c(iter.max,N1)),
-    omega_comm = array(NA, dim = c(iter.max, A) ),
-    omega_micro = array(NA, dim = c(iter.max, M) ),
-    omega_rank = array(NA, dim = c(iter.max, R) ),
-    sigma2.beta = rep(NA, iter.max),
-    gamma_rank = array(NA, dim = c(iter.max, N1) ),
-    gamma_comm = array(NA, dim = c(iter.max, K) ),
-    gamma_micro = array(NA, dim = c(iter.max, N0) ),
-    sigma2_rank = rep(NA, iter.max),
-    sigma2_comm = rep(NA, iter.max),
-    sigma2_micro = rep(NA, iter.max)
+    Z = array(NA, dim = c( iter.keep,N1, R)),
+    beta = array(NA, dim = c(iter.keep,P+1)),
+    mu = array(NA, dim = c(iter.keep,N1)),
+    omega_comm = array(NA, dim = c(iter.keep, A) ),
+    omega_micro = array(NA, dim = c(iter.keep, M) ),
+    omega_rank = array(NA, dim = c(iter.keep, R) ),
+    sigma2.beta = rep(NA, iter.keep),
+    gamma_rank = array(NA, dim = c(iter.keep, N1) ),
+    gamma_comm = array(NA, dim = c(iter.keep, K) ),
+    gamma_micro = array(NA, dim = c(iter.keep, N0) ),
+    sigma2_rank = rep(NA, iter.keep),
+    sigma2_comm = rep(NA, iter.keep),
+    sigma2_micro = rep(NA, iter.keep)
   )
   
   if(is.null(initial.list)){
@@ -298,21 +301,8 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     
   }
   
-  ## store initial value
-  draw$Z[1,,] = Z
-  draw$beta[1,] = beta
-  draw$mu[1,] = mu
-  draw$omega_comm[1,] = omega_comm
-  draw$omega_micro[1,] = omega_micro
-  draw$omega_rank[1,] = omega_rank
-  draw$gamma_rank[1,] = gamma_rank
-  draw$gamma_comm[1,] = gamma_comm
-  draw$gamma_micro[1,] = gamma_micro
-  draw$sigma2_comm[1] = sigma2_comm
-  draw$sigma2_micro[1] = sigma2_micro
-  draw$sigma2_rank[1] = sigma2_rank
   ## Gibbs iteration
-  for(iter in 2:iter.max){
+  for(iter in 1:(iter.max + iter.keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
@@ -346,19 +336,22 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_micro1 %*% beta + Xr_rank[1:N1,]%*%gamma_rank )
 
+    if(iter > iter.burn){
+      j = iter - iter.burn
     # store value at this iteration
-    draw$Z[iter,,] = Z
-    draw$beta[iter,] = beta
-    draw$mu[iter,] = mu
-    draw$omega_micro[iter,] = omega_micro
-    draw$omega_comm[iter,] = omega_comm
-    draw$omega_rank[iter,] = omega_rank
-    draw$gamma_rank[iter,] = gamma_rank
-    draw$gamma_comm[iter,] = gamma_comm
-    draw$gamma_micro[iter,] = gamma_micro
-    draw$sigma2_comm[iter] = sigma2_comm
-    draw$sigma2_micro[iter] = sigma2_micro
-    draw$sigma2_rank[iter] = sigma2_rank
+    draw$Z[j,,] = Z
+    draw$beta[j,] = beta
+    draw$mu[j,] = mu
+    draw$omega_micro[j,] = omega_micro
+    draw$omega_comm[j,] = omega_comm
+    draw$omega_rank[j,] = omega_rank
+    draw$gamma_rank[j,] = gamma_rank
+    draw$gamma_comm[j,] = gamma_comm
+    draw$gamma_micro[j,] = gamma_micro
+    draw$sigma2_comm[j] = sigma2_comm
+    draw$sigma2_micro[j] = sigma2_micro
+    draw$sigma2_rank[j] = sigma2_rank
+    }
     # print iteration number
     if(iter %% print.opt == 0){
       print(paste("Gibbs Iteration", iter))
@@ -366,6 +359,8 @@ BCTarget <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
       # print(c(sigma2.alpha, sigma2.beta))
     }
   }
+  
+  
   return(draw)
 }
 

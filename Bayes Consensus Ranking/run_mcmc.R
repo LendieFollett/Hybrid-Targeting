@@ -13,6 +13,10 @@ N1 = 60 ## number of ranked/test items
 P = 13  ## number of covariates
 rho=0.5 ## correlation for covariates
 
+iter.keep = 5000   ## Gibbs sampler kept iterations
+iter.burn =5000   ## Gibbs sampler burn-in iterations 
+print.opt = 100  ## print a message every print.opt steps
+
 #simulate data based on parameters
 source("Bayes Consensus Ranking/simulate_data.R")
 
@@ -24,7 +28,9 @@ temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micr
                  weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
                  N1 = dim(pair.comp.ten)[1], 
                  R = dim(pair.comp.ten)[3], 
-                 iter.max = iter.max, para.expan = TRUE, print.opt = 100,
+                 iter.keep = iter.keep,
+                 iter.burn = iter.burn,
+                 para.expan = TRUE, print.opt = 100,
                  initial.list = NULL)
 
 mu_mean <- apply(temp$mu, 2, mean)
@@ -47,19 +53,22 @@ ggplot(data = tau_post_summary) +
   geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
 
+
 ggplot(data = tau_post_summary) +
   geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max, colour = apply(temp$gamma_rank, 2, mean))) +
-  scale_colour_gradient2()+
+  scale_colour_gradient2("Gamma\nPosterior\nMean")+
   geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "PMT-based ranks", y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
+  labs(x = "Tau(alpha + X*Beta)", y = " Tau(alpha + X*Beta + gamma)") +
+  ggtitle("Effect of Random Effects on Ultimate Ranks")
 
 ggplot(data = tau_post_summary) +
   geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
                       y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
                       colour = apply(temp$gamma_rank, 2, mean))) +
-  scale_colour_gradient2()+
+  scale_colour_gradient2("Gamma\nPosterior\nMean")+
   geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "PMT posteriors (alpha + X*Beta)", y = "Posterior Summaries of alpha + X*Beta + gamma")
+  labs(x = "alpha + X*Beta", y = "alpha + X*Beta + gamma")+
+  ggtitle("Effect of Random Effects on Posterior Means")
 
 ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
   geom_point(aes(x = 1:nrow(tau_post_summary), y = mean)) +
@@ -87,4 +96,5 @@ plot(temp$sigma2_comm%>%sqrt)
 plot(temp$sigma2_micro%>%sqrt)
 plot(temp$sigma2_rank%>%sqrt)
 
+plot(temp$gamma_rank[,4])
 
