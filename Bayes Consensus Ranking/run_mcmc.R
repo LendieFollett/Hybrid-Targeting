@@ -4,7 +4,7 @@ library(mvtnorm)
 source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
-R = 15  ## number of rankers
+R = 5  ## number of rankers
 A = 2   ## number of aggregate/community-level variables captured
 K = 20 ## number of communities
 M = 2   ## number of micro-level variables captured
@@ -45,12 +45,21 @@ tau_post_summary$PMT <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micr
 ggplot(data = tau_post_summary) +
   geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
   geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
+  labs(x = "Mean Aggregation of R Ranks", y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
 
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = (PMT), y = mean,ymin = min, ymax = max)) +
+  geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max, colour = apply(temp$gamma_rank, 2, mean))) +
+  scale_colour_gradient2()+
   geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "PMT-based ranks", y = "Posterior Summaries of Tau(alpha + X*Beta)")
+  labs(x = "PMT-based ranks", y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
+
+ggplot(data = tau_post_summary) +
+  geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
+                      y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
+                      colour = apply(temp$gamma_rank, 2, mean))) +
+  scale_colour_gradient2()+
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "PMT posteriors (alpha + X*Beta)", y = "Posterior Summaries of alpha + X*Beta + gamma")
 
 ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
   geom_point(aes(x = 1:nrow(tau_post_summary), y = mean)) +
