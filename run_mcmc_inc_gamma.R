@@ -24,16 +24,15 @@ source("Bayes Consensus Ranking/simulate_data.R")
 
 
 #starting values for random effects
-temp_data <- data.frame(y = as.vector(apply(apply(Tau, 2, function(x){(x - mean(x,na.rm=TRUE))/sd(x,na.rm=TRUE)}), 1, function(x){sum(x, na.rm=TRUE)})), kronecker(rep(1, ncol(Z)), X_micro1))
-form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_micro1), collapse = "+")))
-#gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
-beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
-initial_list <- list(#gamma_rank = gamma_start,
+temp_data <- data.frame(y = as.vector(apply(Tau, 2, function(x){(x - mean(x))/sd(x)})), kronecker(rep(1, ncol(Z)), X_micro1))
+form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_micro1), collapse = "+"), " + (1|as.factor(rep(1:nrow(Tau), ncol(Tau))))"))
+gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
+beta_start <-fixef(lmer(form, data = temp_data))%>%as.vector()
+initial_list <- list(gamma_rank = gamma_start,
                      beta = beta_start)
 
 #Run MCMC for Bayesian Consensus Targeting
 temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
-                 X_elite = 7,#7th position (including intercept)
                  Y_comm = Y_comm, Y_micro = Y_micro,
                  weight.prior.value = c(0.5, 1, 2), 
                  weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
@@ -75,8 +74,8 @@ ggplot(data = tau_post_summary) +
 
 ggplot(data = tau_post_summary) +
   geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
-                      y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
-                      colour = apply(temp$gamma_rank, 2, mean))) +
+                 y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
+                 colour = apply(temp$gamma_rank, 2, mean))) +
   scale_colour_gradient2("Gamma\nPosterior\nMean")+
   geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "alpha + X*Beta", y = "alpha + X*Beta + gamma")+

@@ -4,6 +4,8 @@ library(dplyr)
 library(ggplot2)
 library(truncnorm)
 
+#SIMULATION CODE ASSUMES EACH COMMUNITY HAS ONE RANKING SYSTEM FOR THEIR MEMBERS ONLY
+#I.E., K = R
 
 
 community <- rep(1:K, (N0+N1)/K) #each training + testing household assigned to a community
@@ -16,13 +18,15 @@ for(i in 1:(P-1)){
   }
 }
 # X_MICRO - both training and testing has same micro covariate information
-X_micro = rmvnorm(N0 + N1, mean = rep(0, P), sigma = CovMat) ## covariate matrix for ALL sampled individuals
-X_micro <- cbind(1, X_micro)
+X_micro = cbind(rmvnorm(N0 + N1, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
+                rbinom(n = N0 + N1, size = 1, p = .1)) #indicator for elite connection
+X_micro <- cbind(1, X_micro) #add intercept
 X_micro1 = X_micro[1:N1,] ## covariate matrix for ALL sampled individuals
 X_micro0 = X_micro[-c(1:N1),]
 
 X_comm <- aggregate(X_micro, list(community), mean)[,-1] %>%
   as.matrix()
+
 
 Y_comm <- array(NA, dim = c(K, A)) 
 Y_micro <- array(NA, dim = c(N0, M)) #only training has micro response (e.g., consumption)
@@ -57,6 +61,16 @@ for (r in 1:R){ #fill latent Z scores
 
 Tau <- apply(Z, 2, rank) #R rankings (what we actually observe)
 
+#incomplete rankings
+Tau <- data.frame(Z, community=community[1:N1]) %>% 
+  group_by(community) %>%
+  mutate_all(rank) 
+
+for ( idx in 1:R){
+  Tau[Tau$community != idx,idx] <- NA
+}
+Tau <- subset(Tau, select = -c(community)) %>%
+  as.matrix()
 #real life observe: Tau, Y_micro ('test' only), Y_comm 
 #do NOT observe: Z
 
@@ -65,8 +79,6 @@ pair.comp.ten = array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrice
 for(r in 1:R){
   pair.comp.ten[,,r] = FullRankToPairComp( Tau[,r] )
 }
-
-
 
 
 #remove parameters we wouldn't have
