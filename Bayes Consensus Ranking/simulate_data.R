@@ -1,8 +1,3 @@
-library(mvtnorm)
-library(MASS)
-library(dplyr)
-library(ggplot2)
-library(truncnorm)
 
 #SIMULATION CODE ASSUMES EACH COMMUNITY HAS ONE RANKING SYSTEM FOR THEIR MEMBERS ONLY
 #I.E., K = R
@@ -75,11 +70,14 @@ Tau <- subset(Tau, select = -c(community)) %>%
 #do NOT observe: Z
 
 #https://stackoverflow.com/questions/51295402/r-on-macos-error-vector-memory-exhausted-limit-reached
-pair.comp.ten = array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
+pair.comp.ten = list()#array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
 for(r in 1:R){
   print(r)
-  pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] )
-}
+  #pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = as(FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] ), "dgTMatrix")
+  pair.comp.ten[[r]] = FullRankToPairComp( Tau[,r] )
+
+  }
+
 
 
 #remove parameters we wouldn't have

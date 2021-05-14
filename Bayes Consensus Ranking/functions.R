@@ -2,7 +2,10 @@
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
 #' Compute the pairwise comparison matrix from the ranking lists of the ranked entities.
-#' @param rank.vec A full ranking list containing the ranks of all the \eqn{N} entities. Note that here we follow the usual definition of rank in R, that is, the larger the evaluation score of an entity, the larger this entity's rank is. Specifically, for a full ranking list of \eqn{N} entities, the rank of an entity equals \eqn{N+1} minus its ranked position.
+#' @param rank.vec A full ranking list containing the ranks of all the \eqn{N} entities. 
+#' Note that here we follow the usual definition of rank in R, that is, the larger the evaluation score 
+#' of an entity, the larger this entity's rank is. Specifically, for a full ranking list of \eqn{N} entities, 
+#' the rank of an entity equals \eqn{N+1} minus its ranked position.
 #' @return An \eqn{N} by \eqn{N} pairwise comparison for all \eqn{N} entities, where the (\eqn{i},\eqn{j}) element equals 1 if \eqn{i} is ranked higher than \eqn{j}, and 0 if \eqn{i} is ranker lower than \eqn{j}. Note that the diagonal elements (\eqn{i},\eqn{i})'s are set to NA.
 #' @export
 FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
@@ -12,7 +15,7 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
     pair.comp[j,  rank.vec > i] = 1
     pair.comp[j,  rank.vec < i] = 0
   }
-  return(pair.comp)
+  return(as(pair.comp, "dgTMatrix"))
 }
 
 
@@ -23,18 +26,20 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
 ### weight.vec[j]: weight for jth ranker ###
 GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z, mu, omega_rank = rep(1, ncol(Z)), R = ncol(Z) ){
   for(r in 1:R){ #loop over rankers (e.g., CBT, geography, etc...)
-    Z[,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[,,r], Z[,r], mu, weight = omega_rank[r])
+    print(r)
+    up.order = sort( rowSums( pair.comp.ten[[r]], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix
+    #Z[,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[,,r], Z[,r], mu, weight = omega_rank[r])
+    Z[,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[[r]], Z[,r],up.order, mu, weight = omega_rank[r])
   }
   return(Z)
 }
 
 
-GibbsUpLatentGivenRankInd <- function(pair.comp, Z, mu, weight){
-  up.order = sort( rowSums( pair.comp, na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix
+GibbsUpLatentGivenRankInd <- function(pair.comp, Z,up.order, mu, weight){
+
   for(i in up.order){
-    
     set1 = which( pair.comp[i, ] == 1)
-    set0 = which( pair.comp[i, ] == 0)
+    set0 = which( pair.comp[i, ] != 1)
     
     if(length(set1) > 0){
       upper = min(Z[set1])
@@ -106,13 +111,13 @@ GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response
                       rep(omega_rank, each = N1))
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
-  pt1 <- u^T%*%diag(Sigma_inv_diag)%*%X
+  pt1 <- u^T%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%X
   
-  pt2 <- t(X)%*%diag(Sigma_inv_diag)%*%X + diag(P+1)/sigma2_beta
+  pt2 <- t(X)%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%X + diag(P+1)/sigma2_beta
   
   pt2_inv <- solve(pt2)
   
-  alpha_beta <- mvrnorm(1, mu = pt1%*%pt2_inv, Sigma = pt2_inv)
+  alpha_beta <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
 
   return(alpha_beta)
 }
@@ -138,13 +143,13 @@ GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_gamma = 2.5)
   
   Xf <- rep(xbeta, Col)
 
-  pt1 <- (u-Xf)^T%*%diag(Sigma_inv_diag)%*%Xr
+  pt1 <- (u-Xf)^T%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr
   
-  pt2 <- t(Xr)%*%diag(Sigma_inv_diag)%*%Xr + diag(N)/(sigma_gamma^2)
+  pt2 <- t(Xr)%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr + diag(N)/(sigma_gamma^2)
   
   pt2_inv <- solve(pt2)
   
-  gamma <- mvrnorm(1, mu = pt1%*%pt2_inv, Sigma = pt2_inv)
+  gamma <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
   
   return(gamma)
 }
@@ -243,14 +248,14 @@ BCTarget<- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   
   A <- ncol(Y_comm)
   M <- ncol(Y_micro)
-  R <- dim(pair.comp.ten)[3]
+  R <- length(pair.comp.ten)
   K <- nrow(Y_comm)
   N0 <- nrow(Y_micro)
-  N1 <- dim(pair.comp.ten)[1]
+  N1 <- dim(pair.comp.ten[[1]])[1]
   
   #construct random effect matrices
-  Xr_micro <-  kronecker(rep(1, M),diag(N0)) #for training micro set
-  Xr_comm<-  kronecker(rep(1, A),diag(K)) #for community agg set  
+  Xr_micro <-  kronecker(rep(1, M),Diagonal(N0)) #for training micro set
+  Xr_comm<-  kronecker(rep(1, A),Diagonal(K)) #for community agg set  
 
   
   ## store MCMC draws
@@ -272,7 +277,7 @@ BCTarget<- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   if(is.null(initial.list$Z)){
     Z = matrix(NA, nrow = N1, ncol = R)
     for(j in 1:R){
-      Z[sort( rowSums( pair.comp.ten[,,j], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix, j] = (c(N1 : 1) - (1+N1)/2)/sd(c(N1 : 1))
+      Z[sort( rowSums( pair.comp.ten[[j]], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix, j] = (c(N1 : 1) - (1+N1)/2)/sd(c(N1 : 1))
     }}else{
       Z <- initial.list$Z
     }
@@ -417,9 +422,9 @@ BCRTarget_inc_gamma <- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   N1 <- dim(pair.comp.ten)[1]
   
   #construct random effect matrices
-  Xr_micro <-  kronecker(rep(1, M),diag(N0)) #for training micro set
-  Xr_comm<-  kronecker(rep(1, A),diag(K)) #for community agg set  
-  Xr_rank<-  kronecker(rep(1, R),diag(N1)) #for rank set  
+  Xr_micro <-  kronecker(rep(1, M),Diagonal(N0)) #for training micro set
+  Xr_comm<-  kronecker(rep(1, A),Diagonal(K)) #for community agg set  
+  Xr_rank<-  kronecker(rep(1, R),Diagonal(N1)) #for rank set  
   
 
   

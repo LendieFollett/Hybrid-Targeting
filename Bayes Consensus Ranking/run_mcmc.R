@@ -3,15 +3,20 @@ library(truncnorm)
 library(mvtnorm)
 library(LaplacesDemon)
 library(lme4)
+library(Matrix) #for sparse matrices
+library(MASS)
+library(dplyr)
+library(ggplot2)
+library(Rcpp)
 source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
 
 A = 2   ## number of aggregate/community-level variables captured
-K = R = 400 ## number of communities equal to number of rankers
+K = R = 200 ## number of communities equal to number of rankers
 M = 2   ## number of micro-level variables captured
-N0 = 2000## number of unranked/training items
-N1 = 2000 ## number of ranked/test items
+N0 = 1000## number of unranked/training items
+N1 = 1000 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
 
@@ -37,8 +42,6 @@ temp <- BCTarget(pair.comp.ten=pair.comp.ten, X_comm = X_comm, X_micro0 = X_micr
                  Y_comm = Y_comm, Y_micro = Y_micro,
                  weight.prior.value = c(0.5, 1, 2), 
                  weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
-                 N1 = dim(pair.comp.ten)[1], 
-                 R = dim(pair.comp.ten)[3], 
                  iter.keep = iter.keep,
                  iter.burn = iter.burn,
                  para.expan = TRUE, print.opt = 100,
