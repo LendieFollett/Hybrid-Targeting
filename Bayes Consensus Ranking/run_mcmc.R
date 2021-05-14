@@ -8,10 +8,10 @@ source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
 
 A = 2   ## number of aggregate/community-level variables captured
-K = R = 20 ## number of communities equal to number of rankers
+K = R = 400 ## number of communities equal to number of rankers
 M = 2   ## number of micro-level variables captured
-N0 = 200## number of unranked/training items
-N1 = 100 ## number of ranked/test items
+N0 = 2000## number of unranked/training items
+N1 = 2000 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
 
@@ -54,39 +54,40 @@ tau_post_summary <- data.frame(
   max = (apply(tau_post, 1, max)),#maximum rank seen in MCMC draws
   quantile = apply(tau_post, 1, quantile, .75)
 )
-tau_post_summary$naive_agg <- apply(Tau, 1, mean)
+tau_post_summary$naive_agg <- apply(Tau, 1, function(x){mean(x, na.rm=TRUE)})
 tau_post_summary$PMT <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean))
 
 
 
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = naive_agg, y = mean,ymin = min, ymax = max)) +
-  geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "Mean Aggregation of R Ranks", 
-       y = "Posterior Summaries of Tau(alpha + X*Beta + gamma)")
+  geom_violin(aes(x = naive_agg, y = mean, group = naive_agg)) +
+  geom_jitter(aes(x = naive_agg, y = mean)) +
+  #geom_abline(aes(slope = 1, intercept = 0)) +
+  labs(x = "Rank within community", 
+       y = "Posterior Mean of Tau(X*Beta )")
 
 
-ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max, colour = apply(temp$gamma_rank, 2, mean))) +
-  scale_colour_gradient2("Gamma\nPosterior\nMean")+
-  geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "Tau(alpha + X*Beta)", y = " Tau(alpha + X*Beta + gamma)") +
-  ggtitle("Effect of Random Effects on Ultimate Ranks")
+#ggplot(data = tau_post_summary) +
+#  geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max, colour = apply(temp$gamma_rank, 2, mean))) +
+#  scale_colour_gradient2("Gamma\nPosterior\nMean")+
+#  geom_abline(aes(slope = 1, intercept = 0)) +
+#  labs(x = "Tau(alpha + X*Beta)", y = " Tau(alpha + X*Beta + gamma)") +
+#  ggtitle("Effect of Random Effects on Ultimate Ranks")
 
-ggplot(data = tau_post_summary) +
-  geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
-                      y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
-                      colour = apply(temp$gamma_rank, 2, mean))) +
-  scale_colour_gradient2("Gamma\nPosterior\nMean")+
-  geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "alpha + X*Beta", y = "alpha + X*Beta + gamma")+
-  ggtitle("Effect of Random Effects on Posterior Means")
+#ggplot(data = tau_post_summary) +
+#  geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
+#                      y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
+#                      colour = apply(temp$gamma_rank, 2, mean))) +
+#  scale_colour_gradient2("Gamma\nPosterior\nMean")+
+#  geom_abline(aes(slope = 1, intercept = 0)) +
+#  labs(x = "alpha + X*Beta", y = "alpha + X*Beta + gamma")+
+#  ggtitle("Effect of Random Effects on Posterior Means")
 
 ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
-  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean)) +
-  geom_point(aes(x = 1:nrow(tau_post_summary), y = naive_agg), colour = "tomato") +
-  geom_point(aes(x = 1:nrow(tau_post_summary), y = PMT), colour = "steelblue") +
-  geom_abline(aes(slope = 1, intercept = 0)) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean-PMT,colour = naive_agg)) +
+  #geom_point(aes(x = 1:nrow(tau_post_summary), y = naive_agg), colour = "tomato") +
+  #geom_point(aes(x = 1:nrow(tau_post_summary), y = PMT,colour = naive_agg)) +
+  #geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "ID", y = "Different rankings")
 
 
@@ -101,10 +102,10 @@ apply(temp$omega_rank, 2, mean) ;omega_rank_true
 apply(temp$beta, 2, mean) ;beta_true
 
 ###convergence diagnostics------
-qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean), 
-      colour = apply(temp$gamma_rank, 2, ESS)) +
-  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
-  geom_abline(aes(intercept = 0, slope = 1))
+#qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean), 
+#      colour = apply(temp$gamma_rank, 2, ESS)) +
+#  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
+#  geom_abline(aes(intercept = 0, slope = 1))
 
 qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean),
       colour = apply(temp$gamma_micro, 2, ESS)) +
@@ -117,7 +118,7 @@ qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean) ,
 
 plot(temp$sigma2_comm%>%sqrt); sigma2_comm %>%sqrt
 plot(temp$sigma2_micro%>%sqrt); sigma2_micro%>%sqrt
-plot(temp$sigma2_rank%>%sqrt); sigma2_rank%>%sqrt 
+#plot(temp$sigma2_rank%>%sqrt); sigma2_rank%>%sqrt 
 #these are consistently overestimated - reconsider the inverse chi-squared prior
 
 plot(temp$gamma_rank[,4])

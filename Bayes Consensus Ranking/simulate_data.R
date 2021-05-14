@@ -52,9 +52,9 @@ for (m in 1:M){ #fill micro-data
   Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_true, sqrt(1/omega_micro_true[m])) + gamma_micro_true
 }
 
-gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)
+#gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)
 for (r in 1:R){ #fill latent Z scores
-  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, sqrt(1/omega_rank_true[r])) +gamma_rank_true
+  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_true, sqrt(1/omega_rank_true[r])) #+gamma_rank_true
 }
 
 
@@ -74,10 +74,11 @@ Tau <- subset(Tau, select = -c(community)) %>%
 #real life observe: Tau, Y_micro ('test' only), Y_comm 
 #do NOT observe: Z
 
-
+#https://stackoverflow.com/questions/51295402/r-on-macos-error-vector-memory-exhausted-limit-reached
 pair.comp.ten = array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
 for(r in 1:R){
-  pair.comp.ten[,,r] = FullRankToPairComp( Tau[,r] )
+  print(r)
+  pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] )
 }
 
 
