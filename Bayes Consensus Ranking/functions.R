@@ -20,7 +20,7 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
 
 
 ### Gibbs update Z given beta--------------------------
-### pair.comp.ten[,,j]: pairwise comparison matrix for jth ranker ###
+### pair.comp.ten[[r]] pairwise rank comparison matrix from rth community###
 ### Z.mat[,j]: latent variable vector for jth ranker ###
 ### mu: shared mean vector for testing sample N1 x 1 ###
 ### weight.vec[j]: weight for jth ranker ###
@@ -29,7 +29,7 @@ GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z, mu, omega_rank = rep(1
     print(r)
     up.order = sort( rowSums( pair.comp.ten[[r]], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix
     #Z[,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[,,r], Z[,r], mu, weight = omega_rank[r])
-    Z[,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[[r]], Z[,r],up.order, mu, weight = omega_rank[r])
+    Z[,r] = GibbsUpLatentGivenRankInd2(pair.comp.ten[[r]], Z[,r],up.order, mu, weight = omega_rank[r])
   }
   return(Z)
 }
@@ -299,7 +299,7 @@ BCTarget<- function(pair.comp.ten, X_micro0, X_micro1, X_comm,
   sigma2_micro= 1
   ## initial values for sigma2
   
-  
+
   ## Gibbs iteration
   for(iter in 1:(iter.burn + iter.keep)){
     

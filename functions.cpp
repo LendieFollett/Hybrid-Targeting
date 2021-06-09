@@ -11,39 +11,47 @@ using namespace Rcpp;
 //   http://gallery.rcpp.org/
 //
 
+
+
 // [[Rcpp::export]]
-NumericVector GibbsUpLatentGivenRankInd(NumericMatrix pair_comp, NumericVector Z, NumericVector up_order, NumericVector mu, double weight ) {
+NumericVector GibbsUpLatentGivenRankInd2(NumericMatrix pair_comp, NumericVector Z, IntegerVector up_order, NumericVector mu, double weight ) {
   int N1 =Z.length();
   IntegerVector set1(N1);
   IntegerVector set0(N1);
+  NumericVector Z1(N1);
+  NumericVector Z0(N1);
   double upper;
   double lower;
-  
+  int i;
+
   //for(i in up.order){
   for (int idx = 0; idx < N1; idx++){
-    int i = up_order[idx];
+    i = up_order[idx];
       for (int idx2 = 0; idx2 < N1; idx2++){
-        set1[idx2] = (pair_comp[i, idx2] == 1);
-        set0[idx2] = (pair_comp[i, idx2] != 1);
+        set1[idx2] = (pair_comp(i, idx2) == 1);
+        set0[idx2] = (pair_comp(i, idx2) != 1);
         }
-  NumericVector Z1 = Z[set1];
-  NumericVector Z0 = Z[set1];
-    
+   Z1 = Z[set1];
+   Z0 = Z[set0];
+
     if(sum(set1) > 0){
       upper = *std::min_element(Z1.begin(), Z1.end());
     }else{
       upper = std::numeric_limits<double>::infinity();
     }
-    
+
     if(sum(set0) > 0){
       lower = *std::max_element(Z0.begin(), Z0.end());
     }else{
-      lower = -std::numeric_limits<double>::infinity();;
+      lower = -std::numeric_limits<double>::infinity();
     }
     
-    Z[i] = R::rtruncnorm( 1, lower, upper, mean = mu[i], sd = 1/sqrt(weight) )
+do{
+  Z[i] = R::rnorm(mu[i], 1/sqrt(weight) );
+} while ( Z[i] < lower || Z[i] > upper);
+
   }
-  return(Z)
+  return(Z);
 
 }
 
@@ -54,5 +62,5 @@ NumericVector GibbsUpLatentGivenRankInd(NumericMatrix pair_comp, NumericVector Z
 //
 
 /*** R
-timesTwo(42)
+
 */

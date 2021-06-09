@@ -8,6 +8,9 @@ library(MASS)
 library(dplyr)
 library(ggplot2)
 library(Rcpp)
+
+#devtools::install_github("adzemski/rtnorm")
+sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
@@ -20,9 +23,9 @@ N1 = 1000 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
 
-iter.keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter.burn =500   ## Gibbs sampler burn-in iterations 
-print.opt = 100  ## print a message every print.opt steps
+iter.keep = 100   ## Gibbs sampler kept iterations (post burn-in)
+iter.burn =100   ## Gibbs sampler burn-in iterations 
+print.opt = 1  ## print a message every print.opt steps
 
 #simulate data based on parameters
 source("Bayes Consensus Ranking/simulate_data.R")

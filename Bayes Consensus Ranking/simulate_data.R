@@ -2,16 +2,8 @@
 #SIMULATION CODE ASSUMES EACH COMMUNITY HAS ONE RANKING SYSTEM FOR THEIR MEMBERS ONLY
 #I.E., K = R
 
-
 community <- rep(1:K, (N0+N1)/K) #each training + testing household assigned to a community
 
-CovMat=diag(P) ## covariance matrix for the covariates
-for(i in 1:(P-1)){
-  for(j in (i+1):P){
-    CovMat[i,j]=rho^(abs(i-j))
-    CovMat[j,i]=rho^(abs(i-j))
-  }
-}
 # X_MICRO - both training and testing has same micro covariate information
 X_micro = cbind(rmvnorm(N0 + N1, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
                 rbinom(n = N0 + N1, size = 1, p = .1)) #indicator for elite connection
@@ -54,7 +46,7 @@ for (r in 1:R){ #fill latent Z scores
 
 
 
-Tau <- apply(Z, 2, rank) #R rankings (what we actually observe)
+Tau <- apply(Z, 2, rank)
 
 #incomplete rankings
 Tau <- data.frame(Z, community=community[1:N1]) %>% 
@@ -65,7 +57,8 @@ for ( idx in 1:R){
   Tau[Tau$community != idx,idx] <- NA
 }
 Tau <- subset(Tau, select = -c(community)) %>%
-  as.matrix()
+  as.matrix() #R rankings (what we actually observe)
+
 #real life observe: Tau, Y_micro ('test' only), Y_comm 
 #do NOT observe: Z
 
@@ -74,8 +67,7 @@ pair.comp.ten = list()#array(NA, dim = c(N1, N1, R)) ## get pairwise comparison 
 for(r in 1:R){
   print(r)
   #pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = as(FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] ), "dgTMatrix")
-  pair.comp.ten[[r]] = FullRankToPairComp( Tau[,r] )
-
+  pair.comp.ten[[r]] = FullRankToPairComp( Tau[!is.na(Tau[,r]),r] )
   }
 
 
