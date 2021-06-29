@@ -75,43 +75,47 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z_sub,up.order, mu_sub, weight)
 ### omega_rank[r] = weight of r^th ranker###
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
 ### para.expan: whether use parameter expansion  LRF: FALSE???###
-GibbsUpMuGivenLatentGroup <- function(Z, Y_comm=NA, Y_micro=NA, #<-- 3 "response" matrices
-                                      X_comm=NA, X_micro0=NA, X_micro1=NA, 
-                                      omega_comm = rep(1,ncol(Y_comm)), 
-                                      omega_micro = rep(1, ncol(Y_micro)),
-                                      omega_rank = rep(1, ncol(Z)),
+GibbsUpMuGivenLatentGroup <- function(X ,
+                                      Y ,
+                                      omega ,
+                                      rank = FALSE, #need to treat y differently if rank
                                       sigma2_beta = 5^2){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
-  A <- ncol(Y_comm)
-  M <- ncol(Y_micro)
-  R <- ncol(Z)
-  K <- nrow(Y_comm)
-  N0 <- nrow(Y_micro)
-  N1 <- nrow(Z)
-  if(all(X_comm[,1]==1)){
-    P <- ncol(X_micro)-1
-  }else{
-    P <- ncol(X_micro)
-  }
-  
+
+P <- ncol(X) - 1
   
   #Complete 'data' vector
-  u <- c(as.vector(Y_comm), #KxA --> (AK)x1
-             as.vector(Y_micro), #N0xM --> (M*N0)x1
-             as.vector(Z)) #N1xR --> (R*N1)x1
+# u <- c(as.vector(Y_comm), #KxA --> (AK)x1
+#             as.vector(Y_micro), #N0xM --> (M*N0)x1
+#             as.vector(Z)) #N1xR --> (R*N1)x1
+  if(!rank){
+    u <- as.vector(Y) 
+    
+    n <- length(u)
+    c <- ncol(Y)
+  } else{
+
+    if (any(apply(Y, 1, function(x){sum(!is.na(X))}) > 1)){
+      #LRF needs to address: condition for when a person is ranked by multiple sources
+    }else{
+      u <- apply(Y, 1, function(x){sum(x, na.rm=TRUE)}) #basically take the only non-NA element
+      n <- length(u)
+      c <- 1
+    }
+    
+  }
+
+
+  
 #length(u) == A*K + M*N0 +R*N1 check
   
   ### X.mat it full, standardized X matrix with training first, then testing - constructed by kroneker products ###
   ### X.mat is a (A*K + M*N0 +R*N1)x(P+1) matrix ###
-  X <- rbind(kronecker(rep(1, A), X_comm), #(A*K)xP
-                 kronecker(rep(1, M), X_micro0),#(M*N0)xP
-                 kronecker(rep(1, R), X_micro1))#(R*N1)xP
+  X <-kronecker(rep(1, c), X) #(A*K)xP
   
-  Sigma_inv_diag <- c(rep(omega_comm, each = K), 
-                      rep(omega_micro, each = N0),
-                      rep(omega_rank, each = N1))
+  Sigma_inv_diag <-rep(omega, each = n)
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
   pt1 <- u^T%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%X
@@ -292,18 +296,19 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
     
     # update beta (includes intercept) or equivalently mu given Z
-    beta_rank = GibbsUpMuGivenLatentGroup(Y = ,
-                                          X = ,
-                                     omega = ,
+    beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
+                                          X = X_micro1,
+                                     omega = omega_rank,
+                                     rank=TRUE,
                                      sigma2_beta = 5^2)
     
-    beta_comm = GibbsUpMuGivenLatentGroup(Y = ,
-                                          X = ,
-                                          omega = ,
+    beta_comm = GibbsUpMuGivenLatentGroup(Y = Y_comm ,
+                                          X = X_comm ,
+                                          omega = omega_comm,
                                           sigma2_beta = 5^2)
     
-    beta_micro = GibbsUpMuGivenLatentGroup(Y = ,
-                                           X = ,
+    beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
+                                           X = X_micro0,
                                            omega = ,
                                           sigma2_beta = 5^2)
     
