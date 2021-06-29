@@ -165,15 +165,18 @@ GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_gamma = 2.5)
 
 ### Gibbs update for information quality weights omega_comm, omega_micro, omega_rank---------
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
-GibbsUpQualityWeights <- function(y, mu, weight.prior.value = c(0.5, 1, 2), weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)), Col = ncol(y), Row = nrow(y) ){
+GibbsUpQualityWeights <- function(y, mu, weight.prior.value = c(0.5, 1, 2), prior_prob = rep(1/length(weight.prior.value), length(weight.prior.value))){
+  Col <- ncol(y)
   n.prior.value <- length(weight.prior.value)
   weight_samp <- rep(NA, Col)
 
 for( col in 1:Col){ #over information source within y
   log.post.prob = rep(0, n.prior.value) #re-initialize for next information source
+  idx <- which(!is.na(y[,col]))
+  Row <- length(idx)
   for(k in 1:n.prior.value){ #over potential values
     log.post.prob[k] = log.post.prob[k]+
-      log( weight.prior.prob[k] ) + (Row/2) * log( weight.prior.value[k] ) - (weight.prior.value[k]/2) * sum( (y[,col] - mu)^2 )
+      log( prior_prob[k] ) + (Row/2) * log( prior_prob[k] ) - (prior_prob[k]/2) * sum( (y[idx,col] - mu[idx])^2 )
     #log(prior value) - log(sigma) -(1/(2*sigma*sigma))*sum[(y-mu)^2]=
     #log(prior value) + .5log(w) -(w/2)*sum[(y-mu)^2]
   }
@@ -210,7 +213,9 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
                                 Y_comm, Y_micro,
                                 sigma2_beta = 5^2,
                                 weight.prior.value = c(0.5, 1, 2), 
-                                weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                                prior_prob_rank = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                                prior_prob_micro = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                                prior_prob_comm = rep(1/length(weight.prior.value), length(weight.prior.value)),
                                 N1 = dim(X_micro1)[1], #how many people in test set
                                 R = ncol(Tau), #how many rankers. often will be equal to K
                                 iter.keep = 5000,
@@ -241,8 +246,12 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
   if(all(X_micro1[,1]==1)){
     P <- ncol(X_micro1)-1
   }else{
-    P <- ncol(X_micro1)
+    X_micro1 <- cbind(1, X_micro1)
+    X_micro0 <- cbind(1, X_micro0)
+    X_comm <- cbind(1, X_comm)
+    P <- ncol(X_micro1)-1
   }
+  
   
   
   A <- ncol(Y_comm)
@@ -296,17 +305,18 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = mu, omega_rank = omega_rank, R = R )
     
     # update beta (includes intercept) or equivalently mu given Z
+    # ----> for beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
                                           X = X_micro1,
                                      omega = omega_rank,
                                      rank=TRUE,
                                      sigma2_beta = 5^2)
-    
+    # ----> for beta_comm
     beta_comm = GibbsUpMuGivenLatentGroup(Y = Y_comm ,
                                           X = X_comm ,
                                           omega = omega_comm,
                                           sigma2_beta = 5^2)
-    
+    # ----> for beta_micro
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_micro0,
                                            omega = omega_micro,
@@ -315,9 +325,9 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
   
     # update quality weights
     # LRF - INCLUDE RANDOM EFFECTS
-    omega_comm <- GibbsUpQualityWeights(y=Y_comm-kronecker(t(rep(1, A)), gamma_comm), mu=X_comm %*% beta, weight.prior.value = c(0.5, 1, 2 ))
-    omega_micro <-GibbsUpQualityWeights(y=Y_micro-kronecker(t(rep(1, M)), gamma_micro), mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
-    omega_rank <- GibbsUpQualityWeights(y=Z , mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ))
+    omega_comm <- GibbsUpQualityWeights(y=Y_comm, mu=X_comm %*% beta, weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_comm)
+    omega_micro <-GibbsUpQualityWeights(y=Y_micro, mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
+    omega_rank <- GibbsUpQualityWeights(y=Z , mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
 
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
@@ -339,10 +349,6 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
       draw$omega_micro[j,] = omega_micro
       draw$omega_comm[j,] = omega_comm
       draw$omega_rank[j,] = omega_rank
-      draw$gamma_comm[j,] = gamma_comm
-      draw$gamma_micro[j,] = gamma_micro
-      draw$sigma2_comm[j] = sigma2_comm
-      draw$sigma2_micro[j] = sigma2_micro
     }
     # print iteration number
     if(iter %% print.opt == 0){
