@@ -13,7 +13,6 @@ using namespace Rcpp;
 
 
 
-// [[Rcpp::export]]
 NumericVector GibbsUpLatentGivenRankInd2(NumericMatrix pair_comp, NumericVector Z, IntegerVector up_order, NumericVector mu, double weight ) {
   int N1 =Z.length();
   IntegerVector set1(N1);
