@@ -51,9 +51,9 @@ Tau <- apply(Z, 2, rank)
 #incomplete rankings
 Tau <- data.frame(Z, community=community[1:N1]) %>% 
   group_by(community) %>%
-  mutate_all(rank) 
+  mutate_all(rank)  #rank within community
 
-for ( idx in 1:R){
+for ( idx in 1:R){ #loop over columns
   Tau[Tau$community != idx,idx] <- NA
 }
 Tau <- subset(Tau, select = -c(community)) %>%
@@ -61,15 +61,6 @@ Tau <- subset(Tau, select = -c(community)) %>%
 
 #real life observe: Tau, Y_micro ('test' only), Y_comm 
 #do NOT observe: Z
-
-#https://stackoverflow.com/questions/51295402/r-on-macos-error-vector-memory-exhausted-limit-reached
-pair.comp.ten = list()#array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
-for(r in 1:R){
-  print(r)
-  #pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = as(FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] ), "dgTMatrix")
-  pair.comp.ten[[r]] = FullRankToPairComp( Tau[!is.na(Tau[,r]),r] )
-  }
-
 
 
 #remove parameters we wouldn't have

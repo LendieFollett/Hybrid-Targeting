@@ -26,15 +26,15 @@ NumericVector GibbsUpLatentGivenRankInd2(NumericMatrix pair_comp, NumericVector 
 
   //for(i in up.order){
   for (int idx = 0; idx < N1; idx++){
-    i = up_order[idx];
+    i = up_order[idx]; //this assumes up_order is of length N1
       for (int idx2 = 0; idx2 < N1; idx2++){
-        set1[idx2] = (pair_comp(i, idx2) == 1);
-        set0[idx2] = (pair_comp(i, idx2) != 1);
+        set1[idx2] = (pair_comp(i, idx2) == 1); // i is ranked higher than idx2 (i has better wellbeing)
+        set0[idx2] = (pair_comp(i, idx2) != 1); // otherwise
         }
-   Z1 = Z[set1];
-   Z0 = Z[set0];
+   Z1 = Z[set1]; //latent score samples of those are ranked higher (have lower true Z values)
+   Z0 = Z[set0]; //latent score samples of those are ranked lower (have higher true Z values)
 
-    if(sum(set1) > 0){
+    if(sum(set1) > 0){ // if there is anyone ranked higher (with a lower true Z)
       upper = *std::min_element(Z1.begin(), Z1.end());
     }else{
       upper = std::numeric_limits<double>::infinity();
