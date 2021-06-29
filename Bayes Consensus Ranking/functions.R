@@ -97,7 +97,7 @@ P <- ncol(X) - 1
     c <- ncol(Y)
   } else{
 
-    if (any(apply(Y, 1, function(x){sum(!is.na(X))}) > 1)){
+    if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
       #LRF needs to address: condition for when a person is ranked by multiple sources
     }else{
       u <- apply(Y, 1, function(x){sum(x, na.rm=TRUE)}) #basically take the only non-NA element
@@ -309,7 +309,7 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_micro0,
-                                           omega = ,
+                                           omega = omega_micro,
                                           sigma2_beta = 5^2)
     
   
