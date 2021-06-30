@@ -94,11 +94,13 @@ ggplot(data = tau_post_summary) +
 #  ggtitle("Effect of Random Effects on Posterior Means")
 
 ggplot(data = tau_post_summary[order(tau_post_summary$mean_rank),]) +
-  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean_rank-PMT_rank,colour = naive_rank)) +
+  geom_point(aes(x = PMT_rank, y = mean_rank-PMT_rank,colour = naive_rank)) +
+  #geom_point(aes(x = PMT_rank, y = mean_rank-PMT_rank,colour = naive_rank)) +
   #geom_point(aes(x = 1:nrow(tau_post_summary), y = naive_agg), colour = "tomato") +
   #geom_point(aes(x = 1:nrow(tau_post_summary), y = PMT,colour = naive_agg)) +
   #geom_abline(aes(slope = 1, intercept = 0)) +
-  labs(x = "ID", y = "Different rankings")
+  labs(x = "Pure PMT rank", y = "Hybrid ranks lower<--->PMT ranks lower \n lower == more need")+
+  scale_colour_distiller("Pure CBT Rank\n(w/in village)")
 
 
 
