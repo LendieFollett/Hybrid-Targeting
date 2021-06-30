@@ -107,12 +107,6 @@ P <- ncol(X) - 1
     
   }
 
-
-  
-#length(u) == A*K + M*N0 +R*N1 check
-  
-  ### X.mat it full, standardized X matrix with training first, then testing - constructed by kroneker products ###
-  ### X.mat is a (A*K + M*N0 +R*N1)x(P+1) matrix ###
   X <-kronecker(rep(1, c), X) #(A*K)xP
   
   Sigma_inv_diag <-rep(omega, each = n)
@@ -130,35 +124,45 @@ P <- ncol(X) - 1
 }
 
 
-# Update random effects for comm, micro, Z
-#y is the appropriate matrix
-#mu is the corresponding mean
-#omega is the error variance of y
-#Sigma_gamma is the standard deviation on that source's random effect
-#LRF ADDRESS: add sampling steps for sigma_gamma parameters
-GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_gamma = 2.5){
-  
-  N <- nrow(y) #number of random effects to estimate = number of rows
-  #ISSUE: ONLY APPLIES WHEN MULTIPLE SOURCES OF SAME KIND AVAILABLE..
-  #Update conditionally if ncol > 1
-  Col <- ncol(y)
-  
-  #Complete 'data' vector
-  u <- as.vector(y)
-#LRF - 
-  Sigma_inv_diag <- c(rep(omega, each =nrow(y)))
-  
-  Xf <- rep(xbeta, Col)
 
-  pt1 <- (u-Xf)^T%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr
+GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
+                                  beta_comm = NULL,
+                                  beta_micro = NULL,
+                                  omega_rank = NULL,
+                                  omega_comm = NULL,
+                                  omega_micro = NULL){
   
-  pt2 <- t(Xr)%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr + diag(N)/(sigma_gamma^2)
+  P <- max(length(beta_rank), length(beta_comm), length(beta_micro)) - 1
+
+  if (!is.null(omega_rank)){
+    Omega_rank <- diag(P + 1)*omega_rank
+  } else{
+    Omega_rank <- diag(rep(0, P+1))
+    beta_rank <- rep(0, P+1)
+  }
   
-  pt2_inv <- solve(pt2)
+  if (!is.null(omega_comm)){
+    Omega_comm <- diag(P + 1)*omega_comm
+  } else{
+    Omega_comm <- diag(rep(0, P+1))
+    beta_comm <- rep(0, P+1)
+  }
   
-  gamma <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
+  if (!is.null(omega_micro)){
+    Omega_micro <- diag(P + 1)*omega_micro
+  } else{
+    Omega_micro <- diag(rep(0, P+1))
+    beta_micro <- rep(0, P+1)
+  }
   
-  return(gamma)
+  
+  post_Sigma <- solve(solve(Omega_rank) + solve(Omega_comm) + solve(Omega_micro) + diag(P+1))
+  
+  post_mu <- (t(beta_rank)%*%solve(Omega_rank) + t(beta_comm)%*%solve(Omega_comm) + t(beta_micro)%*%solve(Omega_micro))%*%post_Sigma
+  
+  mu_beta <- mvrnorm(1, mu = t(post_mu), Sigma = post_Sigma)
+  
+  return(mu_beta)
 }
 
 
@@ -308,6 +312,7 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     
     # update beta (includes intercept) or equivalently mu given Z
     # ----> for beta_rank
+    #LRF: UPDATE FUNCTION GibbsUpMuGivenLatentGroup TO ACCOMODATE NON-ZERO MEAN
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
                                           X = X_micro1,
                                      omega = omega_rank,
@@ -331,6 +336,9 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     omega_micro <-GibbsUpQualityWeights(y=Y_micro, mu=X_micro0 %*% beta, weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
     omega_rank <- GibbsUpQualityWeights(y=Z , mu=X_micro1 %*% beta, weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
 
+    mu_beta <- GibbsUpGlobalMuGivenMu(beta_rank,  beta_comm,  beta_micro,
+                           omega_rank, omega_comm, omega_micro )
+    
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_micro1 %*% beta  )
