@@ -78,8 +78,7 @@ GibbsUpMuGivenLatentGroup <- function(X ,
                                       Y ,
                                       omega ,
                                       mu_beta,
-                                      rank = FALSE, #need to treat y differently if rank
-                                      sigma2_beta = 5^2){
+                                      rank = FALSE){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -176,8 +175,8 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0
   n.prior.value <- length(weight.prior.value)
   weight_samp <- rep(NA, Col)
 
+  log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
   for(k in 1:n.prior.value){ #over potential values
-    log.post.prob = rep(0, n.prior.value) #re-initialize for next information source    
     for( col in 1:Col){ #over information source within y
       idx <- which(!is.na(y[,col])) #in the case of omega_rank
       Row <- length(idx)
@@ -189,7 +188,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0
   log.post.prob = log.post.prob - max(log.post.prob)
   post.prob = exp(log.post.prob)
   
-  weight_samp <- weight.prior.value[sample(c(1,2,3), post.prob)]
+  weight_samp <- weight.prior.value[sample(c(1,2,3),prob= post.prob)]
   
   return(weight_samp)
 }
@@ -314,20 +313,17 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
                                           X = X_micro1,
                                      omega = omega_rank,
                                      mu_beta = mu_beta,
-                                     rank=TRUE,
-                                     sigma2_beta = 5^2)
+                                     rank=TRUE)
     # ----> for beta_comm
     beta_comm = GibbsUpMuGivenLatentGroup(Y = Y_comm ,
                                           X = X_comm ,
                                           omega = omega_comm,
-                                          mu_beta = mu_beta,
-                                          sigma2_beta = 5^2)
+                                          mu_beta = mu_beta)
     # ----> for beta_micro
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_micro0,
                                            omega = omega_micro,
-                                           mu_beta = mu_beta,
-                                          sigma2_beta = 5^2)
+                                           mu_beta = mu_beta)
     
   
     # update quality weights

@@ -53,30 +53,33 @@ mu_mean <- apply(temp$mu, 2, mean) # mu = X_micro1 %*% mu_beta
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
 tau_post_summary <- data.frame(
-  mean =  rank(apply(temp$mu, 2, mean)),#Rank of posterior means of xbeta + gamma
-  min = (apply(tau_post, 1, min)), #minimum rank seen in MCMC draws
-  max = (apply(tau_post, 1, max)),#maximum rank seen in MCMC draws
-  quantile = apply(tau_post, 1, quantile, .75)
+  mean_rank =  rank(apply(temp$mu, 2, mean)),#Rank of posterior means of xbeta + gamma
+  min_rank = (apply(tau_post, 1, min)), #minimum rank seen in MCMC draws
+  max_rank = (apply(tau_post, 1, max)),#maximum rank seen in MCMC draws
+  mean_score = mu_mean
 )
-tau_post_summary$naive_agg <- apply(Tau, 1, function(x){mean(x, na.rm=TRUE)})
-tau_post_summary$PMT <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean))
+tau_post_summary$naive_rank <- apply(Tau, 1, function(x){mean(x, na.rm=TRUE)})
+tau_post_summary$PMT_rank <- rank(X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean))
 
-
+tau_post_summary$PMT <- (X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean))
 
 ggplot(data = tau_post_summary) +
-  geom_violin(aes(x = naive_agg, y = mean, group = naive_agg)) +
-  geom_jitter(aes(x = naive_agg, y = mean)) +
+  geom_violin(aes(x = naive_rank, y = mean_rank, group = naive_rank)) +
+  geom_jitter(aes(x = naive_rank, y = mean_rank)) +
   #geom_abline(aes(slope = 1, intercept = 0)) +
   labs(x = "Rank within community", 
        y = "Posterior Mean of Tau(X*Beta )")
 
 
 ggplot(data = tau_post_summary) +
-  geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max)) +
-  geom_point(aes(x = PMT, y = mean, colour = mean))
-#  geom_abline(aes(slope = 1, intercept = 0)) +
-#  labs(x = "Tau(alpha + X*Beta)", y = " Tau(alpha + X*Beta + gamma)") +
-#  ggtitle("Effect of Random Effects on Ultimate Ranks")
+  geom_point(aes(x = PMT_rank, y = mean_rank))
+
+ggplot(data = tau_post_summary) +
+  geom_point(aes(x = PMT, y = mu_mean))
+
+ggplot(data = tau_post_summary) +
+  geom_point(aes(x = PMT, y = mu_mean)) +
+  geom_abline(aes(slope = 1, intercept = 0))
 
 #ggplot(data = tau_post_summary) +
 #  geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
@@ -87,8 +90,8 @@ ggplot(data = tau_post_summary) +
 #  labs(x = "alpha + X*Beta", y = "alpha + X*Beta + gamma")+
 #  ggtitle("Effect of Random Effects on Posterior Means")
 
-ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
-  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean-PMT,colour = naive_agg)) +
+ggplot(data = tau_post_summary[order(tau_post_summary$mean_rank),]) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y = mean_rank-PMT_rank,colour = naive_rank)) +
   #geom_point(aes(x = 1:nrow(tau_post_summary), y = naive_agg), colour = "tomato") +
   #geom_point(aes(x = 1:nrow(tau_post_summary), y = PMT,colour = naive_agg)) +
   #geom_abline(aes(slope = 1, intercept = 0)) +
@@ -99,9 +102,9 @@ ggplot(data = tau_post_summary[order(tau_post_summary$mean),]) +
 data.frame(postmean =  (apply(tau_post, 1, median)), rank(apply(Tau, 1, mean)))
 
 #posteriors of quality weights - compare to truths
-apply(temp$omega_comm, 2, mean); omega_comm_true
-apply(temp$omega_micro, 2, mean);omega_micro_true
-apply(temp$omega_rank, 2, mean) ;omega_rank_true
+mean(temp$omega_comm); omega_comm_true
+mean(temp$omega_micro);omega_micro_true
+mean(temp$omega_rank) ;omega_rank_true
 
 apply(temp$beta, 2, mean) ;beta_true
 

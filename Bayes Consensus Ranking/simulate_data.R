@@ -21,8 +21,8 @@ Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption
 
 #parameter values
 omega_comm_true <- rep(1, A)
-omega_micro_true <- rep(2, M)
-omega_rank_true <- rep(.5, R)
+omega_micro_true <- rep(.5, M)
+omega_rank_true <- rep(2, R)
 beta_comm_true = c(0,rep(1, P)) #first column is intercept
 beta_rank_true = c(.5,rep(1, P)) #first column is intercept
 beta_micro_true = c(-.5,rep(1, P)) #first column is intercept
