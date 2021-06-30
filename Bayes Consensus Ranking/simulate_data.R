@@ -23,12 +23,11 @@ Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption
 omega_comm_true <- rep(1, A)
 omega_micro_true <- rep(.5, M)
 omega_rank_true <- rep(2, R)
-beta_comm_true = c(0,rep(1, P)) #first column is intercept
-beta_rank_true = c(.5,rep(1, P)) #first column is intercept
-beta_micro_true = c(-.5,rep(1, P)) #first column is intercept
+beta_comm_true = c(0,sample(c(0,1), size = P, replace=TRUE)) #first column is intercept
+beta_rank_true = c(0,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
+beta_micro_true = c(0,sample(c(0,1), size = P, replace=TRUE)) 
 
-#random effect variances
-sigma2_comm <- sigma2_micro <- sigma2_rank <- 1
+
 #Fill "responses"
 #gamma_comm_true <- rnorm(K, 0, sigma2_comm^.5) 
 for (a in 1:A){ #fill community measures

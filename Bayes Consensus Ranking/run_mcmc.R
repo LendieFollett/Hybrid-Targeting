@@ -10,7 +10,7 @@ library(ggplot2)
 library(Rcpp)
 
 #devtools::install_github("adzemski/rtnorm")
-sourceCpp("functions.cpp")
+#sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
@@ -32,12 +32,15 @@ source("Bayes Consensus Ranking/simulate_data.R")
 
 
 #starting values for random effects
-temp_data <- data.frame(y = as.vector(apply(apply(Tau, 2, function(x){(x - mean(x,na.rm=TRUE))/sd(x,na.rm=TRUE)}), 1, function(x){sum(x, na.rm=TRUE)})), kronecker(rep(1, ncol(Z)), X_micro1))
+temp_data <- data.frame(y = as.vector(apply(apply(Y_micro, 2, function(x){(x - mean(x,na.rm=TRUE))/sd(x,na.rm=TRUE)}), 1, function(x){mean(x, na.rm=TRUE)})),
+                        kronecker(rep(1, ncol(Y_micro)), X_micro0))
 form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_micro1), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(#gamma_rank = gamma_start,
-                     beta = beta_start)
+                     beta_rank = beta_start,
+                     beta_comm = beta_start,
+                     beta_micro = beta_start)
 
 #Run MCMC for Bayesian Consensus Targeting
 temp <- BCTarget(Tau=Tau, X_micro0 = X_micro0, X_micro1 = X_micro1, X_comm = X_comm,
@@ -106,7 +109,9 @@ mean(temp$omega_comm); omega_comm_true
 mean(temp$omega_micro);omega_micro_true
 mean(temp$omega_rank) ;omega_rank_true
 
-apply(temp$beta, 2, mean) ;beta_true
+apply(temp$beta_rank, 2, mean) ;beta_rank_true
+apply(temp$beta_comm, 2, mean) ;beta_comm_true
+apply(temp$beta_micro, 2, mean) ;beta_micro_true
 
 ###convergence diagnostics------
 #qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean), 

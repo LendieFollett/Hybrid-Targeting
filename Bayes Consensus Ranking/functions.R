@@ -180,7 +180,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0
     for( col in 1:Col){ #over information source within y
       idx <- which(!is.na(y[,col])) #in the case of omega_rank
       Row <- length(idx)
-    log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight.prior.value), log = TRUE))
+    log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight.prior.value[k]), log = TRUE))
     }
     log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta, mean = mu_beta, sd =sqrt(1/weight.prior.value[k]), log = TRUE ))
   }
@@ -188,7 +188,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0
   log.post.prob = log.post.prob - max(log.post.prob)
   post.prob = exp(log.post.prob)
   
-  weight_samp <- weight.prior.value[sample(c(1,2,3),prob= post.prob)]
+  weight_samp <- weight.prior.value[sample(c(1,2,3),size = 1, prob= post.prob)]
   
   return(weight_samp)
 }
@@ -355,9 +355,9 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
       draw$beta_micro[j,] = beta_micro
       draw$mu[j,] = mu
       draw$mu_noelite[j,] = mu_noelite
-      draw$omega_micro[j,] = omega_micro
-      draw$omega_comm[j,] = omega_comm
-      draw$omega_rank[j,] = omega_rank
+      draw$omega_micro[j] = omega_micro
+      draw$omega_comm[j] = omega_comm
+      draw$omega_rank[j] = omega_rank
     }
     # print iteration number
     if(iter %% print.opt == 0){
