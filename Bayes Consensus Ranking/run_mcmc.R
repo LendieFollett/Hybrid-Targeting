@@ -23,8 +23,8 @@ N1 = 1000 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
 
-iter.keep = 100   ## Gibbs sampler kept iterations (post burn-in)
-iter.burn =100   ## Gibbs sampler burn-in iterations 
+iter.keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter.burn =500   ## Gibbs sampler burn-in iterations 
 print.opt = 1  ## print a message every print.opt steps
 
 #simulate data based on parameters
@@ -40,17 +40,15 @@ initial_list <- list(#gamma_rank = gamma_start,
                      beta = beta_start)
 
 #Run MCMC for Bayesian Consensus Targeting
-temp <- BCTarget(Tau=Tau, X_comm = X_comm, X_micro0 = X_micro0, X_micro1 = X_micro1,
+temp <- BCTarget(Tau=Tau, X_micro0 = X_micro0, X_micro1 = X_micro1, X_comm = X_comm,
                  X_elite = 7,#7th position (including intercept)
                  Y_comm = Y_comm, Y_micro = Y_micro,
                  weight.prior.value = c(0.5, 1, 2), 
-                 weight.prior.prob = rep(1/length(weight.prior.value), length(weight.prior.value)),
                  iter.keep = iter.keep,
                  iter.burn = iter.burn,
-                 para.expan = TRUE, print.opt = 100,
-                 initial.list = initial_list)
+                 para.expan = TRUE, print.opt = 100)
 
-mu_mean <- apply(temp$mu, 2, mean) # mu = X_micro1 %*% beta + Xr_rank[1:N1,]%*%gamma_rank
+mu_mean <- apply(temp$mu, 2, mean) # mu = X_micro1 %*% mu_beta
 
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
@@ -73,9 +71,9 @@ ggplot(data = tau_post_summary) +
        y = "Posterior Mean of Tau(X*Beta )")
 
 
-#ggplot(data = tau_post_summary) +
-#  geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max, colour = apply(temp$gamma_rank, 2, mean))) +
-#  scale_colour_gradient2("Gamma\nPosterior\nMean")+
+ggplot(data = tau_post_summary) +
+  geom_pointrange(aes(x = PMT, y = mean,ymin = min, ymax = max)) +
+  geom_point(aes(x = PMT, y = mean, colour = mean))
 #  geom_abline(aes(slope = 1, intercept = 0)) +
 #  labs(x = "Tau(alpha + X*Beta)", y = " Tau(alpha + X*Beta + gamma)") +
 #  ggtitle("Effect of Random Effects on Ultimate Ranks")

@@ -27,7 +27,6 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
 ### weight.vec[j]: weight for jth ranker ###
 GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z, mu, omega_rank , R = ncol(Z) ){
   for(r in 1:R){ #loop over rankers (in simple case, ranker = community)
-    print(r)
     rcases <- which(!is.na(Z[,r]) )
     #order from lowest ranked to highest (best well being to worst well being)
     up.order = sort( rowSums( pair.comp.ten[[r]], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix
@@ -233,7 +232,6 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
   #create pair.comp.ten matrix
   pair.comp.ten = list()#array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
   for(r in 1:R){
-    print(r)
     #pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = as(FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] ), "dgTMatrix")
     pair.comp.ten[[r]] = FullRankToPairComp( Tau[!is.na(Tau[,r]),r] )
   }
@@ -269,7 +267,8 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
   
   ## store MCMC draws
   draw = list(
-    Z = array(NA, dim = c( iter.keep,N1)),
+   # Z = array(NA, dim = c( iter.keep,N1)),
+    mu_beta = array(NA, dim = c(iter.keep,P+1)),
     beta_rank = array(NA, dim = c(iter.keep,P+1)),
     beta_comm = array(NA, dim = c(iter.keep,P+1)),
     beta_micro = array(NA, dim = c(iter.keep,P+1)),
@@ -342,10 +341,10 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
-    mu = as.vector( X_micro1 %*% beta_rank  )
+    mu = as.vector( X_micro1 %*% mu_beta  )
     
     if(!is.null(X_elite)){
-    mu_noelite = as.vector( X_micro1_noelite %*% beta_rank )
+    mu_noelite = as.vector( X_micro1_noelite %*% mu_beta )
     }else{
       mu_noelite = mu
     }
@@ -353,7 +352,8 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     if(iter > iter.burn){
       j = iter - iter.burn
       # store value at this iteration
-      draw$Z[j,,] = Z
+      #draw$Z[j,,] = Z
+      draw$mu_beta[j,] = mu_beta
       draw$beta_rank[j,] = beta_rank
       draw$beta_comm[j,] = beta_comm
       draw$beta_micro[j,] = beta_micro
