@@ -267,7 +267,9 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
   ## store MCMC draws
   draw = list(
     Z = array(NA, dim = c( iter.keep,N1)),
-    beta = array(NA, dim = c(iter.keep,P+1)),
+    beta_rank = array(NA, dim = c(iter.keep,P+1)),
+    beta_comm = array(NA, dim = c(iter.keep,P+1)),
+    beta_micro = array(NA, dim = c(iter.keep,P+1)),
     mu = array(NA, dim = c(iter.keep,N1)),
     mu_noelite = array(NA, dim = c(iter.keep,N1)), #for debiasing
     omega_comm = array(NA, dim = c(iter.keep, 1) ),
@@ -343,7 +345,9 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
       j = iter - iter.burn
       # store value at this iteration
       draw$Z[j,,] = Z
-      draw$beta[j,] = beta
+      draw$beta_rank[j,] = beta_rank
+      draw$beta_comm[j,] = beta_comm
+      draw$beta_micro[j,] = beta_micro
       draw$mu[j,] = mu
       draw$mu_noelite[j,] = mu_noelite
       draw$omega_micro[j,] = omega_micro
