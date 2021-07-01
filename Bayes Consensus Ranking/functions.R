@@ -2,11 +2,10 @@
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
 #' Compute the pairwise comparison matrix from the ranking lists of the ranked entities.
-#' @param rank.vec A full ranking list containing the ranks of all the \eqn{N} entities. 
+#' @param rank.vec A full ranking list containing the ranks of all the entities. 
 #' Note that here we follow the usual definition of rank in R, that is, the larger the evaluation score 
 #' of an entity, the larger this entity's rank is. Specifically, for a full ranking list of \eqn{N} entities, 
 #' the rank of an entity equals \eqn{N+1} minus its ranked position.
-#' ranked higher = lower Z latent score
 #' @return An \eqn{N} by \eqn{N} pairwise comparison for all \eqn{N} entities, where the (\eqn{i},\eqn{j}) element equals 1 if \eqn{i} is ranked higher than \eqn{j}, and 0 if \eqn{i} is ranker lower than \eqn{j}. Note that the diagonal elements (\eqn{i},\eqn{i})'s are set to NA.
 #' @export
 FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
@@ -208,8 +207,9 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0
 #' @param Tau A \eqn{N1} by \eqn{R} integer matrix, possibly containing NA values, describing ranks of individuals. Each column is distinct 'ranker', each row is distinct individual in 'testing sample'.  
 #' @param weight_prior_value A vector for the support of the discrete prior on weight parameter.
 #' @param prior_prob_rank A vector for the prior probability mass of the discrete prior on weight parameter for rank. Same for micro and comm.
-#' @param iter.keep Number of iterations kept for Gibbs sampler after burn-in.
-#' @param iter.burn Number of iterations for burn in (discarded)
+#' @param iter_keep Number of iterations kept for Gibbs sampler after burn-in.
+#' @param iter_burn Number of iterations for burn in (discarded)
+#' @param print_opt Frequency of printing MCMC sampling progress.
 #' @return A list containing posterior samples of mu, the shared 'wellness' mean, conditional on the test X_micro1.
 #' @export
 BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL, X_comm=NULL,
@@ -221,9 +221,9 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL, X_comm=NULL,
                                 prior_prob_comm = rep(1/length(weight_prior_value), length(weight_prior_value)),
                                 N1 = dim(X_micro1)[1], #how many people in test set
                                 R = ncol(Tau), #how many rankers. often will be equal to K
-                                iter.keep = 5000,
-                                iter.burn = 5000,
-                                print.opt = 100,
+                                iter_keep = 5000,
+                                iter_burn = 5000,
+                                print_opt = 100,
                                 initial.list = NULL){
   #pair.com.ten An \eqn{N1} by \eqn{N1} by \eqn{R} pairwise comparison array for all \eqn{N1} entities and \eqn{R} rankers, 
   #where the (\eqn{i},\eqn{j},\eqn{r}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 
