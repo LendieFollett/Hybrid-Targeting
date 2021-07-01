@@ -170,9 +170,9 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
 
 ### Gibbs update for information quality weights omega_comm, omega_micro, omega_rank---------
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
-GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0.5, 1, 2), prior_prob = rep(1/length(weight.prior.value), length(weight.prior.value))){
+GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value))){
   Col <- ncol(y)
-  n.prior.value <- length(weight.prior.value)
+  n.prior.value <- length(weight_prior_value)
   weight_samp <- rep(NA, Col)
 
   log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
@@ -180,15 +180,15 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0
     for( col in 1:Col){ #over information source within y
       idx <- which(!is.na(y[,col])) #in the case of omega_rank
       Row <- length(idx)
-    log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight.prior.value[k]), log = TRUE))
+    log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
     }
-    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta, mean = mu_beta, sd =sqrt(1/weight.prior.value[k]), log = TRUE ))
+    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta, mean = mu_beta, sd =sqrt(1/weight_prior_value[k]), log = TRUE ))
   }
 #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
   log.post.prob = log.post.prob - max(log.post.prob)
   post.prob = exp(log.post.prob)
   
-  weight_samp <- weight.prior.value[sample(c(1,2,3),size = 1, prob= post.prob)]
+  weight_samp <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
   
   return(weight_samp)
 }
@@ -199,29 +199,31 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight.prior.value = c(0
 #' @import truncnorm
 #' @import mvtnorm
 #' @import MASS
-#' @param X_micro0 An \eqn{N0} by \eqn{P+1} covariate matrix for the \eqn{N0} entities with \eqn{P} covariates. Assumes 1st col is 1's for intercept.
-#' @param X_micro1 An \eqn{N1} by \eqn{P+1} covariate matrix for the \eqn{N1} entities with \eqn{P} covariates. Assumes 1st col is 1's for intercept.
-#' @param X_comm An \eqn{K} by \eqn{P+1} covariate matrix. An aggregate of X_micro0 and X_micro 1. 
-#' @param elite is an optional character string specifying column name of binary elite connection indicator OR the column position. used for debiasing
-#' @param sigma_beta Currently given/fixed. Prior variance on beta.
-#' @param weight.prior.value A vector for the support of the discrete prior on weight parameter.
-#' @param weight.prior.prob A vector for the prior probability mass of the discrete prior on weight parameter.
+#' @param X_micro0 An \eqn{N0} by \eqn{P+1} covariate matrix for the \eqn{N0} 'training sample' entities with \eqn{P} covariates. If 1st column isn't 1s, an intercept is added.
+#' @param X_micro1 An \eqn{N1} by \eqn{P+1} covariate matrix for the \eqn{N1} 'testing sample' entities with \eqn{P} covariates. If 1st column isn't 1s, an intercept is added.
+#' @param X_comm An \eqn{K} by \eqn{P+1} covariate matrix. Usually an aggregate of X_micro0. Must have same columns, in same order, as X_micro0/1.
+#' @param X_elite is an optional character string specifying column name of binary elite connection indicator OR the numeric column position. Used for debiasing.
+#' @param Y_comm A \eqn{K} by \eqn{A} numeric matrix of community-level response variables. Each column represents a distinct response.
+#' @param Y_micro A \eqn{N0} by \eqn{A} numeric matrix of micro-level response variables for 'training sample'. Each column represents a distinct response.
+#' @param Tau A \eqn{N1} by \eqn{R} integer matrix, possibly containing NA values, describing ranks of individuals. Each column is distinct 'ranker', each row is distinct individual in 'testing sample'.  
+#' @param weight_prior_value A vector for the support of the discrete prior on weight parameter.
+#' @param prior_prob_rank A vector for the prior probability mass of the discrete prior on weight parameter for rank. Same for micro and comm.
 #' @param iter.keep Number of iterations kept for Gibbs sampler after burn-in.
 #' @param iter.burn Number of iterations for burn in (discarded)
 #' @return A list containing posterior samples of mu, the shared 'wellness' mean, conditional on the test X_micro1.
 #' @export
-BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
+BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL, X_comm=NULL,
                                 X_elite = NULL,
-                                Y_comm, Y_micro,
-                                weight.prior.value = c(0.5, 1, 2), 
-                                prior_prob_rank = rep(1/length(weight.prior.value), length(weight.prior.value)),
-                                prior_prob_micro = rep(1/length(weight.prior.value), length(weight.prior.value)),
-                                prior_prob_comm = rep(1/length(weight.prior.value), length(weight.prior.value)),
+                                Y_comm=NULL, Y_micro=NULL,
+                                weight_prior_value = c(0.5, 1, 2), 
+                                prior_prob_rank = rep(1/length(weight_prior_value), length(weight_prior_value)),
+                                prior_prob_micro = rep(1/length(weight_prior_value), length(weight_prior_value)),
+                                prior_prob_comm = rep(1/length(weight_prior_value), length(weight_prior_value)),
                                 N1 = dim(X_micro1)[1], #how many people in test set
                                 R = ncol(Tau), #how many rankers. often will be equal to K
                                 iter.keep = 5000,
                                 iter.burn = 5000,
-                                para.expan = TRUE, print.opt = 100,
+                                print.opt = 100,
                                 initial.list = NULL){
   #pair.com.ten An \eqn{N1} by \eqn{N1} by \eqn{R} pairwise comparison array for all \eqn{N1} entities and \eqn{R} rankers, 
   #where the (\eqn{i},\eqn{j},\eqn{r}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 
@@ -290,9 +292,10 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
       Z <- initial.list$Z
     }
   
-  if(is.null(initial.list$beta_comm)){beta_comm <- rep(0, P+1)}else{  beta_comm <-  initial.list$beta_comm } 
+  
+  if(is.null(initial.list$beta_comm)|is.null(Y_comm)){beta_comm <- rep(0, P+1)}else{  beta_comm <-  initial.list$beta_comm } 
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
-  if(is.null(initial.list$beta_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
+  if(is.null(initial.list$beta_micro)|is.null(Y_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
   mu_beta <- cbind(beta_comm, beta_rank, beta_micro) %>%apply(1, mean)
   
   ## initial values for weights
@@ -306,31 +309,45 @@ BCTarget<- function(Tau, X_micro0, X_micro1, X_comm,
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = X_micro1 %*% beta_rank, omega_rank = omega_rank, R = R )
     
-    # update beta (includes intercept) or equivalently mu given Z
-    # ----> for beta_rank
-    #LRF: UPDATE FUNCTION GibbsUpMuGivenLatentGroup TO ACCOMODATE NON-ZERO MEAN
+    # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
                                           X = X_micro1,
                                      omega = omega_rank,
                                      mu_beta = mu_beta,
                                      rank=TRUE)
-    # ----> for beta_comm
+    
+    # ----> update quality weights
+    omega_rank <- GibbsUpQualityWeights(y=Z , 
+                                        mu=X_micro1 %*% beta_rank, 
+                                        beta_rank,  mu_beta,
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
+    # ----> update beta_comm
+    if(!is.null(Y_comm)){
     beta_comm = GibbsUpMuGivenLatentGroup(Y = Y_comm ,
                                           X = X_comm ,
                                           omega = omega_comm,
                                           mu_beta = mu_beta)
-    # ----> for beta_micro
+    
+    # ----> update quality weights
+    omega_comm <- GibbsUpQualityWeights(y=Y_comm, 
+                                        mu=X_comm %*% beta_comm,
+                                        beta_comm, mu_beta,
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_comm)
+    }
+    if(is.null(Y_micro)){
+    # ----> update beta_micro 
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_micro0,
                                            omega = omega_micro,
                                            mu_beta = mu_beta)
     
-  
-    # update quality weights
-    # LRF - INCLUDE RANDOM EFFECTS y, mu, beta, mu_beta
-    omega_comm <- GibbsUpQualityWeights(y=Y_comm, mu=X_comm %*% beta_comm,beta_comm, mu_beta,weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_comm)
-    omega_micro <-GibbsUpQualityWeights(y=Y_micro, mu=X_micro0 %*% beta_micro,beta_micro, mu_beta, weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
-    omega_rank <- GibbsUpQualityWeights(y=Z , mu=X_micro1 %*% beta_rank, beta_rank,  mu_beta,weight.prior.value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
+    # ----> update quality weights    
+    omega_micro <-GibbsUpQualityWeights(y=Y_micro, 
+                                        mu=X_micro0 %*% beta_micro,
+                                        beta_micro, mu_beta, 
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
+    }
+
 
     mu_beta <- GibbsUpGlobalMuGivenMu(beta_rank,  beta_comm,  beta_micro,
                            omega_rank, omega_comm, omega_micro )

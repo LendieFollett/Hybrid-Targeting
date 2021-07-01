@@ -84,14 +84,11 @@ ggplot(data = tau_post_summary) +
   geom_point(aes(x = PMT, y = mu_mean)) +
   geom_abline(aes(slope = 1, intercept = 0))
 
-#ggplot(data = tau_post_summary) +
-#  geom_point(aes(x = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean),
-#                      y = X_micro1%*%solve(t(X_micro0)%*%X_micro0)%*%t(X_micro0)%*%apply(Y_micro, 1, mean) +apply(temp$gamma_rank, 2, mean),
-#                      colour = apply(temp$gamma_rank, 2, mean))) +
-#  scale_colour_gradient2("Gamma\nPosterior\nMean")+
-#  geom_abline(aes(slope = 1, intercept = 0)) +
-#  labs(x = "alpha + X*Beta", y = "alpha + X*Beta + gamma")+
-#  ggtitle("Effect of Random Effects on Posterior Means")
+
+ggplot(data = tau_post_summary[order(tau_post_summary$mean_rank),]) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y= mean_rank)) +
+  geom_point(aes(x = 1:nrow(tau_post_summary), y= PMT_rank, colour = community[1:nrow(tau_post_summary)])) 
+
 
 ggplot(data = tau_post_summary[order(tau_post_summary$mean_rank),]) +
   geom_point(aes(x = PMT_rank, y = mean_rank-PMT_rank,colour = naive_rank)) +
@@ -116,26 +113,6 @@ apply(temp$beta_comm, 2, mean) ;beta_comm_true
 apply(temp$beta_micro, 2, mean) ;beta_micro_true
 
 ###convergence diagnostics------
-#qplot(gamma_rank_true,apply(temp$gamma_rank, 2, mean), 
-#      colour = apply(temp$gamma_rank, 2, ESS)) +
-#  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
-#  geom_abline(aes(intercept = 0, slope = 1))
-
-qplot(gamma_micro_true,apply(temp$gamma_micro, 2, mean),
-      colour = apply(temp$gamma_micro, 2, ESS)) +
-  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
-  geom_abline(aes(intercept = 0, slope = 1))
-qplot(gamma_comm_true,apply(temp$gamma_comm, 2, mean) ,
-      colour = apply(temp$gamma_comm, 2, ESS)) +
-  scale_colour_gradient2("ESS", midpoint = 100)+#color by effective sample size - want > 100
-  geom_abline(aes(intercept = 0, slope = 1))
-
-plot(temp$sigma2_comm%>%sqrt); sigma2_comm %>%sqrt
-plot(temp$sigma2_micro%>%sqrt); sigma2_micro%>%sqrt
-#plot(temp$sigma2_rank%>%sqrt); sigma2_rank%>%sqrt 
-#these are consistently overestimated - reconsider the inverse chi-squared prior
-
-plot(temp$gamma_rank[,4])
 
 
 #do all ESS checks
@@ -148,7 +125,7 @@ doESS <- function(x){
   }
 }
 
-effectiv_ss <- lapply(temp[-c(1)], doESS) 
+effectiv_ss <- lapply(temp, doESS) 
 
 effectiv_ss%>% str()
 
