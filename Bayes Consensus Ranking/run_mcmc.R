@@ -43,10 +43,11 @@ initial_list <- list(#gamma_rank = gamma_start,
                      beta_micro = beta_start)
 
 #Run MCMC for Bayesian Consensus Targeting
-temp <- BCTarget(Tau=Tau, X_micro0 = X_micro0, X_micro1 = X_micro1, X_comm = X_comm,
+temp <- BCTarget(Tau=Tau, 
+                 X_micro0 = X_micro0, 
+                 X_micro1 = X_micro1,
                  X_elite = 7,#7th position (including intercept)
-                 Y_comm = Y_comm, Y_micro = Y_micro,
-                 weight.prior.value = c(0.5, 1, 2), 
+                 Y_micro = Y_micro,
                  iter.keep = iter.keep,
                  iter.burn = iter.burn,
                  para.expan = TRUE, print.opt = 100)
