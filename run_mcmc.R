@@ -14,18 +14,20 @@ library(Rcpp)
 source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
 
-full_data <- read.csv("Empirical Study/alatas.csv")
+full_data <- read.csv("Empirical Study/alatas.csv") %>%
+  select(-c("hhsize_ae"))
 #add a community id
 #rank is a decimal; needs to be an integer rank
 full_data <- full_data%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
-         mutate(rank = floor(rank(rank))) %>%ungroup
-
-
+         mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
+  subset(community == 1 | hybrid == 1)
+set.seed(57239852)
+train_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
 
 #groups of x variables
-m1 <- c("elite","hhsize","hhsize_ae","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
+m1 <- c("elite","hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
         "hheduc2","hheduc3","hheduc4",
         "age04","higheduc2","higheduc3","higheduc4","depratio")
 m2.1 <- c("pcfloor", "tfloor","twall", "toilet","water","lighting", "troof",
@@ -36,8 +38,8 @@ m2 <- c(m1, m2.1)
 m3.1 <- c("credit","hhsector1", "hhsector2","hhsector3",
           "formal","informal", "eschild","jschild","sschild")
 m3 <- c(m2,m3.1) #full collection
-test_data <- full_data %>% subset(community == 1)
-train_data <- full_data %>% subset(community == 0)
+test_data <- full_data[-train_idx,] #%>% subset(community == 1)
+train_data <- full_data[train_idx,] #%>% subset(community == 0)
 
 X_micro0 <- cbind(1,train_data[,m3]) %>%as.matrix
 X_micro1 <- cbind(1, test_data[,m3]) %>%as.matrix
@@ -72,7 +74,7 @@ for ( idx in unique(test_data$community_id)){ #loop over columns
 
 
 iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =500   ## Gibbs sampler burn-in iterations 
+iter_burn =1000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -99,6 +101,7 @@ data.frame(parameter = colnames(X_micro0)[-1],
   melt(id.var = "parameter") %>%
   mutate(parameter = factor(parameter, levels = colnames(X_micro0[,-1])[order(mu_beta_mean[-1])]))%>%
   ggplot() +
+  geom_hline(aes(yintercept = 0))+
   geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
   geom_point(aes(x = parameter, y = value, colour = variable, group = variable)) +
   coord_flip() +
