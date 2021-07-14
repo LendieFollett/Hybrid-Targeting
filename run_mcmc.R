@@ -16,7 +16,14 @@ source("Bayes Consensus Ranking/functions.R")
 
 full_data <- read.csv("Empirical Study/alatas.csv")
 #add a community id
-full_data <- full_data%>% mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))
+#rank is a decimal; needs to be an integer rank
+full_data <- full_data%>% 
+  mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
+  group_by(village, province, district, subdistrict)%>%
+         mutate(rank = floor(rank(rank))) %>%ungroup
+
+
+
 #groups of x variables
 m1 <- c("elite","hhsize","hhsize_ae","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
         "hheduc2","hheduc3","hheduc4",
@@ -35,7 +42,8 @@ train_data <- full_data %>% subset(community == 0)
 X_micro0 <- cbind(1,train_data[,m3]) %>%as.matrix
 X_micro1 <- cbind(1, test_data[,m3]) %>%as.matrix
 
-Y_micro <- train_data$consumption
+Y_micro <- as.matrix(train_data$consumption)
+Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
 R = test_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
 M = 1  ## just consumption
@@ -73,13 +81,23 @@ temp <- BCTarget(Tau=Tau,
                  X_micro0 = X_micro0, 
                  X_micro1 = X_micro1,
                  X_elite = "elite",
-                 Y_micro = Y_micro,
+                 Y_micro = Y_micro, #needs to be a matrix, not vector
                  iter_keep = iter_keep,
                  iter_burn = iter_burn,
-                  print_opt = print_opt)
+                  print_opt = print_opt,
+                 initial.list = initial_list)
 
 
+mu_beta_mean <- apply(temp$mu_beta, 2, mean)
+beta_rank_mean <- apply(temp$beta_rank, 2, mean)
+beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-
-
+data.frame(parameter = colnames(X_micro0),
+           mu_beta_mean,
+           beta_rank_mean,
+           beta_micro_mean)%>%
+  melt(id.var = "parameter") %>%
+  ggplot() +
+  geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
+  coord_flip()
 

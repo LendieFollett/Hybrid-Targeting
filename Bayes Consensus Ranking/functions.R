@@ -84,12 +84,12 @@ GibbsUpMuGivenLatentGroup <- function(X ,
 P <- ncol(X) - 1
   
 
-  if(!rank){
+  if(!rank){ #if it's micro
     u <- as.vector(Y) 
     
     n <- length(u)
     c <- ncol(Y)
-  } else{
+  } else{ #if it's rank
 
     if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
       #LRF needs to address: condition for when a person is ranked by multiple sources
@@ -101,8 +101,10 @@ P <- ncol(X) - 1
     
   }
 
+  if(!is.null(c)){
   X <-kronecker(rep(1, c), X) #(A*K)xP
-  
+  } 
+
   Sigma_inv_y<-omega*diag(n)
   
   Sigma_inv_beta <- omega*diag(P+1) #prior covariance matrix
@@ -146,6 +148,7 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
 GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value))){
   Col <- ncol(y)
+  if(is.null(Col)){Col <- 1}
   n.prior.value <- length(weight_prior_value)
   weight_samp <- rep(NA, Col)
 
@@ -236,14 +239,14 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   
   ## store MCMC draws
   draw = list(
-   # Z = array(NA, dim = c( iter.keep,N1)),
-    mu_beta = array(NA, dim = c(iter.keep,P+1)),
-    beta_rank = array(NA, dim = c(iter.keep,P+1)),
-    beta_micro = array(NA, dim = c(iter.keep,P+1)),
-    mu = array(NA, dim = c(iter.keep,N1)),
-    mu_noelite = array(NA, dim = c(iter.keep,N1)), #for debiasing
-    omega_micro = array(NA, dim = c(iter.keep, 1) ),
-    omega_rank = array(NA, dim = c(iter.keep, 1) )
+   # Z = array(NA, dim = c( iter_keep,N1)),
+    mu_beta = array(NA, dim = c(iter_keep,P+1)),
+    beta_rank = array(NA, dim = c(iter_keep,P+1)),
+    beta_micro = array(NA, dim = c(iter_keep,P+1)),
+    mu = array(NA, dim = c(iter_keep,N1)),
+    mu_noelite = array(NA, dim = c(iter_keep,N1)), #for debiasing
+    omega_micro = array(NA, dim = c(iter_keep, 1) ),
+    omega_rank = array(NA, dim = c(iter_keep, 1) )
   )
   
   ## set initial values for parameters, where given
@@ -268,7 +271,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   omega_rank = 1
   
   ## Gibbs iteration
-  for(iter in 1:(iter.burn + iter.keep)){
+  for(iter in 1:(iter_burn + iter_keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = X_micro1 %*% beta_rank, omega_rank = omega_rank, R = R )
@@ -286,7 +289,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
                                         beta_rank,  mu_beta,
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
 
-    if(is.null(Y_micro)){
+
     # ----> update beta_micro 
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_micro0,
@@ -298,7 +301,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
                                         mu=X_micro0 %*% beta_micro,
                                         beta_micro, mu_beta, 
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
-    }
+    
 
 
     mu_beta <- GibbsUpGlobalMuGivenMu(beta_rank,  beta_micro,
@@ -307,15 +310,15 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_micro1 %*% mu_beta  )
-    
+    head(data.frame(mu_beta, beta_rank, beta_micro))
     if(!is.null(X_elite)){
     mu_noelite = as.vector( X_micro1_noelite %*% mu_beta )
     }else{
       mu_noelite = mu
     }
     
-    if(iter > iter.burn){
-      j = iter - iter.burn
+    if(iter > iter_burn){
+      j = iter - iter_burn
       # store value at this iteration
       #draw$Z[j,,] = Z
       draw$mu_beta[j,] = mu_beta
