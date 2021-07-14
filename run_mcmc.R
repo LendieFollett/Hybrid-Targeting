@@ -57,7 +57,7 @@ P = ncol(X_micro0)-1 #(-1 since i've included the intercept)
 #starting values for random effects
 temp_data <- data.frame(y = Y_micro,
                          X_micro0)
-form <- formula(paste0("y~-1+", paste0(colnames(X_micro0), collapse = "+")))
+form <- formula(paste0("y~", paste0(colnames(X_micro0), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(#gamma_rank = gamma_start,
@@ -112,7 +112,7 @@ data.frame(parameter = colnames(X_micro0)[-1],
 ggsave("coefficients.pdf", width = 6, height = 10)
 
 
-test_data$prediction <- apply(temp$mu*sd(train_data$consumption) + mean(train_data$consumption),2,mean)
+test_data$prediction <- apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 ggplot(test_data) +
-  geom_point(aes(x = consumption, y = prediction))
+  geom_point(aes(x = log(consumption), y = prediction))
 
