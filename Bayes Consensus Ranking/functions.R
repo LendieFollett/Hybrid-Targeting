@@ -133,7 +133,7 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
   Omega_rank <- diag(P + 1)*1/omega_rank
   Omega_micro <- diag(P + 1)*1/omega_micro
   
-  post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P+1))
+  post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P+1)/2.5^2) #prior sd on mu_beta = 2.5
   
   post_mu <- (t(beta_rank)%*%solve(Omega_rank) + t(beta_micro)%*%solve(Omega_micro))%*%post_Sigma
   

@@ -92,12 +92,17 @@ mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-data.frame(parameter = colnames(X_micro0),
-           mu_beta_mean,
-           beta_rank_mean,
-           beta_micro_mean)%>%
+data.frame(parameter = colnames(X_micro0)[-1],
+           mu_beta_mean[-1],
+           beta_rank_mean[-1],
+           beta_micro_mean[-1])%>%
   melt(id.var = "parameter") %>%
+  mutate(parameter = factor(parameter, levels = colnames(X_micro0[,-1])[order(mu_beta_mean[-1])]))%>%
   ggplot() +
   geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
-  coord_flip()
+  geom_point(aes(x = parameter, y = value, colour = variable, group = variable)) +
+  coord_flip() +
+  labs(x = "Coefficient ", y = "Estimate") +
+  scale_colour_brewer("Parameter", palette = "Set1") +
+  theme_bw()
 
