@@ -41,10 +41,10 @@ m3 <- c(m2,m3.1) #full collection
 test_data <- full_data[-train_idx,] #%>% subset(community == 1)
 train_data <- full_data[train_idx,] #%>% subset(community == 0)
 
-X_micro0 <- cbind(1,train_data[,m3]) %>%as.matrix
-X_micro1 <- cbind(1, test_data[,m3]) %>%as.matrix
+X_micro0 <- cbind(1, train_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
+X_micro1 <- cbind(1, test_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)}))
 
-Y_micro <- as.matrix(train_data$consumption)
+Y_micro <- as.matrix(log(train_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
 R = test_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
@@ -55,7 +55,7 @@ P = ncol(X_micro0)-1 #(-1 since i've included the intercept)
 
 
 #starting values for random effects
-temp_data <- data.frame(y = (Y_micro - mean(Y_micro,na.rm=TRUE))/sd(Y_micro),
+temp_data <- data.frame(y = Y_micro,
                          X_micro0)
 form <- formula(paste0("y~-1+", paste0(colnames(X_micro0), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
@@ -97,7 +97,8 @@ beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 data.frame(parameter = colnames(X_micro0)[-1],
            mu_beta = mu_beta_mean[-1],
            beta_rank = beta_rank_mean[-1],
-           beta_micro=beta_micro_mean[-1])%>%
+           beta_micro=beta_micro_mean[-1],
+           beta_start = beta_start[-1])%>%
   melt(id.var = "parameter") %>%
   mutate(parameter = factor(parameter, levels = colnames(X_micro0[,-1])[order(mu_beta_mean[-1])]))%>%
   ggplot() +
@@ -108,4 +109,10 @@ data.frame(parameter = colnames(X_micro0)[-1],
   labs(x = "Coefficient ", y = "Estimate") +
   scale_colour_brewer("Parameter", palette = "Set1") +
   theme_bw()
+ggsave("coefficients.pdf", width = 6, height = 10)
+
+
+test_data$prediction <- apply(temp$mu*sd(train_data$consumption) + mean(train_data$consumption),2,mean)
+ggplot(test_data) +
+  geom_point(aes(x = consumption, y = prediction))
 
