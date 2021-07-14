@@ -10,6 +10,16 @@ library(ggplot2)
 library(Rcpp)
 library(reshape2)
 library(gridExtra)
+library(LaplacesDemon)
+
+doESS <- function(x){
+  
+  if(!is.null(dim(x))){ #if it's a data frame
+    return(apply(x, 2, ESS))
+  }else{
+    return(ESS(x))
+  }
+}
 
 source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
@@ -90,16 +100,18 @@ temp <- BCTarget(Tau=Tau,
                  initial.list = initial_list)
 
 
+lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
+
 mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-data.frame(parameter = colnames(X_micro0)[-1],
-           mu_beta = mu_beta_mean[-1],
-           beta_rank = beta_rank_mean[-1],
-           beta_micro=beta_micro_mean[-1])%>%
+data.frame(parameter = colnames(X_micro0),
+           mu_beta = mu_beta_mean,
+           beta_rank = beta_rank_mean,
+           beta_micro=beta_micro_mean)%>%
   melt(id.var = "parameter") %>%
-  mutate(parameter = factor(parameter, levels = colnames(X_micro0[,-1])[order(mu_beta_mean[-1])]))%>%
+  mutate(parameter = factor(parameter, levels = colnames(X_micro0)[order(mu_beta_mean)]))%>%
   ggplot() +
   geom_hline(aes(yintercept = 0))+
   geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
@@ -111,32 +123,52 @@ data.frame(parameter = colnames(X_micro0)[-1],
 ggsave("coefficients.pdf", width = 6, height = 10)
 
 #get back on log(consumption scale) --->sigma*predicted + mu
-test_data$hybrid_prediction <-         apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+test_data$hybrid_prediction <-         X_micro1%*%c(beta_micro_mean[1], mu_beta_mean[-1])*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
 test_data$micro_prediction <- (X_micro1%*%beta_start)*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
+poverty_rate <- .3
+
+test_data <- test_data %>% group_by(village, province, district, subdistrict) %>%
+  mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
+         hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
+         pmt_rank =rank(micro_prediction)/length(village)) %>%
+  mutate(hybrid_inclusion = hybrid_rank < poverty_rate,
+         hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
+         pmt_inclusion = pmt_rank < poverty_rate,
+         consumption_inclusion = rank(consumption)/length(village)<poverty_rate) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+library(caret)
+
+confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
+
 p1 <- ggplot(test_data) +
-  geom_point(aes(x = log(consumption), y = hybrid_prediction)) +
+  geom_point(aes(x = hybrid_prediction, y = hybrid_prediction-log(consumption))) +
   geom_abline(aes(intercept = 0, slope = 1))+
-  ggtitle("Hybrid")
+  ggtitle("Hybrid") +scale_y_continuous(limits = c(-2,2))
 
 p2 <- ggplot(test_data) +
-  geom_point(aes(x = log(consumption), y = hybrid_prediction_noelite)) +
+  geom_point(aes(x = hybrid_prediction_noelite, y = hybrid_prediction_noelite-log(consumption))) +
   geom_abline(aes(intercept = 0, slope = 1))+
-  ggtitle("Hybrid No-elite")
+  ggtitle("Hybrid No-elite")+scale_y_continuous(limits = c(-2,2))
 
 p3 <- ggplot(test_data) +
-  geom_point(aes(x = log(consumption), y = micro_prediction)) +
+  geom_point(aes(x = micro_prediction, y = micro_prediction-log(consumption))) +
   geom_abline(aes(intercept = 0, slope = 1))+
-  ggtitle("PMT")
+  ggtitle("PMT")+scale_y_continuous(limits = c(-2,2))
 
 grid.arrange(p1,p2,p3, nrow = 1)
 
-#Mean Squared Errors:
-mean((test_data$hybrid_prediction_noelite - log(test_data$consumption))^2)
-mean((test_data$hybrid_prediction - log(test_data$consumption))^2)
-mean((test_data$micro_prediction - log(test_data$consumption))^2)
+
+ggplot(data = test_data) +
+  geom_histogram(aes(x = hybrid_prediction-log(consumption)), fill = "blue",alpha = I(.4))+
+  geom_histogram(aes(x = hybrid_prediction_noelite-log(consumption)), fill = "pink",alpha = I(.4))+
+  geom_histogram(aes(x = micro_prediction-log(consumption)), fill = "green",alpha = I(.4))
+
+
+
 
 
 
