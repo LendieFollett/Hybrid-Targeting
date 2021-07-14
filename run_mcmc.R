@@ -132,9 +132,9 @@ p3 <- ggplot(test_data) +
 grid.arrange(p1,p2,p3, nrow = 1)
 
 #Mean Squared Errors:
-mean((test_data$hybrid_prediction_noelite - (test_data$consumption))^2)
-mean((test_data$hybrid_prediction - (test_data$consumption))^2)
-mean((test_data$micro_prediction - (test_data$consumption))^2)
+mean((test_data$hybrid_prediction_noelite - log(test_data$consumption))^2)
+mean((test_data$hybrid_prediction - log(test_data$consumption))^2)
+mean((test_data$micro_prediction - log(test_data$consumption))^2)
 
 
 
