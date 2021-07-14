@@ -327,7 +327,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
       draw$omega_rank[j] = omega_rank
     }
     # print iteration number
-    if(iter %% print.opt == 0){
+    if(iter %% print_opt == 0){
       print(paste("Gibbs Iteration", iter))
       # print(table(weight.vec))
       # print(c(sigma2.alpha, sigma2.beta))

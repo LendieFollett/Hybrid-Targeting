@@ -15,7 +15,7 @@ source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
 
-A = 2   ## number of aggregate/community-level variables captured
+
 K = R = 200 ## number of communities equal to number of rankers
 M = 2   ## number of micro-level variables captured
 N0 = 1000## number of unranked/training items
