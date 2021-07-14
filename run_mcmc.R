@@ -1,5 +1,3 @@
-#Run MCMC, convergence diagnostics
-#see results.R for analysis
 rm(list = ls())
 library(truncnorm)
 library(mvtnorm)
@@ -97,8 +95,7 @@ beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 data.frame(parameter = colnames(X_micro0)[-1],
            mu_beta = mu_beta_mean[-1],
            beta_rank = beta_rank_mean[-1],
-           beta_micro=beta_micro_mean[-1],
-           beta_start = beta_start[-1])%>%
+           beta_micro=beta_micro_mean[-1])%>%
   melt(id.var = "parameter") %>%
   mutate(parameter = factor(parameter, levels = colnames(X_micro0[,-1])[order(mu_beta_mean[-1])]))%>%
   ggplot() +
@@ -111,8 +108,35 @@ data.frame(parameter = colnames(X_micro0)[-1],
   theme_bw()
 ggsave("coefficients.pdf", width = 6, height = 10)
 
+#get back on log(consumption scale) --->sigma*predicted + mu
+test_data$hybrid_prediction <-         apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+#beta_start is the OLS estimate of beta
+test_data$micro_prediction <- (X_micro1%*%beta_start)*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
-test_data$prediction <- apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-ggplot(test_data) +
-  geom_point(aes(x = log(consumption), y = prediction))
+p1 <- ggplot(test_data) +
+  geom_point(aes(x = log(consumption), y = hybrid_prediction)) +
+  geom_abline(aes(intercept = 0, slope = 1))+
+  ggtitle("Hybrid")
+
+p2 <- ggplot(test_data) +
+  geom_point(aes(x = log(consumption), y = hybrid_prediction_noelite)) +
+  geom_abline(aes(intercept = 0, slope = 1))+
+  ggtitle("Hybrid No-elite")
+
+p3 <- ggplot(test_data) +
+  geom_point(aes(x = log(consumption), y = micro_prediction)) +
+  geom_abline(aes(intercept = 0, slope = 1))+
+  ggtitle("PMT")
+
+grid.arrange(p1,p2,p3, nrow = 1)
+
+#Mean Squared Errors:
+mean((test_data$hybrid_prediction_noelite - (test_data$consumption))^2)
+mean((test_data$hybrid_prediction - (test_data$consumption))^2)
+mean((test_data$micro_prediction - (test_data$consumption))^2)
+
+
+
+
 

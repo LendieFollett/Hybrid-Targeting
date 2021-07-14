@@ -310,7 +310,6 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_micro1 %*% mu_beta  )
-    head(data.frame(mu_beta, beta_rank, beta_micro))
     if(!is.null(X_elite)){
     mu_noelite = as.vector( X_micro1_noelite %*% mu_beta )
     }else{
