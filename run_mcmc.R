@@ -8,6 +8,8 @@ library(MASS)
 library(dplyr)
 library(ggplot2)
 library(Rcpp)
+library(reshape2)
+library(gridExtra)
 
 source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
