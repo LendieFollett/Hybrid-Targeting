@@ -85,7 +85,7 @@ P <- ncol(X) - 1
   
 
   if(!rank){ #if it's micro
-    u <- as.vector(Y) 
+    u <- as.vector(Y)
     
     n <- length(u)
     c <- ncol(Y)
@@ -105,19 +105,36 @@ P <- ncol(X) - 1
   X <-kronecker(rep(1, c), X) #(A*K)xP
   } 
 
-  Sigma_inv_y<-omega*diag(n)
-  
-  Sigma_inv_beta <- omega*diag(P+1) #prior covariance matrix
+Sigma_inv_y<-omega*diag(n)
+
+if(!rank){  
+  Sigma_inv_beta <- diag(c(2.5^2, omega*rep(1, P))) #prior covariance matrix
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
-  pt1 <- u^T%*%Sigma_inv_y%*%X + t(mu_beta)%*%Sigma_inv_beta
+
+  pt1 <- u^T%*%Sigma_inv_y%*%X + t(c(0,mu_beta))%*%Sigma_inv_beta
   
   pt2 <- t(X)%*%Sigma_inv_y%*%X + Sigma_inv_beta
   
   pt2_inv <- solve(pt2)
   
   alpha_beta <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
-
+  
+}else{
+  Sigma_inv_beta <- diag(omega*rep(1, P)) #prior covariance matrix
+  
+  #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
+  
+  pt1 <- u^T%*%Sigma_inv_y%*%X[,-1] + t(mu_beta)%*%Sigma_inv_beta
+  
+  pt2 <- t(X[,-1])%*%Sigma_inv_y%*%X[,-1] + Sigma_inv_beta
+  
+  pt2_inv <- solve(pt2)
+  
+  alpha_beta <-c(0,mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)) #intercept is 0
+  
+}
+  
   return(alpha_beta)
 }
 
@@ -130,12 +147,12 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
   
   P <- max(length(beta_rank), length(beta_micro)) - 1
 
-  Omega_rank <- diag(P + 1)*1/omega_rank
-  Omega_micro <- diag(P + 1)*1/omega_micro
+  Omega_rank <-  diag(1/omega_rank*rep(1, P))#diag(P + 1)*1/omega_rank
+  Omega_micro <- diag(1/omega_micro*rep(1, P))#diag(P + 1)*1/omega_micro
   
-  post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P+1)/1^2) #prior sd on mu_beta = 1
+  post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P)/1^2) #prior sd on mu_beta = 1
   
-  post_mu <- (t(beta_rank)%*%solve(Omega_rank) + t(beta_micro)%*%solve(Omega_micro))%*%post_Sigma
+  post_mu <- (t(beta_rank[-1])%*%solve(Omega_rank) + t(beta_micro[-1])%*%solve(Omega_micro))%*%post_Sigma
   
   mu_beta <- mvrnorm(1, mu = t(post_mu), Sigma = post_Sigma)
   
@@ -239,8 +256,8 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   
   ## store MCMC draws
   draw = list(
-   # Z = array(NA, dim = c( iter_keep,N1)),
-    mu_beta = array(NA, dim = c(iter_keep,P+1)),
+    Z = array(NA, dim = c( iter_keep,6)),
+    mu_beta = array(NA, dim = c(iter_keep,P)),
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
     beta_micro = array(NA, dim = c(iter_keep,P+1)),
     mu = array(NA, dim = c(iter_keep,N1)),
@@ -264,7 +281,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
   if(is.null(initial.list$beta_micro)|is.null(Y_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
-  mu_beta <- cbind(beta_rank, beta_micro) %>%apply(1, mean)
+  mu_beta <- cbind(beta_rank[-1], beta_micro[-1]) %>%apply(1, mean)
   
   ## initial values for weights
   omega_micro = 1
@@ -274,13 +291,18 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   for(iter in 1:(iter_burn + iter_keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
-    Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, Z = Z, mu = X_micro1 %*% beta_rank, omega_rank = omega_rank, R = R )
+    Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, 
+                                    Z = Z, 
+                                    mu = X_micro1 %*% beta_rank, 
+                                    omega_rank = omega_rank, 
+                                    R = R )
     
     # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
                                           X = X_micro1,
                                      omega = omega_rank,
                                      mu_beta = mu_beta,
+                                     sigma_intercept = .1,
                                      rank=TRUE)
     
     # ----> update quality weights
@@ -309,9 +331,9 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
     
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
-    mu = as.vector( X_micro1 %*% mu_beta  )
+    mu = as.vector( X_micro1 %*% c(omega_micro[1],mu_beta ))
     if(!is.null(X_elite)){
-    mu_noelite = as.vector( X_micro1_noelite %*% mu_beta )
+    mu_noelite = as.vector( X_micro1_noelite %*% c(omega_micro[1],mu_beta ) )
     }else{
       mu_noelite = mu
     }
@@ -319,7 +341,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
     if(iter > iter_burn){
       j = iter - iter_burn
       # store value at this iteration
-      #draw$Z[j,,] = Z
+      draw$Z[j,] = Z[1:6,1]
       draw$mu_beta[j,] = mu_beta
       draw$beta_rank[j,] = beta_rank
       draw$beta_micro[j,] = beta_micro

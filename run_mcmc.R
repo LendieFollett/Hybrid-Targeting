@@ -71,9 +71,9 @@ form <- formula(paste0("y~", paste0(colnames(X_micro0), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(#gamma_rank = gamma_start,
-  beta_rank = beta_start,
+  beta_rank = c(0,beta_start[-1]),
   beta_micro = beta_start,
-  mu_beta = beta_start)
+  mu_beta = beta_start[-1])
 
 Tau <- array(NA, dim = c(nrow(test_data), R))
 j = 0
@@ -83,8 +83,8 @@ for ( idx in unique(test_data$community_id)){ #loop over columns
 }
 
 
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1000   ## Gibbs sampler burn-in iterations 
+iter_keep = 3000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =3000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -106,12 +106,12 @@ mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-data.frame(parameter = colnames(X_micro0),
+data.frame(parameter = colnames(X_micro0)[-1],
            mu_beta = mu_beta_mean,
-           beta_rank = beta_rank_mean,
-           beta_micro=beta_micro_mean)%>%
+           beta_rank = beta_rank_mean[-1],
+           beta_micro=beta_micro_mean[-1])%>%
   melt(id.var = "parameter") %>%
-  mutate(parameter = factor(parameter, levels = colnames(X_micro0)[order(mu_beta_mean)]))%>%
+  mutate(parameter = factor(parameter, levels = colnames(X_micro0)[-1][order(mu_beta_mean)]))%>%
   ggplot() +
   geom_hline(aes(yintercept = 0))+
   geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
@@ -123,26 +123,33 @@ data.frame(parameter = colnames(X_micro0),
 ggsave("coefficients.pdf", width = 6, height = 10)
 
 #get back on log(consumption scale) --->sigma*predicted + mu
-test_data$hybrid_prediction <-         X_micro1%*%c(beta_micro_mean[1], mu_beta_mean[-1])*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+test_data$hybrid_prediction <-         apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
-test_data$micro_prediction <- (X_micro1%*%beta_start)*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+test_data$micro_prediction <- (X_micro1%*%beta_micro_mean)*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 poverty_rate <- .3
 
 test_data <- test_data %>% group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
-         pmt_rank =rank(micro_prediction)/length(village)) %>%
+         pmt_rank =rank(micro_prediction)/length(village),
+         consumption_rank = rank(consumption)/length(village),
+         cbt_rank = rank/length(village)) %>%
   mutate(hybrid_inclusion = hybrid_rank < poverty_rate,
          hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
          pmt_inclusion = pmt_rank < poverty_rate,
-         consumption_inclusion = rank(consumption)/length(village)<poverty_rate) %>%ungroup() %>%
+         consumption_inclusion = consumption_rank<poverty_rate) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 library(caret)
+ggplot(data = test_data) + 
+  geom_boxplot(aes(x = elite, y = cbt_rank,group=elite))+
+  geom_jitter(aes(x = elite, y = cbt_rank,group=elite))
 
 confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
+confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
+confusionMatrix(test_data$pmt_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
 
 p1 <- ggplot(test_data) +
   geom_point(aes(x = hybrid_prediction, y = hybrid_prediction-log(consumption))) +
