@@ -37,7 +37,7 @@ set.seed(57239852)
 train_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
 
 #groups of x variables
-m1 <- c("elite","hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
+m1 <- c("hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
         "hheduc2","hheduc3","hheduc4",
         "age04","higheduc2","higheduc3","higheduc4","depratio")
 m2.1 <- c("pcfloor", "tfloor","twall", "toilet","water","lighting", "troof",
@@ -92,7 +92,7 @@ print_opt = 100  ## print a message every print.opt steps
 temp <- BCTarget(Tau=Tau, 
                  X_micro0 = X_micro0, 
                  X_micro1 = X_micro1,
-                 X_elite = "elite",
+                 X_elite = NULL,
                  Y_micro = Y_micro, #needs to be a matrix, not vector
                  iter_keep = iter_keep,
                  iter_burn = iter_burn,
@@ -123,12 +123,13 @@ data.frame(parameter = colnames(X_micro0)[-1],
 ggsave("coefficients.pdf", width = 6, height = 10)
 
 #get back on log(consumption scale) --->sigma*predicted + mu
-test_data$hybrid_prediction <-         apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+test_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
-test_data$micro_prediction <- (X_micro1%*%beta_micro_mean)*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+test_data$micro_prediction <- (X_micro1%*%beta_micro_mean)#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
-poverty_rate <- .3
+
+poverty_rate <- .4
 
 test_data <- test_data %>% group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
@@ -142,10 +143,10 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
          consumption_inclusion = consumption_rank<poverty_rate) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
-library(caret)
 ggplot(data = test_data) + 
-  geom_boxplot(aes(x = elite, y = cbt_rank,group=elite))+
-  geom_jitter(aes(x = elite, y = cbt_rank,group=elite))
+  geom_jitter(aes(pmt_rank,hybrid_rank, colour = cbt_rank),width = .025, height = .025)
+library(caret)
+
 
 confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
 confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
