@@ -302,7 +302,6 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
                                           X = X_micro1,
                                      omega = omega_rank,
                                      mu_beta = mu_beta,
-                                     sigma_intercept = .1,
                                      rank=TRUE)
     
     # ----> update quality weights

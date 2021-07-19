@@ -37,7 +37,7 @@ set.seed(57239852)
 train_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
 
 #groups of x variables
-m1 <- c("hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
+m1 <- c("connected","hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
         "hheduc2","hheduc3","hheduc4",
         "age04","higheduc2","higheduc3","higheduc4","depratio")
 m2.1 <- c("pcfloor", "tfloor","twall", "toilet","water","lighting", "troof",
@@ -92,7 +92,7 @@ print_opt = 100  ## print a message every print.opt steps
 temp <- BCTarget(Tau=Tau, 
                  X_micro0 = X_micro0, 
                  X_micro1 = X_micro1,
-                 X_elite = NULL,
+                 X_elite = "connected",
                  Y_micro = Y_micro, #needs to be a matrix, not vector
                  iter_keep = iter_keep,
                  iter_burn = iter_burn,
@@ -144,7 +144,14 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
   mutate_at(vars(matches("inclusion")), as.factor)
 
 ggplot(data = test_data) + 
-  geom_jitter(aes(pmt_rank,hybrid_rank, colour = cbt_rank),width = .025, height = .025)
+  geom_jitter(aes(consumption_rank,hybrid_rank, colour = cbt_rank),width = .025, height = .025) +
+  geom_hline(aes(yintercept = poverty_rate)) +
+  geom_vline(aes(xintercept = poverty_rate))
+
+ggplot(data = test_data) + 
+  geom_jitter(aes(consumption_rank,pmt_rank, colour = cbt_rank),width = .025, height = .025) +
+  geom_hline(aes(yintercept = poverty_rate)) +
+  geom_vline(aes(xintercept = poverty_rate))
 library(caret)
 
 
@@ -172,7 +179,7 @@ grid.arrange(p1,p2,p3, nrow = 1)
 
 ggplot(data = test_data) +
   geom_histogram(aes(x = hybrid_prediction-log(consumption)), fill = "blue",alpha = I(.4))+
-  geom_histogram(aes(x = hybrid_prediction_noelite-log(consumption)), fill = "pink",alpha = I(.4))+
+  #geom_histogram(aes(x = hybrid_prediction_noelite-log(consumption)), fill = "pink",alpha = I(.4))+
   geom_histogram(aes(x = micro_prediction-log(consumption)), fill = "green",alpha = I(.4))
 
 
