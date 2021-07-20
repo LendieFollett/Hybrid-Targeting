@@ -15,7 +15,14 @@ source("Bayes Consensus Ranking/functions.R")
 
 #parameters for simulation
 
-
+doESS <- function(x){
+  
+  if(!is.null(dim(x))){ #if it's a data frame
+    return(apply(x, 2, ESS))
+  }else{
+    return(ESS(x))
+  }
+}
 K = R = 200 ## number of communities equal to number of rankers
 M = 2   ## number of micro-level variables captured
 N0 = 1000## number of unranked/training items
@@ -23,9 +30,9 @@ N1 = 1000 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
 
-iter.keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter.burn =500   ## Gibbs sampler burn-in iterations 
-print.opt = 1  ## print a message every print.opt steps
+iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =500   ## Gibbs sampler burn-in iterations 
+print_opt = 100  ## print a message every print.opt steps
 
 #simulate data based on parameters
 source("Bayes Consensus Ranking/simulate_data.R")
@@ -48,11 +55,33 @@ temp <- BCTarget(Tau=Tau,
                  X_micro1 = X_micro1,
                  X_elite = 7,#7th position (including intercept)
                  Y_micro = Y_micro,
-                 iter.keep = iter.keep,
-                 iter.burn = iter.burn,
-                 para.expan = TRUE, print.opt = 100)
+                 iter_keep = iter_keep,
+                 iter_burn = iter_burn,
+                 print_opt = print_opt,
+                 initial.list = initial_list)
 
-mu_mean <- apply(temp$mu, 2, mean) # mu = X_micro1 %*% mu_beta
+lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
+
+mu_beta_mean <- apply(temp$mu_beta, 2, mean)
+beta_rank_mean <- apply(temp$beta_rank, 2, mean)
+beta_micro_mean <- apply(temp$beta_micro, 2, mean)
+
+
+
+
+data.frame(parameter = paste("Parameter", c(1:length(mu_beta_mean))),
+           mu_beta = mu_beta_mean,
+           beta_rank = beta_rank_mean[-1],
+           beta_micro=beta_micro_mean[-1])%>%
+  melt(id.var = "parameter") %>%
+  ggplot() +
+  geom_hline(aes(yintercept = 0))+
+  geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
+  geom_point(aes(x = parameter, y = value, colour = variable, group = variable)) +
+  coord_flip() +
+  labs(x = "Coefficient ", y = "Estimate") +
+  scale_colour_brewer("Parameter", palette = "Set1") +
+  theme_bw()
 
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)

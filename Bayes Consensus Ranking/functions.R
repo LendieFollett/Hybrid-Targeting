@@ -6,7 +6,9 @@
 #' Note that here we follow the usual definition of rank in R, that is, the larger the evaluation score 
 #' of an entity, the larger this entity's rank is. Specifically, for a full ranking list of \eqn{N} entities, 
 #' the rank of an entity equals \eqn{N+1} minus its ranked position.
-#' @return An \eqn{N} by \eqn{N} pairwise comparison for all \eqn{N} entities, where the (\eqn{i},\eqn{j}) element equals 1 if \eqn{i} is ranked higher than \eqn{j}, and 0 if \eqn{i} is ranker lower than \eqn{j}. Note that the diagonal elements (\eqn{i},\eqn{i})'s are set to NA.
+#' @return An \eqn{N} by \eqn{N} pairwise comparison for all \eqn{N} entities, 
+#' where the (\eqn{i},\eqn{j}) element equals 1 if \eqn{i} is ranked higher than \eqn{j}, 
+#' and 0 if \eqn{i} is ranker lower than \eqn{j}. Note that the diagonal elements (\eqn{i},\eqn{i})'s are set to NA.
 #' @export
 FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
   pair.comp <- matrix(NA, n, n)
@@ -39,7 +41,7 @@ GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z, mu, omega_rank , R = n
 GibbsUpLatentGivenRankInd <- function(pair.comp, Z_sub,up.order, mu_sub, weight){
 
   for(i in up.order){
-    set1 = which( pair.comp[i, ] == 1)
+    set1 = which( pair.comp[i, ] == 1) #who has a LARGER rank than person i
     set0 = which( pair.comp[i, ] != 1)
     
     if(length(set1) > 0){
@@ -105,7 +107,7 @@ P <- ncol(X) - 1
   X <-kronecker(rep(1, c), X) #(A*K)xP
   } 
 
-Sigma_inv_y<-omega*diag(n)
+Sigma_inv_y<-omega*diag(n) #omega = 1/sigma^2
 
 if(!rank){  
   Sigma_inv_beta <- diag(c(2.5^2, omega*rep(1, P))) #prior covariance matrix
@@ -176,7 +178,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0
       Row <- length(idx)
     log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
     }
-    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta, mean = mu_beta, sd =sqrt(1/weight_prior_value[k]), log = TRUE ))
+    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(1/weight_prior_value[k]), log = TRUE ))
   }
 #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
   log.post.prob = log.post.prob - max(log.post.prob)

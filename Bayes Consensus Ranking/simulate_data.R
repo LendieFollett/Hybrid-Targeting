@@ -11,29 +11,18 @@ X_micro <- cbind(1, X_micro) #add intercept
 X_micro1 = X_micro[1:N1,] ## covariate matrix for ALL sampled individuals
 X_micro0 = X_micro[-c(1:N1),]
 
-X_comm <- aggregate(X_micro, list(community), mean)[,-1] %>%
-  as.matrix()
 
-
-Y_comm <- array(NA, dim = c(K, A)) 
 Y_micro <- array(NA, dim = c(N0, M)) #only training has micro response (e.g., consumption)
 Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption)
 
 #parameter values
-omega_comm_true <- rep(1, A)
 omega_micro_true <- rep(.5, M)
 omega_rank_true <- rep(2, R)
-beta_comm_true = c(0,sample(c(0,1), size = P, replace=TRUE)) #first column is intercept
-beta_rank_true = c(0,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
-beta_micro_true = c(0,sample(c(0,1), size = P, replace=TRUE)) 
+beta_rank_true = c(1.5,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
+beta_micro_true = c(-1,sample(c(0,1), size = P, replace=TRUE)) 
 
 
 #Fill "responses"
-#gamma_comm_true <- rnorm(K, 0, sigma2_comm^.5) 
-for (a in 1:A){ #fill community measures
-  Y_comm[,a] <-  rnorm(K, X_comm %*% beta_comm_true, sqrt(1/omega_comm_true[a])) #+gamma_comm_true
-}
-
 
 #gamma_micro_true <-  rnorm(N0, 0, sigma2_micro^.5)
 for (m in 1:M){ #fill micro-data

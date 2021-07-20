@@ -33,8 +33,8 @@ full_data <- full_data%>%
   group_by(village, province, district, subdistrict)%>%
          mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
   subset(community == 1 | hybrid == 1)
-set.seed(57239852)
-train_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
+set.seed(572319852)
+train_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
 
 #groups of x variables
 m1 <- c("connected","hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
@@ -75,6 +75,7 @@ initial_list <- list(#gamma_rank = gamma_start,
   beta_micro = beta_start,
   mu_beta = beta_start[-1])
 
+#create rank matrix: one column per 'ranker' (community)
 Tau <- array(NA, dim = c(nrow(test_data), R))
 j = 0
 for ( idx in unique(test_data$community_id)){ #loop over columns
@@ -83,8 +84,8 @@ for ( idx in unique(test_data$community_id)){ #loop over columns
 }
 
 
-iter_keep = 3000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =3000   ## Gibbs sampler burn-in iterations 
+iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =1000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -94,6 +95,8 @@ temp <- BCTarget(Tau=Tau,
                  X_micro1 = X_micro1,
                  X_elite = "connected",
                  Y_micro = Y_micro, #needs to be a matrix, not vector
+                 prior_prob_rank = c(.2,.2,.6),
+                 prior_prob_micro = c(.6,.2,.2),
                  iter_keep = iter_keep,
                  iter_burn = iter_burn,
                   print_opt = print_opt,
@@ -126,10 +129,10 @@ ggsave("coefficients.pdf", width = 6, height = 10)
 test_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
-test_data$micro_prediction <- (X_micro1%*%beta_micro_mean)#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+test_data$micro_prediction <- (X_micro1[,-1]%*%beta_start[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 
-poverty_rate <- .4
+poverty_rate <- .3
 
 test_data <- test_data %>% group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
@@ -144,43 +147,28 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
   mutate_at(vars(matches("inclusion")), as.factor)
 
 ggplot(data = test_data) + 
-  geom_jitter(aes(consumption_rank,hybrid_rank, colour = cbt_rank),width = .025, height = .025) +
-  geom_hline(aes(yintercept = poverty_rate)) +
-  geom_vline(aes(xintercept = poverty_rate))
+  geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+
+  geom_jitter(aes(x = connected, y = consumption_rank,group=elite,colour = elite))
 
-ggplot(data = test_data) + 
-  geom_jitter(aes(consumption_rank,pmt_rank, colour = cbt_rank),width = .025, height = .025) +
-  geom_hline(aes(yintercept = poverty_rate)) +
-  geom_vline(aes(xintercept = poverty_rate))
 library(caret)
 
 
-confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
-confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
-confusionMatrix(test_data$pmt_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass
+rbind(confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(test_data$pmt_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c("Hybrid", "Hybrid Connection Corrected", "PMT"),
+         TD = Sensitivity - (1-Specificity)) %>%
+  dplyr::select(c(Method,Sensitivity, Specificity, TD))
+
+ggplot(data = test_data) + 
+ geom_point(aes(log(consumption),cbt_rank, colour = cbt_rank),width = .025, height = .025) #+
+ # geom_hline(aes(yintercept = poverty_rate)) +
+ # geom_vline(aes(xintercept = poverty_rate))
 
 p1 <- ggplot(test_data) +
-  geom_point(aes(x = hybrid_prediction, y = hybrid_prediction-log(consumption))) +
+  geom_point(aes(x = hybrid_prediction, y = consumption)) +
   geom_abline(aes(intercept = 0, slope = 1))+
   ggtitle("Hybrid") +scale_y_continuous(limits = c(-2,2))
-
-p2 <- ggplot(test_data) +
-  geom_point(aes(x = hybrid_prediction_noelite, y = hybrid_prediction_noelite-log(consumption))) +
-  geom_abline(aes(intercept = 0, slope = 1))+
-  ggtitle("Hybrid No-elite")+scale_y_continuous(limits = c(-2,2))
-
-p3 <- ggplot(test_data) +
-  geom_point(aes(x = micro_prediction, y = micro_prediction-log(consumption))) +
-  geom_abline(aes(intercept = 0, slope = 1))+
-  ggtitle("PMT")+scale_y_continuous(limits = c(-2,2))
-
-grid.arrange(p1,p2,p3, nrow = 1)
-
-
-ggplot(data = test_data) +
-  geom_histogram(aes(x = hybrid_prediction-log(consumption)), fill = "blue",alpha = I(.4))+
-  #geom_histogram(aes(x = hybrid_prediction_noelite-log(consumption)), fill = "pink",alpha = I(.4))+
-  geom_histogram(aes(x = micro_prediction-log(consumption)), fill = "green",alpha = I(.4))
 
 
 
