@@ -66,6 +66,9 @@ mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
+#true coefficients:
+beta_rank_true #intercept is irrelevant
+beta_micro_true
 
 
 
@@ -111,7 +114,7 @@ rbind(confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusio
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
 tau_post_summary <- data.frame(
-  mean_rank =  rank(apply(temp$mu, 2, mean)),#Rank of posterior means of xbeta + gamma
+  mean_rank =  rank(apply(temp$mu, 2, mean)),#Rank of posterior means of xbeta
   min_rank = (apply(tau_post, 1, min)), #minimum rank seen in MCMC draws
   max_rank = (apply(tau_post, 1, max)),#maximum rank seen in MCMC draws
   mean_score = mu_mean

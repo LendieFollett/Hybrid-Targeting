@@ -258,7 +258,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   
   ## store MCMC draws
   draw = list(
-    Z = array(NA, dim = c( iter_keep,6)),
+    Z = array(NA, dim = c( iter_keep,N1)),
     mu_beta = array(NA, dim = c(iter_keep,P)),
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
     beta_micro = array(NA, dim = c(iter_keep,P+1)),
@@ -342,7 +342,7 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
     if(iter > iter_burn){
       j = iter - iter_burn
       # store value at this iteration
-      draw$Z[j,] = Z[1:6,1]
+      draw$Z[j,] = apply(Z, 1, function(x){sum(x,na.rm=TRUE)})
       draw$mu_beta[j,] = mu_beta
       draw$beta_rank[j,] = beta_rank
       draw$beta_micro[j,] = beta_micro
