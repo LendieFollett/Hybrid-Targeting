@@ -144,11 +144,20 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
          hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
          pmt_inclusion = pmt_rank < poverty_rate,
          consumption_inclusion = consumption_rank<poverty_rate) %>%ungroup() %>%
+  mutate(Z_mean = apply(temp$Z, 2, mean))%>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 ggplot(data = test_data) + 
   geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+
   geom_jitter(aes(x = connected, y = consumption_rank,group=elite,colour = elite))
+
+
+qplot(Z_mean, cbt_rank, colour = pmt_rank,data = test_data)
+
+ggplot(data = test_data) +
+  geom_point(aes(cbt_rank,Z_mean, colour = pmt_rank)) +
+               geom_line(aes(x = cbt_rank, y = Z_mean, group = community_id), alpha = I(.3))
+
 
 library(caret)
 
