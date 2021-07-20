@@ -13,6 +13,7 @@ X_micro0 = X_micro[-c(1:N1),]
 
 
 Y_micro <- array(NA, dim = c(N0, M)) #only training has micro response (e.g., consumption)
+Y_micro1 <- array(NA, dim = c(N1, M)) #true 'testing' response
 Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption)
 
 #parameter values
@@ -20,13 +21,17 @@ omega_micro_true <- rep(.5, M)
 omega_rank_true <- rep(2, R)
 beta_rank_true = c(1.5,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
 beta_micro_true = c(-1,sample(c(0,1), size = P, replace=TRUE)) 
-
+mu_beta <- apply(cbind(beta_rank_true,beta_micro_true), 1, mean)
 
 #Fill "responses"
 
 #gamma_micro_true <-  rnorm(N0, 0, sigma2_micro^.5)
 for (m in 1:M){ #fill micro-data
   Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_micro_true, sqrt(1/omega_micro_true[m])) #+ gamma_micro_true
+}
+
+for (m in 1:M){ #fill micro-data
+  Y_micro1[,m] <-  rnorm(N0, X_micro1 %*%mu_beta , sqrt(1/omega_micro_true[m])) #+ gamma_micro_true
 }
 
 #gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)

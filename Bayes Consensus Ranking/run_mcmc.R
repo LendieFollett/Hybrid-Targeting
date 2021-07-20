@@ -83,6 +83,31 @@ data.frame(parameter = paste("Parameter", c(1:length(mu_beta_mean))),
   scale_colour_brewer("Parameter", palette = "Set1") +
   theme_bw()
 
+
+poverty_rate <- .3
+
+test_data <- data.frame(X_micro1, consumption = Y_micro1[,1], community=community[1:nrow(X_micro1)]) %>% 
+  mutate(hybrid_prediction =         apply(temp$mu, 2, mean),
+         hybrid_prediction_noelite =         apply(temp$mu_noelite, 2, mean),
+         micro_prediction = X_micro1%*%beta_micro_mean)%>%
+  group_by(community) %>%
+  mutate(hybrid_rank =rank(hybrid_prediction)/length(community),
+         hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(community),
+         pmt_rank =rank(micro_prediction)/length(community),
+         consumption_rank = rank(consumption)/length(community)) %>%
+  mutate(hybrid_inclusion = hybrid_rank < poverty_rate,
+         hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
+         pmt_inclusion = pmt_rank < poverty_rate,
+         consumption_inclusion = consumption_rank<poverty_rate) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+rbind(confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(test_data$pmt_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c("Hybrid", "Hybrid Connection Corrected", "PMT"),
+         TD = Sensitivity - (1-Specificity)) %>%
+  dplyr::select(c(Method,Sensitivity, Specificity, TD))
+
 #posterior summaries of ranks
 tau_post <-apply(temp$mu, 1, rank)
 tau_post_summary <- data.frame(
