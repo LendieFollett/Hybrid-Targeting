@@ -37,7 +37,7 @@ set.seed(572319852)
 train_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
 
 #groups of x variables
-m1 <- c("connected","hhsize","hhage","hhmale","hhmarried","hhage2", "hhsize2", "hhmalemarr",
+m1 <- c("connected","hhsize","hhage","hhmale","hhmarried",
         "hheduc2","hheduc3","hheduc4",
         "age04","higheduc2","higheduc3","higheduc4","depratio")
 m2.1 <- c("pcfloor", "tfloor","twall", "toilet","water","lighting", "troof",
@@ -160,7 +160,6 @@ ggplot(data = test_data) +
 
 
 library(caret)
-
 
 rbind(confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
