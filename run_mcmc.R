@@ -129,7 +129,7 @@ ggsave("coefficients.pdf", width = 6, height = 10)
 test_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
-test_data$micro_prediction <- (X_micro1[,-1]%*%beta_start[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+test_data$micro_prediction <- (X_micro1[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 
 poverty_rate <- .3
@@ -147,17 +147,6 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
   mutate(Z_mean = apply(temp$Z, 2, mean))%>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
-ggplot(data = test_data) + 
-  geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+
-  geom_jitter(aes(x = connected, y = consumption_rank,group=elite,colour = elite))
-
-
-qplot(Z_mean, cbt_rank, colour = pmt_rank,data = test_data)
-
-ggplot(data = test_data) +
-  geom_point(aes(cbt_rank,Z_mean, colour = pmt_rank)) +
-               geom_line(aes(x = cbt_rank, y = Z_mean, group = community_id), alpha = I(.3))
-
 
 library(caret)
 
@@ -167,6 +156,18 @@ confusionMatrix(test_data$pmt_inclusion, test_data$consumption_inclusion,positiv
   mutate(Method = c("Hybrid", "Hybrid Connection Corrected", "PMT"),
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,Sensitivity, Specificity, TD))
+
+
+p1 <-ggplot(data = test_data) + 
+  geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+
+  geom_jitter(aes(x = connected, y = consumption_rank,group=elite,colour = elite))
+
+
+p2 <-qplot(Z_mean, cbt_rank, colour = pmt_rank,data = test_data)
+
+p3 <-ggplot(data = test_data) +
+  geom_point(aes(cbt_rank,Z_mean, colour = pmt_rank)) +
+  geom_line(aes(x = cbt_rank, y = Z_mean, group = community_id), alpha = I(.3))
 
 ggplot(data = test_data) + 
  geom_point(aes(log(consumption),cbt_rank, colour = cbt_rank),width = .025, height = .025) #+
