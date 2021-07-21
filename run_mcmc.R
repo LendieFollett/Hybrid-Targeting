@@ -130,7 +130,7 @@ test_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(
 test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
 test_data$micro_prediction <- (X_micro1[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-
+test_data$cbt_model_prediction <- (X_micro1[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 poverty_rate <- .3
 
@@ -138,22 +138,26 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          pmt_rank =rank(micro_prediction)/length(village),
+         cbt_model_rank = rank(cbt_model_prediction)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village)) %>%
   mutate(hybrid_inclusion = hybrid_rank < poverty_rate,
          hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
          pmt_inclusion = pmt_rank < poverty_rate,
-         consumption_inclusion = consumption_rank<poverty_rate) %>%ungroup() %>%
+         consumption_inclusion = consumption_rank<poverty_rate,
+         cbt_model_inclusion = cbt_model_rank<poverty_rate,
+         cbt_inclusion = cbt_rank < poverty_rate) %>%ungroup() %>%
   mutate(Z_mean = apply(temp$Z, 2, mean))%>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 
 library(caret)
 
-rbind(confusionMatrix(test_data$hybrid_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(test_data$pmt_inclusion, test_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c("Hybrid", "Hybrid Connection Corrected", "PMT"),
+rbind(confusionMatrix(test_data$hybrid_inclusion,   test_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(test_data$cbt_model_inclusion,      test_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(test_data$pmt_inclusion,            test_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT"),
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,Sensitivity, Specificity, TD))
 
