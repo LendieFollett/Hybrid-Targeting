@@ -11,6 +11,7 @@ library(Rcpp)
 library(reshape2)
 library(gridExtra)
 library(LaplacesDemon)
+library(caret)
 
 doESS <- function(x){
   
@@ -33,13 +34,16 @@ full_data <- full_data%>%
   group_by(village, province, district, subdistrict)%>%
          mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
   subset(community == 1 | hybrid == 1)
+#50% of the full data is surveyed for PMT. get both X and y=consumption
 set.seed(572319852)
-PMT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.5))
+PMT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), 
+                                                   replace=FALSE, 
+                                                   length(unique(full_data$community_id))*.5))
 #Note: the hh index for program is everything else,
 set.seed(23529)
-CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[! full_data$community_id %in% PMT_idx]), 
+CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
                                                     replace=FALSE, 
-                                                    length(unique(full_data$community_id[! full_data$community_id %in% PMT_idx]))*.3))
+                                                    length(unique(full_data$community_id[-PMT_idx]))*.1))
 
 #groups of x variables
 m1 <- c("connected","hhsize","hhage","hhmale","hhmarried",
@@ -159,7 +163,6 @@ Program_data <- Program_data %>%group_by(village, province, district, subdistric
   mutate_at(vars(matches("inclusion")), as.factor)
 
 
-library(caret)
 
 rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
