@@ -195,8 +195,9 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0
 #' @import truncnorm
 #' @import mvtnorm
 #' @import MASS
-#' @param X_micro0 An \eqn{N0} by \eqn{P+1} covariate matrix for the \eqn{N0} 'training sample' entities with \eqn{P} covariates. If 1st column isn't 1s, an intercept is added.
-#' @param X_micro1 An \eqn{N1} by \eqn{P+1} covariate matrix for the \eqn{N1} 'testing sample' entities with \eqn{P} covariates. If 1st column isn't 1s, an intercept is added.
+#' @param X_PMT An \eqn{N0} by \eqn{P+1} covariate matrix for the \eqn{N0} 'training sample' entities with \eqn{P} covariates. If 1st column isn't 1s, an intercept is added.
+#' @param X_CBT An \eqn{N1} by \eqn{P+1} covariate matrix for the \eqn{N1} 'testing sample' entities with \eqn{P} covariates. If 1st column isn't 1s, an intercept is added.
+#' @param X_program An \eqn{N} by \eqn{P+1} covariate matrix for the program area. Will be used for predictions. 
 #' @param X_elite is an optional character string specifying column name of binary elite connection indicator OR the numeric column position. Used for debiasing.
 #' @param Y_micro A \eqn{N0} by \eqn{A} numeric matrix of micro-level response variables for 'training sample'. Each column represents a distinct response.
 #' @param Tau A \eqn{N1} by \eqn{R} integer matrix, possibly containing NA values, describing ranks of individuals. Each column is distinct 'ranker', each row is distinct individual in 'testing sample'.  
@@ -205,15 +206,15 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0
 #' @param iter_keep Number of iterations kept for Gibbs sampler after burn-in.
 #' @param iter_burn Number of iterations for burn in (discarded)
 #' @param print_opt Frequency of printing MCMC sampling progress.
-#' @return A list containing posterior samples of mu, the shared 'wellness' mean, conditional on the test X_micro1.
+#' @return A list containing posterior samples of mu, the shared 'wellness' mean, conditional on the test X_CBT.
 #' @export
-BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL, 
+BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                 X_elite = NULL,
                                 Y_micro=NULL,
                                 weight_prior_value = c(0.5, 1, 2), 
                                 prior_prob_rank = rep(1/length(weight_prior_value), length(weight_prior_value)),
                                 prior_prob_micro = rep(1/length(weight_prior_value), length(weight_prior_value)),
-                                N1 = dim(X_micro1)[1], #how many people in test set
+                                N1 = dim(X_CBT)[1], #how many people in test set
                                 R = ncol(Tau), #how many rankers. often will be equal to K
                                 iter_keep = 5000,
                                 iter_burn = 5000,
@@ -234,27 +235,24 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
   
   
   if (!is.null(X_elite)){
-    X_micro1_noelite <-  X_micro1
-    X_micro1_noelite[,X_elite] <- 0
+    X_program_noelite <-  X_program
+    X_program_noelite[,X_elite] <- 0
   }
   
   # intercept? P includes variables only
-  if(all(X_micro1[,1]==1)){
-    P <- ncol(X_micro1)-1
+  if(all(X_CBT[,1]==1)){
+    P <- ncol(X_CBT)-1
   }else{
-    X_micro1 <- cbind(1, X_micro1)
-    X_micro0 <- cbind(1, X_micro0)
-    P <- ncol(X_micro1)-1
+    X_CBT <- cbind(1, X_CBT)
+    X_PMT <- cbind(1, X_PMT)
+    P <- ncol(X_CBT)-1
   }
   
   
   M <- ncol(Y_micro)
   R <- length(pair.comp.ten)
   N0 <- nrow(Y_micro)
-  N1 <- dim(X_micro1)[1]
-  
-  #will need to add conditional logic here to account for multiple rankers of individuals
-  Z.len <- N1
+  N1 <- dim(X_CBT)[1]
   
   ## store MCMC draws
   draw = list(
@@ -262,8 +260,8 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
     mu_beta = array(NA, dim = c(iter_keep,P)),
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
     beta_micro = array(NA, dim = c(iter_keep,P+1)),
-    mu = array(NA, dim = c(iter_keep,N1)),
-    mu_noelite = array(NA, dim = c(iter_keep,N1)), #for debiasing
+    mu = array(NA, dim = c(iter_keep,nrow(X_program))),
+    mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), #for debiasing
     omega_micro = array(NA, dim = c(iter_keep, 1) ),
     omega_rank = array(NA, dim = c(iter_keep, 1) )
   )
@@ -295,33 +293,33 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, 
                                     Z = Z, 
-                                    mu = X_micro1 %*% beta_rank, 
+                                    mu = X_CBT %*% beta_rank, 
                                     omega_rank = omega_rank, 
                                     R = R )
     
     # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
-                                          X = X_micro1,
+                                          X = X_CBT,
                                      omega = omega_rank,
                                      mu_beta = mu_beta,
                                      rank=TRUE)
     
     # ----> update quality weights
     omega_rank <- GibbsUpQualityWeights(y=Z , 
-                                        mu=X_micro1 %*% beta_rank, 
+                                        mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
 
 
     # ----> update beta_micro 
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
-                                           X = X_micro0,
+                                           X = X_PMT,
                                            omega = omega_micro,
                                            mu_beta = mu_beta)
     
     # ----> update quality weights    
     omega_micro <-GibbsUpQualityWeights(y=Y_micro, 
-                                        mu=X_micro0 %*% beta_micro,
+                                        mu=X_PMT %*% beta_micro,
                                         beta_micro, mu_beta, 
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
     
@@ -332,9 +330,9 @@ BCTarget<- function(Tau, X_micro0=NULL, X_micro1=NULL,
     
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
-    mu = as.vector( X_micro1 %*% c(omega_micro[1],mu_beta ))
+    mu = as.vector( X_program %*% c(omega_micro[1],mu_beta ))
     if(!is.null(X_elite)){
-    mu_noelite = as.vector( X_micro1_noelite %*% c(omega_micro[1],mu_beta ) )
+    mu_noelite = as.vector( X_program_noelite %*% c(omega_micro[1],mu_beta ) )
     }else{
       mu_noelite = mu
     }

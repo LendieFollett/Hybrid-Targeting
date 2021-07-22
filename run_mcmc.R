@@ -25,7 +25,7 @@ source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
 
 full_data <- read.csv("Empirical Study/alatas.csv") %>%
-  select(-c("hhsize_ae"))
+  select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)
 #add a community id
 #rank is a decimal; needs to be an integer rank
 full_data <- full_data%>% 
@@ -34,40 +34,46 @@ full_data <- full_data%>%
          mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
   subset(community == 1 | hybrid == 1)
 set.seed(572319852)
-train_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.7))
+PMT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.5))
+#Note: the hh index for program is everything else,
+set.seed(23529)
+CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[! full_data$community_id %in% PMT_idx]), replace=FALSE, length(unique(full_data$community_id[! full_data$community_id %in% PMT_idx])*.5)))
 
 #groups of x variables
 m1 <- c("connected","hhsize","hhage","hhmale","hhmarried",
         "hheduc2","hheduc3","hheduc4",
         "age04","higheduc2","higheduc3","higheduc4","depratio")
 m2.1 <- c("pcfloor", "tfloor","twall", "toilet","water","lighting", "troof",
-          "fcook","house", "ac","computer","radio","tv", "dvd","satellite", 
+          "fcook","house", "computer","radio","tv", "dvd","satellite", #LRF REMOVED AC FOR NOW
           "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
           "jewelry","chicken","cow")
 m2 <- c(m1, m2.1)
 m3.1 <- c("credit","hhsector1", "hhsector2","hhsector3",
           "formal","informal", "eschild","jschild","sschild")
 m3 <- c(m2,m3.1) #full collection
-test_data <- full_data[-train_idx,] #%>% subset(community == 1)
-train_data <- full_data[train_idx,] #%>% subset(community == 0)
+CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
+PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+Program_data <- full_data[-PMT_idx,]
 
-X_micro0 <- cbind(1, train_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
-X_micro1 <- cbind(1, test_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)}))
 
-Y_micro <- as.matrix(log(train_data$consumption))
+X_PMT <- cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
+X_CBT <- cbind(1, CBT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)}))
+X_program <- cbind(1, Program_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)}))
+
+Y_micro <- as.matrix(log(PMT_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
-R = test_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
+R = CBT_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
 M = 1  ## just consumption
-N0 = train_data %>%nrow
-N1 = test_data %>%nrow
-P = ncol(X_micro0)-1 #(-1 since i've included the intercept)
+N0 = PMT_data %>%nrow
+N1 = CBT_data %>%nrow
+P = ncol(PMT_data)-1 #(-1 since i've included the intercept)
 
 
 #starting values for random effects
 temp_data <- data.frame(y = Y_micro,
-                         X_micro0)
-form <- formula(paste0("y~", paste0(colnames(X_micro0), collapse = "+")))
+                        X_PMT)
+form <- formula(paste0("y~", paste0(colnames(X_PMT), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(#gamma_rank = gamma_start,
@@ -76,11 +82,11 @@ initial_list <- list(#gamma_rank = gamma_start,
   mu_beta = beta_start[-1])
 
 #create rank matrix: one column per 'ranker' (community)
-Tau <- array(NA, dim = c(nrow(test_data), R))
+Tau <- array(NA, dim = c(nrow(CBT_data), R))
 j = 0
-for ( idx in unique(test_data$community_id)){ #loop over columns
+for ( idx in unique(CBT_data$community_id)){ #loop over columns
   j = j + 1
-  Tau[test_data$community_id == idx,j] <- test_data$rank[test_data$community_id == idx]
+  Tau[CBT_data$community_id == idx,j] <- CBT_data$rank[CBT_data$community_id == idx]
 }
 
 
@@ -91,8 +97,9 @@ print_opt = 100  ## print a message every print.opt steps
 
 #Run MCMC for Bayesian Consensus Targeting
 temp <- BCTarget(Tau=Tau, 
-                 X_micro0 = X_micro0, 
-                 X_micro1 = X_micro1,
+                 X_PMT = X_PMT, 
+                 X_CBT = X_CBT,
+                 X_program = X_program,
                  X_elite = "connected",
                  Y_micro = Y_micro, #needs to be a matrix, not vector
                  prior_prob_rank = c(.2,.2,.6),
@@ -129,7 +136,7 @@ ggsave("coefficients.pdf", width = 6, height = 10)
 test_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
-test_data$micro_prediction <- (X_micro1[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+test_data$PMT_prediction <- (X_micro1[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 test_data$cbt_model_prediction <- (X_micro1[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 poverty_rate <- .3
@@ -137,7 +144,7 @@ poverty_rate <- .3
 test_data <- test_data %>% group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
-         pmt_rank =rank(micro_prediction)/length(village),
+         pmt_rank =rank(PMT_prediction)/length(village),
          cbt_model_rank = rank(cbt_model_prediction)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village)) %>%
@@ -185,7 +192,43 @@ p1 <- ggplot(test_data) +
 
 
 
+###############
 
+#get back on log(consumption scale) --->sigma*predicted + mu
+#train_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+#train_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+#beta_start is the OLS estimate of beta
+train_data$micro_prediction <- (X_micro0[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+train_data$cbt_model_prediction <- (X_micro0[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+train_data$hybrid_prediction_noelite <- (X_micro0[,-c(1,2)]%*%mu_beta_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+
+poverty_rate <- .3
+
+train_data <- train_data %>% group_by(village, province, district, subdistrict) %>%
+  mutate(
+         hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
+         pmt_rank =rank(micro_prediction)/length(village),
+         cbt_model_rank = rank(cbt_model_prediction)/length(village),
+        
+         cbt_rank = rank/length(village)) %>%
+  mutate(
+         hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
+         pmt_inclusion = pmt_rank < poverty_rate,
+
+         cbt_model_inclusion = cbt_model_rank<poverty_rate,
+         cbt_inclusion = cbt_rank < poverty_rate) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+
+library(caret)
+
+rbind(
+      confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(test_data$cbt_model_inclusion,      test_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(test_data$pmt_inclusion,            test_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c("Hybrid No elite", "CBT Model-based", "PMT"),
+         TD = Sensitivity - (1-Specificity)) %>%
+  dplyr::select(c(Method,Sensitivity, Specificity, TD))
 
 
 
