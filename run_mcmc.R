@@ -37,7 +37,9 @@ set.seed(572319852)
 PMT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE, length(unique(full_data$community_id))*.5))
 #Note: the hh index for program is everything else,
 set.seed(23529)
-CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[! full_data$community_id %in% PMT_idx]), replace=FALSE, length(unique(full_data$community_id[! full_data$community_id %in% PMT_idx])*.5)))
+CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[! full_data$community_id %in% PMT_idx]), 
+                                                    replace=FALSE, 
+                                                    length(unique(full_data$community_id[! full_data$community_id %in% PMT_idx]))*.3))
 
 #groups of x variables
 m1 <- c("connected","hhsize","hhage","hhmale","hhmarried",
@@ -116,12 +118,12 @@ mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-data.frame(parameter = colnames(X_micro0)[-1],
+data.frame(parameter = colnames(X_CBT)[-1],
            mu_beta = mu_beta_mean,
            beta_rank = beta_rank_mean[-1],
            beta_micro=beta_micro_mean[-1])%>%
   melt(id.var = "parameter") %>%
-  mutate(parameter = factor(parameter, levels = colnames(X_micro0)[-1][order(mu_beta_mean)]))%>%
+  mutate(parameter = factor(parameter, levels = colnames(X_CBT)[-1][order(mu_beta_mean)]))%>%
   ggplot() +
   geom_hline(aes(yintercept = 0))+
   geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
@@ -133,15 +135,15 @@ data.frame(parameter = colnames(X_micro0)[-1],
 ggsave("coefficients.pdf", width = 6, height = 10)
 
 #get back on log(consumption scale) --->sigma*predicted + mu
-test_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-test_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+Program_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+Program_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
-test_data$PMT_prediction <- (X_micro1[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-test_data$cbt_model_prediction <- (X_micro1[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+Program_data$PMT_prediction <- (X_program[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+Program_data$cbt_model_prediction <- (X_program[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 poverty_rate <- .3
 
-test_data <- test_data %>% group_by(village, province, district, subdistrict) %>%
+Program_data <- Program_data %>%group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          pmt_rank =rank(PMT_prediction)/length(village),
@@ -154,16 +156,15 @@ test_data <- test_data %>% group_by(village, province, district, subdistrict) %>
          consumption_inclusion = consumption_rank<poverty_rate,
          cbt_model_inclusion = cbt_model_rank<poverty_rate,
          cbt_inclusion = cbt_rank < poverty_rate) %>%ungroup() %>%
-  mutate(Z_mean = apply(temp$Z, 2, mean))%>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 
 library(caret)
 
-rbind(confusionMatrix(test_data$hybrid_inclusion,   test_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(test_data$cbt_model_inclusion,      test_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(test_data$pmt_inclusion,            test_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
   mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT"),
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,Sensitivity, Specificity, TD))
@@ -189,47 +190,4 @@ p1 <- ggplot(test_data) +
   geom_point(aes(x = hybrid_prediction, y = consumption)) +
   geom_abline(aes(intercept = 0, slope = 1))+
   ggtitle("Hybrid") +scale_y_continuous(limits = c(-2,2))
-
-
-
-###############
-
-#get back on log(consumption scale) --->sigma*predicted + mu
-#train_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-#train_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-#beta_start is the OLS estimate of beta
-train_data$micro_prediction <- (X_micro0[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-train_data$cbt_model_prediction <- (X_micro0[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-train_data$hybrid_prediction_noelite <- (X_micro0[,-c(1,2)]%*%mu_beta_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-
-poverty_rate <- .3
-
-train_data <- train_data %>% group_by(village, province, district, subdistrict) %>%
-  mutate(
-         hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
-         pmt_rank =rank(micro_prediction)/length(village),
-         cbt_model_rank = rank(cbt_model_prediction)/length(village),
-        
-         cbt_rank = rank/length(village)) %>%
-  mutate(
-         hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
-         pmt_inclusion = pmt_rank < poverty_rate,
-
-         cbt_model_inclusion = cbt_model_rank<poverty_rate,
-         cbt_inclusion = cbt_rank < poverty_rate) %>%ungroup() %>%
-  mutate_at(vars(matches("inclusion")), as.factor)
-
-
-library(caret)
-
-rbind(
-      confusionMatrix(test_data$hybrid_noelite_inclusion, test_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(test_data$cbt_model_inclusion,      test_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(test_data$pmt_inclusion,            test_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c("Hybrid No elite", "CBT Model-based", "PMT"),
-         TD = Sensitivity - (1-Specificity)) %>%
-  dplyr::select(c(Method,Sensitivity, Specificity, TD))
-
-
-
 
