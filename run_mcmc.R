@@ -25,41 +25,52 @@ doESS <- function(x){
 source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
 
+
+poverty_rate <- .3
+iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =1000   ## Gibbs sampler burn-in iterations 
+print_opt = 100  ## print a message every print.opt steps
+
+
 full_data <- read.csv("Empirical Study/alatas.csv") %>%
-  select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)
-#add a community id
-#rank is a decimal; needs to be an integer rank
-full_data <- full_data%>% 
+  select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
-         mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
-  subset(community == 1 | hybrid == 1)
-#50% of the full data is surveyed for PMT. get both X and y=consumption
-set.seed(572319852)
-PMT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id), 
-                                                   replace=FALSE, 
-                                                   length(unique(full_data$community_id))*.5))
-#Note: the hh index for program is everything else,
-set.seed(23529)
-CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
-                                                    replace=FALSE, 
-                                                    length(unique(full_data$community_id[-PMT_idx]))*.1))
-
-#groups of x variables
-m1 <- c("connected","hhsize","hhage","hhmale","hhmarried",
+  mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup
+#x variables to include in model
+m3 <- c("connected","hhsize","hhage","hhmale","hhmarried",
         "hheduc2","hheduc3","hheduc4",
-        "age04","higheduc2","higheduc3","higheduc4","depratio")
-m2.1 <- c("pcfloor", "tfloor","twall", "toilet","water","lighting", "troof",
-          "fcook","house", "computer","radio","tv", "dvd","satellite", #LRF REMOVED AC FOR NOW
-          "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
-          "jewelry","chicken","cow")
-m2 <- c(m1, m2.1)
-m3.1 <- c("credit","hhsector1", "hhsector2","hhsector3",
-          "formal","informal", "eschild","jschild","sschild")
-m3 <- c(m2,m3.1) #full collection
+        "age04","higheduc2","higheduc3","higheduc4","depratio","pcfloor",
+        "tfloor","twall", "toilet","water","lighting", "troof",
+        "fcook","house", "computer","radio","tv", "dvd","satellite", #LRF REMOVED AC FOR NOW
+        "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
+        "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
+        "formal","informal", "eschild","jschild","sschild")
+
+#50% of the full data is surveyed for PMT. get both X and y=consumption
+#set.seed(572319852)
+PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE,  length(unique(full_data$community_id))*.5))
+#Note: the hh index for program is everything else, e.g. , full_data[-PMT_idx,]
+#a subset of the program data is CBT
+
+
+
+Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
+                                                    replace=FALSE, 
+                                                    length(unique(full_data$community_id[-PMT_idx]))*0.5))
+
+results <- list()
+i <- 0
+for(CBT_prop in c(.1, .2, .3, .4, .5)){
+  for(rep in c(1:5)){
+    i = i + 1
+CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
+                                                   replace=FALSE, 
+                                                   length(unique(full_data$community_id[-c(PMT_idx, Program_idx)]))*CBT_prop))
+
 CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
 PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
-Program_data <- full_data[-PMT_idx,]
+Program_data <- full_data[-c(CBT_idx,PMT_idx),]
 
 
 X_PMT <- cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
@@ -95,13 +106,8 @@ for ( idx in unique(CBT_data$community_id)){ #loop over columns
   Tau[CBT_data$community_id == idx,j] <- CBT_data$rank[CBT_data$community_id == idx]
 }
 
-
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1000   ## Gibbs sampler burn-in iterations 
-print_opt = 100  ## print a message every print.opt steps
-
-
 #Run MCMC for Bayesian Consensus Targeting
+t1 <- Sys.time()
 temp <- BCTarget(Tau=Tau, 
                  X_PMT = X_PMT, 
                  X_CBT = X_CBT,
@@ -114,7 +120,7 @@ temp <- BCTarget(Tau=Tau,
                  iter_burn = iter_burn,
                   print_opt = print_opt,
                  initial.list = initial_list)
-
+t2 <- Sys.time()
 
 lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
 
@@ -122,32 +128,18 @@ mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-data.frame(parameter = colnames(X_CBT)[-1],
-           mu_beta = mu_beta_mean,
-           beta_rank = beta_rank_mean[-1],
-           beta_micro=beta_micro_mean[-1])%>%
-  melt(id.var = "parameter") %>%
-  mutate(parameter = factor(parameter, levels = colnames(X_CBT)[-1][order(mu_beta_mean)]))%>%
-  ggplot() +
-  geom_hline(aes(yintercept = 0))+
-  geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
-  geom_point(aes(x = parameter, y = value, colour = variable, group = variable)) +
-  coord_flip() +
-  labs(x = "Coefficient ", y = "Estimate") +
-  scale_colour_brewer("Parameter", palette = "Set1") +
-  theme_bw()
-ggsave("coefficients.pdf", width = 6, height = 10)
+
 
 #get back on log(consumption scale) --->sigma*predicted + mu
 Program_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 Program_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
 #beta_start is the OLS estimate of beta
 Program_data$PMT_prediction <- (X_program[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-Program_data$cbt_model_prediction <- (X_program[,-c(1,2)]%*%beta_rank_mean[-c(1,2)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%beta_rank_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
-poverty_rate <- .3
 
-Program_data <- Program_data %>%group_by(village, province, district, subdistrict) %>%
+
+Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          pmt_rank =rank(PMT_prediction)/length(village),
@@ -164,14 +156,34 @@ Program_data <- Program_data %>%group_by(village, province, district, subdistric
 
 
 
-rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+results[[i]] <- rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
   mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT"),
+         CBT_prop = CBT_prop,
          TD = Sensitivity - (1-Specificity)) %>%
-  dplyr::select(c(Method,Sensitivity, Specificity, TD))
+  dplyr::select(c(Method,Method,Sensitivity, Specificity, TD))
 
+  }
+}
+
+
+data.frame(parameter = colnames(X_CBT)[-1],
+           mu_beta = mu_beta_mean,
+           beta_rank = beta_rank_mean[-1],
+           beta_micro=beta_micro_mean[-1])%>%
+  melt(id.var = "parameter") %>%
+  mutate(parameter = factor(parameter, levels = colnames(X_CBT)[-1][order(mu_beta_mean)]))%>%
+  ggplot() +
+  geom_hline(aes(yintercept = 0))+
+  geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
+  geom_point(aes(x = parameter, y = value, colour = variable, group = variable)) +
+  coord_flip() +
+  labs(x = "Coefficient ", y = "Estimate") +
+  scale_colour_brewer("Parameter", palette = "Set1") +
+  theme_bw()
+#ggsave("coefficients.pdf", width = 6, height = 10)
 
 p1 <-ggplot(data = test_data) + 
   geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+
