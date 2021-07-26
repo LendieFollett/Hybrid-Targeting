@@ -73,12 +73,12 @@ GibbsUpLatentGivenRankInd <- function(pair.comp, Z_sub,up.order, mu_sub, weight)
 ### weight.vec: (A + M + R)x1 vector of weights omega_rank, omega_micro###
 ### omega_rank[r] = weight of r^th ranker###
 ### sigma2.alpha, sigma2.beta: prior parameters for mu = (alpha, beta) ###
-### para.expan: whether use parameter expansion  LRF: FALSE???###
 GibbsUpMuGivenLatentGroup <- function(X ,
                                       Y ,
                                       omega ,
                                       mu_beta,
-                                      rank = FALSE){
+                                      rank = FALSE,
+                                      con){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -107,10 +107,10 @@ P <- ncol(X) - 1
   X <-kronecker(rep(1, c), X) #(A*K)xP
   } 
 
-Sigma_inv_y<-omega*diag(n) #omega = 1/sigma^2
+Sigma_inv_y<-omega*diag(n) 
 
 if(!rank){  
-  Sigma_inv_beta <- diag(c(2.5^2, omega*rep(1, P))) #prior covariance matrix
+  Sigma_inv_beta <- diag(c(1/2.5^2, (1/con)*omega*rep(1, P))) #prior covariance matrix #omega = 1/sigma^2 prior variance on beta = N(mu_beta, sigma^2/10)
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
 
@@ -123,7 +123,7 @@ if(!rank){
   alpha_beta <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
   
 }else{
-  Sigma_inv_beta <- diag(omega*rep(1, P)) #prior covariance matrix
+  Sigma_inv_beta <- diag((1/con)*omega*rep(1, P)) #prior covariance matrix
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
   
@@ -145,12 +145,13 @@ if(!rank){
 GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
                                   beta_micro = NULL,
                                   omega_rank = NULL,
-                                  omega_micro = NULL){
+                                  omega_micro = NULL,
+                                  con){
   
   P <- max(length(beta_rank), length(beta_micro)) - 1
 
-  Omega_rank <-  diag(1/omega_rank*rep(1, P))#diag(P + 1)*1/omega_rank
-  Omega_micro <- diag(1/omega_micro*rep(1, P))#diag(P + 1)*1/omega_micro
+  Omega_rank <-  diag(1/omega_rank*rep(1, P))*con#diag(P + 1)*1/omega_rank
+  Omega_micro <- diag(1/omega_micro*rep(1, P))*con#diag(P + 1)*1/omega_micro
   
   post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P)/1^2) #prior sd on mu_beta = 1
   
@@ -165,7 +166,7 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
 
 ### Gibbs update for information quality weights omega_micro, omega_rank---------
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
-GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value))){
+GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value))){
   Col <- ncol(y)
   if(is.null(Col)){Col <- 1}
   n.prior.value <- length(weight_prior_value)
@@ -178,7 +179,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0
       Row <- length(idx)
     log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
     }
-    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(1/weight_prior_value[k]), log = TRUE ))
+    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
   }
 #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
   log.post.prob = log.post.prob - max(log.post.prob)
@@ -188,6 +189,37 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta, weight_prior_value = c(0
   
   return(weight_samp)
 }
+
+
+GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con_old){
+  
+  y <- c(beta_rank[-1], beta_micro[-1])
+  mu <- rep(mu_beta, 2)
+  sigma2 <- c(1/rep(omega_rank, length(beta_rank[-1])),
+              1/rep(omega_micro, length(beta_rank[-1])))
+  
+  con_prop <- con_old + rnorm(1, 0, .5)
+  while(con_prop < 0){
+    con_prop <- con_old + rnorm(1, 0, .5)
+  }
+  
+ lik_old <-  dnorm(y, mu, sqrt(con_old*sigma2), log=TRUE) %>%sum
+ lik_prop <- dnorm(y, mu, sqrt(con_prop*sigma2), log=TRUE) %>%sum 
+  
+  prior_old <- dnorm(con_old, 0, .25, log=TRUE)
+  prior_prop<- dnorm(con_prop, 0, .25, log = TRUE)
+  
+  alpha <- lik_prop + prior_prop - lik_old - prior_old
+  
+  if(alpha > log(runif(1,0,1))){
+    con <- con_prop
+  }else {
+    con <- con_old
+  }
+  
+  return(con)
+}
+
 
 #' Bayesian Consensus Targeting WITHOUT random effects for testing subjects (no sigma^2_rank)
 #'
@@ -263,7 +295,8 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     mu = array(NA, dim = c(iter_keep,nrow(X_program))),
     mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), #for debiasing
     omega_micro = array(NA, dim = c(iter_keep, 1) ),
-    omega_rank = array(NA, dim = c(iter_keep, 1) )
+    omega_rank = array(NA, dim = c(iter_keep, 1) ),
+    con = array(NA, dim = c(iter_keep, 1) )
   )
   
   ## set initial values for parameters, where given
@@ -281,6 +314,7 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
   if(is.null(initial.list$beta_micro)|is.null(Y_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
+  if(is.null(initial.list$con)){con <- .10}else{ con <- initial.list$con  } 
   mu_beta <- cbind(beta_rank[-1], beta_micro[-1]) %>%apply(1, mean)
   
   ## initial values for weights
@@ -302,12 +336,14 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                           X = X_CBT,
                                      omega = omega_rank,
                                      mu_beta = mu_beta,
+                                     con = con,
                                      rank=TRUE)
     
     # ----> update quality weights
     omega_rank <- GibbsUpQualityWeights(y=Z , 
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
+                                        con = con,
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
 
 
@@ -315,19 +351,23 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_PMT,
                                            omega = omega_micro,
-                                           mu_beta = mu_beta)
+                                           mu_beta = mu_beta, 
+                                           con = con)
     
     # ----> update quality weights    
     omega_micro <-GibbsUpQualityWeights(y=Y_micro, 
                                         mu=X_PMT %*% beta_micro,
                                         beta_micro, mu_beta, 
+                                        con = con,
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
     
 
 
     mu_beta <- GibbsUpGlobalMuGivenMu(beta_rank,  beta_micro,
-                           omega_rank, omega_micro )
+                           omega_rank, omega_micro ,con)
     
+    
+    con <- GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_program %*% c(omega_micro[1],mu_beta ))
@@ -348,6 +388,7 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
       draw$mu_noelite[j,] = mu_noelite
       draw$omega_micro[j] = omega_micro
       draw$omega_rank[j] = omega_rank
+      draw$con[j] = con
     }
     # print iteration number
     if(iter %% print_opt == 0){

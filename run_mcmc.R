@@ -27,7 +27,7 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter_keep = 2500   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn =1000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
@@ -59,9 +59,10 @@ Program_idx <- which(full_data$community_id %in% sample(unique(full_data$communi
                                                     replace=FALSE, 
                                                     length(unique(full_data$community_id[-PMT_idx]))*0.5))
 
+CBT_prop_list <- c(.05,.2, .3)
 results <- list()
 i <- 0
-for(CBT_prop in c(.1, .2, .3, .4, .5)){
+for(CBT_prop in CBT_prop_list){
   for(rep in c(1:5)){
     i = i + 1
 CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
@@ -136,6 +137,8 @@ Program_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(
 #beta_start is the OLS estimate of beta
 Program_data$PMT_prediction <- (X_program[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%beta_rank_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+Program_data$ss_weighted_prediction <- (X_program[,-c(1)]%*%(beta_rank_mean[-c(1)]*nrow(CBT_data)/(nrow(CBT_data) + nrow(PMT_data)) +
+                                                             beta_micro_mean[-c(1)]*nrow(PMT_data)/(nrow(CBT_data) + nrow(PMT_data))))#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
 
 
 
@@ -145,12 +148,14 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          pmt_rank =rank(PMT_prediction)/length(village),
          cbt_model_rank = rank(cbt_model_prediction)/length(village),
          consumption_rank = rank(consumption)/length(village),
-         cbt_rank = rank/length(village)) %>%
+         cbt_rank = rank/length(village),
+         ss_weighted_rank = rank(ss_weighted_prediction)/length(village)) %>%
   mutate(hybrid_inclusion = hybrid_rank < poverty_rate,
          hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
          pmt_inclusion = pmt_rank < poverty_rate,
          consumption_inclusion = consumption_rank<poverty_rate,
          cbt_model_inclusion = cbt_model_rank<poverty_rate,
+         ss_weighted_inclusion = ss_weighted_rank<poverty_rate,
          cbt_inclusion = cbt_rank < poverty_rate) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
@@ -159,14 +164,23 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
 results[[i]] <- rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT"),
+confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$ss_weighted_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT", "SS weighted"),
          CBT_prop = CBT_prop,
          TD = Sensitivity - (1-Specificity)) %>%
-  dplyr::select(c(Method,Method,Sensitivity, Specificity, TD))
+  dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
 
   }
 }
+
+all_results <- do.call(rbind, results)
+
+all_results %>%mutate(CBT_prop = rep(c(.05,.1,.2, .3), each = 5*5)) %>%melt(id.var = c("Method", "CBT_prop")) %>%
+  ggplot() +geom_boxplot(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
+  geom_point(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
+  facet_grid(variable~CBT_prop, scales = "free") +theme(axis.text.x = element_text(angle = 45))
+ggsave("results.pdf")
 
 
 data.frame(parameter = colnames(X_CBT)[-1],
