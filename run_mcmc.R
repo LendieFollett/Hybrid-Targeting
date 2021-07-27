@@ -66,7 +66,7 @@ CBT_prop_list <- c(.05,.1, .25)
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
-  for(rep in c(1:3)){
+  for(rep in c(1:5)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
@@ -215,7 +215,7 @@ confusionMatrix(Program_data$CBT_noshrink_inclusion,            Program_data$cbt
    return(r)
   }, mc.cores = length(CBT_prop_list))
 
-all_results_1 <- unlist(list(results[[2]],results[[3]]), recursive = FALSE)
+all_results_1 <- unlist(results, recursive = FALSE)
 all_results <- do.call("rbind", all_results_1)
 
 
