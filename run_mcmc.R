@@ -41,14 +41,19 @@ full_data <- read.csv("Empirical Study/alatas.csv") %>%
   mutate(prop_rank = rank) %>%
   mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup
 #x variables to include in model
-m3 <- c("connected","hhsize","hhage","hhmale","hhmarried",
-        "hheduc2","hheduc3","hheduc4",
-        "age04","higheduc2","higheduc3","higheduc4","depratio","pcfloor",
-        "tfloor","twall", "toilet","water","lighting", "troof",
-        "fcook","house", "computer","radio","tv", "dvd","satellite", #LRF REMOVED AC FOR NOW
-        "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
-        "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
-        "formal","informal", "eschild","jschild","sschild")
+m_num <- c("hhsize","hhage",
+        "age04","depratio","pcfloor",
+        "eschild","jschild","sschild")
+
+m_bin <- c("connected","hhmale","hhmarried",
+           "hheduc2","hheduc3","hheduc4",
+           "higheduc2","higheduc3","higheduc4",
+           "tfloor","twall", "toilet","water","lighting", "troof",
+           "fcook","house", "computer","radio","tv", "dvd","satellite", #LRF REMOVED AC FOR NOW
+           "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
+           "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
+           "formal")#,"informal" lrf removed informal for now
+m3 <- c(m_num, m_bin)
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption
 #set.seed(572319852)
@@ -62,30 +67,50 @@ PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(uni
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .25)  
+CBT_prop_list <- c(.05,.1, .2)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
-  for(rep in c(1:5)){
+   HybridESS <- list()
+   CBESS <- list()
+  for(rep in c(1:3)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
 Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
                                                     replace=FALSE, 
                                                     length(unique(full_data$community_id[-PMT_idx]))*0.5))
-CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
+CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
                                                    replace=FALSE, 
                                                    length(unique(full_data$community_id[-c(PMT_idx, Program_idx)]))*CBT_prop))
 
+
 CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
 PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+
+while(any(apply(CBT_data[,m3], 2, var) == 0)){
+  Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
+                                                          replace=FALSE, 
+                                                          length(unique(full_data$community_id[-PMT_idx]))*0.5))
+  CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
+                                                     replace=FALSE, 
+                                                     length(unique(full_data$community_id[-c(PMT_idx, Program_idx)]))*CBT_prop))
+  
+  
+  CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
+  PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+}
 Program_data <- full_data[Program_idx,]
 
 
-X_PMT <- cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
-X_CBT <- cbind(1, CBT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)}))
-X_program <- cbind(1, Program_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)}))
-
+X_PMT <- cbind(1,PMT_data[,m3] %>%
+  mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}))%>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
+X_CBT <- cbind(1,CBT_data[,m3] %>%
+                 mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}))%>%as.matrix()
+X_program <- cbind(1,Program_data[,m3] %>%
+                     mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}))%>%as.matrix()
+X_program_noelite <- X_program
+X_program_noelite[,"connected"] <- 0
 Y_micro <- as.matrix(log(PMT_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
@@ -130,6 +155,7 @@ Hybridtemp <- HybridTarget(Tau=Tau,
                   print_opt = print_opt,
                  initial.list = initial_list)
 
+#Run MCMC for Bayesian Community Based Targeting
 CBtemp <- CBTarget(Tau=Tau, 
                  X_CBT = X_CBT,
                  X_program = X_program,
@@ -140,8 +166,12 @@ CBtemp <- CBTarget(Tau=Tau,
                  print_opt = print_opt,
                  initial.list = initial_list)
 
+#HybridESS[[i]] <- do.call(rbind, lapply(Hybridtemp[c( "beta_rank", "beta_micro")], doESS) )[,-1]
 
-#lapply(Hybridtemp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
+#CBESS[[i]] <- apply(CBtemp$beta_rank,2, doESS)[-1] 
+
+
+
 
 Hybrid_mu_beta_mean <- apply(Hybridtemp$mu_beta, 2, mean)
 Hybrid_beta_rank_mean <- apply(Hybridtemp$beta_rank, 2, mean)
@@ -165,15 +195,20 @@ data.frame(parameter = m3,
   theme_bw()
 ggsave(paste0("coefficients_",CBT_prop, "_", i, ".pdf"), width = 6, height = 10)
 
+
+#Fit logistic regression for Community Based Targeting
+#lr <- glm(prop_rank<=0.3 ~ ., data = CBT_data[,c("prop_rank", m3)])
+
+#Fit linear model for community based targeting
 m <- lm(prop_rank ~ ., data = CBT_data[,c("prop_rank", m3)])
 
 #get back on log(consumption scale) --->sigma*predicted + mu
 #HYBRID-BASED PREDICTION
-Program_data$hybrid_prediction <-        (X_program[,-c(1)]%*%Hybrid_beta_rank_mean[-c(1)]) #apply(Hybridtemp$mu, 2, mean)
-Program_data$hybrid_prediction_noelite <-(cbind(0,X_program[,-c(1,2)])%*%Hybrid_beta_rank_mean[-c(1)]) #apply(Hybridtemp$mu_noelite, 2, mean)
+Program_data$hybrid_prediction <-        (X_program%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu, 2, mean)
+Program_data$hybrid_prediction_noelite <-(X_program_noelite%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu_noelite, 2, mean)
 
 #CBT SCORE-BASED PREDICTION
-Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%CB_beta_rank_mean[-c(1)])
+Program_data$cbt_model_prediction <- (X_program_noelite%*%CB_beta_rank_mean)
 
 #BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
 Program_data$CBT_noshrink_prediction<- predict(m, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
@@ -210,13 +245,16 @@ confusionMatrix(Program_data$CBT_noshrink_inclusion,            Program_data$cbt
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
 
+print(r[[i]])
 
-}
+  }
+   write.csv(do.call(rbind,HybridESS), paste0("HybridESS_", CBT_prop, ".csv"))
+   write.csv(do.call(rbind,CBESS), paste0("CBESS_", CBT_prop, ".csv"))
    return(r)
   }, mc.cores = length(CBT_prop_list))
 
 all_results_1 <- unlist(results, recursive = FALSE)
-all_results <- do.call("rbind", all_results_1)
+all_results <- do.call("rbind", all_results_1[1:(5*length(CBT_prop_list))])
 
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%

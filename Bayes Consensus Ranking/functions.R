@@ -212,8 +212,8 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
  lik_old <-  dnorm(y, mu, sqrt(con_old*sigma2), log=TRUE) %>%sum
  lik_prop <- dnorm(y, mu, sqrt(con_prop*sigma2), log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 0, .25, log=TRUE)
-  prior_prop<- dnorm(con_prop, 0, .25, log = TRUE)
+  prior_old <- dnorm(con_old, 0, 2.5, log=TRUE)#prior constant ~ N(0,1)
+  prior_prop<- dnorm(con_prop, 0, 2.5, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
   
@@ -320,7 +320,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
   if(is.null(initial.list$beta_micro)|is.null(Y_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
-  if(is.null(initial.list$con)){con <- .01}else{ con <- initial.list$con  } 
+  if(is.null(initial.list$con)){con <- .5}else{ con <- initial.list$con  } 
   mu_beta <- cbind(beta_rank[-1], beta_micro[-1]) %>%apply(1, mean)
   
   ## initial values for weights
@@ -476,7 +476,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
-  if(is.null(initial.list$con)){con <- .01}else{ con <- initial.list$con  } 
+  if(is.null(initial.list$con)){con <- .5}else{ con <- initial.list$con  } 
   
   ## initial values for weights
   omega_rank = 1
