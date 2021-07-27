@@ -116,8 +116,8 @@ for ( idx in unique(CBT_data$community_id)){ #loop over columns
 }
 
 #Run MCMC for Bayesian Consensus Targeting
-t1 <- Sys.time()
-temp <- BCTarget(Tau=Tau, 
+
+Hybridtemp <- HybridTarget(Tau=Tau, 
                  X_PMT = X_PMT, 
                  X_CBT = X_CBT,
                  X_program = X_program,
@@ -129,21 +129,32 @@ temp <- BCTarget(Tau=Tau,
                  iter_burn = iter_burn,
                   print_opt = print_opt,
                  initial.list = initial_list)
-t2 <- Sys.time()
 
-lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
+CBtemp <- CBTarget(Tau=Tau, 
+                 X_CBT = X_CBT,
+                 X_program = X_program,
+                 X_elite = "connected",
+                 prior_prob_rank = c(.025, .025,.95),
+                 iter_keep =iter_keep,
+                 iter_burn = iter_burn,
+                 print_opt = print_opt,
+                 initial.list = initial_list)
 
-mu_beta_mean <- apply(temp$mu_beta, 2, mean)
-beta_rank_mean <- apply(temp$beta_rank, 2, mean)
-beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
+#lapply(Hybridtemp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
+
+Hybrid_mu_beta_mean <- apply(Hybridtemp$mu_beta, 2, mean)
+Hybrid_beta_rank_mean <- apply(Hybridtemp$beta_rank, 2, mean)
+Hybrid_beta_micro_mean <- apply(Hybridtemp$beta_micro, 2, mean)
+
+CB_beta_rank_mean <- apply(CBtemp$beta_rank, 2, mean)
 
 data.frame(parameter = m3,
-           mu_beta = mu_beta_mean,
-           beta_rank = beta_rank_mean[-1],
-           beta_micro=beta_micro_mean[-1])%>%
+           mu_beta = Hybrid_mu_beta_mean,
+           beta_rank = Hybrid_beta_rank_mean[-1],
+           beta_micro=Hybrid_beta_micro_mean[-1])%>%
   melt(id.var = "parameter") %>%
-  mutate(parameter = factor(parameter, levels = colnames(X_CBT)[-1][order(mu_beta_mean)]))%>%
+  mutate(parameter = factor(parameter, levels = colnames(X_CBT)[-1][order(Hybrid_mu_beta_mean)]))%>%
   ggplot() +
   geom_hline(aes(yintercept = 0))+
   geom_line(aes(x = parameter, y = value, colour = variable, group = variable)) +
@@ -157,22 +168,28 @@ ggsave(paste0("coefficients_",CBT_prop, "_", i, ".pdf"), width = 6, height = 10)
 m <- lm(prop_rank ~ ., data = CBT_data[,c("prop_rank", m3)])
 
 #get back on log(consumption scale) --->sigma*predicted + mu
-Program_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-Program_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-#beta_start is the OLS estimate of beta
-Program_data$PMT_prediction <- (X_program[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%beta_rank_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-Program_data$CBT_noshrink_prediction<- predict(m, as.data.frame(X_program[,-1]))
+#HYBRID-BASED PREDICTION
+Program_data$hybrid_prediction <-        (X_program[,-c(1)]%*%Hybrid_beta_rank_mean[-c(1)]) #apply(Hybridtemp$mu, 2, mean)
+Program_data$hybrid_prediction_noelite <-(cbind(0,X_program[,-c(1,2)])%*%Hybrid_beta_rank_mean[-c(1)]) #apply(Hybridtemp$mu_noelite, 2, mean)
+
+#CBT SCORE-BASED PREDICTION
+Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%CB_beta_rank_mean[-c(1)])
+
+#BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
+Program_data$CBT_noshrink_prediction<- predict(m, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
+
+#OLS-BASED PMT PREDICTION
+Program_data$PMT_prediction <- (X_program[,-1]%*%beta_start[-1])#beta_start is the OLS estimate of beta
 
 Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
-  mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
+  mutate(#hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          pmt_rank =rank(PMT_prediction)/length(village),
          cbt_model_rank = rank(cbt_model_prediction)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village),
          CBT_noshrink_rank = rank(CBT_noshrink_prediction)/length(village)) %>%
-  mutate(hybrid_inclusion = hybrid_rank <= poverty_rate,
+  mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
          hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
          pmt_inclusion = pmt_rank <= poverty_rate,
          consumption_inclusion = consumption_rank<=poverty_rate,
@@ -183,12 +200,12 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
 
 
 
-r[[i]] <- rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+r[[i]] <- rbind(#confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$CBT_noshrink_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT", "CBT No-shrink"),
+  mutate(Method = c( "Hybrid Model","CBT Score Bayesian", "PMT OLS", "CBT OLS"),
          CBT_prop = CBT_prop,
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
@@ -198,7 +215,7 @@ confusionMatrix(Program_data$CBT_noshrink_inclusion,            Program_data$cbt
    return(r)
   }, mc.cores = length(CBT_prop_list))
 
-all_results_1 <- unlist(results, recursive = FALSE)
+all_results_1 <- unlist(list(results[[2]],results[[3]]), recursive = FALSE)
 all_results <- do.call("rbind", all_results_1)
 
 
