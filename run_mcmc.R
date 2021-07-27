@@ -12,6 +12,8 @@ library(reshape2)
 library(gridExtra)
 library(LaplacesDemon)
 library(caret)
+library(parallel)
+detectCores(logical=FALSE)
 
 doESS <- function(x){
   
@@ -36,6 +38,7 @@ full_data <- read.csv("Empirical Study/alatas.csv") %>%
   select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
+  mutate(prop_rank = rank) %>%
   mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup
 #x variables to include in model
 m3 <- c("connected","hhsize","hhage","hhmale","hhmarried",
@@ -56,10 +59,13 @@ PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(uni
 
 
 
-CBT_prop_list <- c(.05,.1, .25)
-results <- list()
-i <- 0
-for(CBT_prop in CBT_prop_list){
+
+
+#parallelized across CBT proportions via mcapply
+CBT_prop_list <- c(.05,.1, .25)  
+ results <-  mclapply(CBT_prop_list, function(CBT_prop){
+   i <- 0
+   r <- list()
   for(rep in c(1:3)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
@@ -132,63 +138,7 @@ beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
 
-
-#get back on log(consumption scale) --->sigma*predicted + mu
-Program_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-Program_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
-#beta_start is the OLS estimate of beta
-Program_data$PMT_prediction <- (X_program[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%beta_rank_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-Program_data$ss_weighted_prediction <- (X_program[,-c(1)]%*%(beta_rank_mean[-c(1)]*nrow(CBT_data)/(nrow(CBT_data) + nrow(PMT_data)) +
-                                                             beta_micro_mean[-c(1)]*nrow(PMT_data)/(nrow(CBT_data) + nrow(PMT_data))))#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
-
-
-
-Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
-  mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
-         hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
-         pmt_rank =rank(PMT_prediction)/length(village),
-         cbt_model_rank = rank(cbt_model_prediction)/length(village),
-         consumption_rank = rank(consumption)/length(village),
-         cbt_rank = rank/length(village),
-         ss_weighted_rank = rank(ss_weighted_prediction)/length(village)) %>%
-  mutate(hybrid_inclusion = hybrid_rank < poverty_rate,
-         hybrid_noelite_inclusion = hybrid_noelite_rank < poverty_rate,
-         pmt_inclusion = pmt_rank < poverty_rate,
-         consumption_inclusion = consumption_rank<poverty_rate,
-         cbt_model_inclusion = cbt_model_rank<poverty_rate,
-         ss_weighted_inclusion = ss_weighted_rank<poverty_rate,
-         cbt_inclusion = cbt_rank < poverty_rate) %>%ungroup() %>%
-  mutate_at(vars(matches("inclusion")), as.factor)
-
-
-
-results[[i]] <- rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$ss_weighted_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT", "SS weighted"),
-         CBT_prop = CBT_prop,
-         TD = Sensitivity - (1-Specificity)) %>%
-  dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
-
-  }
-}
-
-all_results <- do.call(rbind, results)
-
-all_results %>%mutate(CBT_prop = rep(CBT_prop_list, each = 3*5)) %>%melt(id.var = c("Method", "CBT_prop")) %>%
-  ggplot() +geom_boxplot(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
-  geom_point(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
-  facet_grid(variable~CBT_prop, scales = "free") +theme(axis.text.x = element_text(angle = 45))
-ggsave("results_with_con.pdf")
-
-qplot(1:2500,temp$beta_rank[,11]) + 
-  geom_point(aes(1:2500,temp$beta_micro[,11]), colour = "red")+
-  geom_line(aes(1:2500,temp$mu_beta[,10]), alpha = I(.4))
-
-data.frame(parameter = colnames(X_CBT)[-1],
+data.frame(parameter = m3,
            mu_beta = mu_beta_mean,
            beta_rank = beta_rank_mean[-1],
            beta_micro=beta_micro_mean[-1])%>%
@@ -202,7 +152,67 @@ data.frame(parameter = colnames(X_CBT)[-1],
   labs(x = "Coefficient ", y = "Estimate") +
   scale_colour_brewer("Parameter", palette = "Set1") +
   theme_bw()
-ggsave("coefficients.pdf", width = 6, height = 10)
+ggsave(paste0("coefficients_",CBT_prop, "_", i, ".pdf"), width = 6, height = 10)
+
+m <- lm(prop_rank ~ ., data = CBT_data[,c("prop_rank", m3)])
+
+#get back on log(consumption scale) --->sigma*predicted + mu
+Program_data$hybrid_prediction <-         apply(temp$mu, 2, mean)#apply(temp$mu*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+Program_data$hybrid_prediction_noelite <- apply(temp$mu_noelite, 2, mean)#apply(temp$mu_noelite*sd(log(train_data$consumption)) + mean(log(train_data$consumption)),2,mean)
+#beta_start is the OLS estimate of beta
+Program_data$PMT_prediction <- (X_program[,-1]%*%beta_micro_mean[-1])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+Program_data$cbt_model_prediction <- (X_program[,-c(1)]%*%beta_rank_mean[-c(1)])#*sd(log(train_data$consumption)) + mean(log(train_data$consumption))
+Program_data$CBT_noshrink_prediction<- predict(m, as.data.frame(X_program[,-1]))
+
+Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
+  mutate(hybrid_rank =rank(hybrid_prediction)/length(village),
+         hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
+         pmt_rank =rank(PMT_prediction)/length(village),
+         cbt_model_rank = rank(cbt_model_prediction)/length(village),
+         consumption_rank = rank(consumption)/length(village),
+         cbt_rank = rank/length(village),
+         CBT_noshrink_rank = rank(CBT_noshrink_prediction)/length(village)) %>%
+  mutate(hybrid_inclusion = hybrid_rank <= poverty_rate,
+         hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
+         pmt_inclusion = pmt_rank <= poverty_rate,
+         consumption_inclusion = consumption_rank<=poverty_rate,
+         cbt_model_inclusion = cbt_model_rank<=poverty_rate,
+         CBT_noshrink_inclusion = CBT_noshrink_rank<=poverty_rate,
+         cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+
+
+r[[i]] <- rbind(confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$CBT_noshrink_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c("Hybrid", "Hybrid Connection Corrected","CBT Model-based", "PMT", "CBT No-shrink"),
+         CBT_prop = CBT_prop,
+         TD = Sensitivity - (1-Specificity)) %>%
+  dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
+
+
+}
+   return(r)
+  }, mc.cores = length(CBT_prop_list))
+
+all_results_1 <- unlist(results, recursive = FALSE)
+all_results <- do.call("rbind", all_results_1)
+
+
+all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
+  ggplot() +geom_boxplot(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
+  geom_point(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
+  facet_grid(variable~CBT_prop, scales = "free") +theme(axis.text.x = element_text(angle = 45))
+ggsave("results_with_con.pdf")
+
+qplot(1:1000,temp$beta_rank[,21]) + 
+  geom_point(aes(1:1000,temp$beta_micro[,21]), colour = "red")+
+  geom_line(aes(1:1000,temp$mu_beta[,20]), alpha = I(.4))
+
+
 
 p1 <-ggplot(data = test_data) + 
   geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+

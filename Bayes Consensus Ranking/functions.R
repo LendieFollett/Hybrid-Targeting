@@ -330,6 +330,7 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                     mu = X_CBT %*% beta_rank, 
                                     omega_rank = omega_rank, 
                                     R = R )
+    Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
     
     # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
