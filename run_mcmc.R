@@ -27,7 +27,7 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 2500   ## Gibbs sampler kept iterations (post burn-in)
+iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn =1000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
@@ -55,23 +55,25 @@ PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(uni
 
 
 
-Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
-                                                    replace=FALSE, 
-                                                    length(unique(full_data$community_id[-PMT_idx]))*0.5))
 
-CBT_prop_list <- c(.05,.2, .3)
+CBT_prop_list <- c(.05,.1, .25)
 results <- list()
 i <- 0
 for(CBT_prop in CBT_prop_list){
-  for(rep in c(1:5)){
+  for(rep in c(1:3)){
+    print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
+    
+Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
+                                                    replace=FALSE, 
+                                                    length(unique(full_data$community_id[-PMT_idx]))*0.5))
 CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
                                                    replace=FALSE, 
                                                    length(unique(full_data$community_id[-c(PMT_idx, Program_idx)]))*CBT_prop))
 
 CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
 PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
-Program_data <- full_data[-c(CBT_idx,PMT_idx),]
+Program_data <- full_data[Program_idx,]
 
 
 X_PMT <- cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
@@ -115,8 +117,8 @@ temp <- BCTarget(Tau=Tau,
                  X_program = X_program,
                  X_elite = "connected",
                  Y_micro = Y_micro, #needs to be a matrix, not vector
-                 prior_prob_rank = c(.2,.2,.6),
-                 prior_prob_micro = c(.6,.2,.2),
+                 prior_prob_rank = c(.025, .025,.95),
+                 prior_prob_micro = c(.95,.025, .025),
                  iter_keep = iter_keep,
                  iter_burn = iter_burn,
                   print_opt = print_opt,
@@ -176,12 +178,15 @@ confusionMatrix(Program_data$ss_weighted_inclusion,            Program_data$cbt_
 
 all_results <- do.call(rbind, results)
 
-all_results %>%mutate(CBT_prop = rep(c(.05,.1,.2, .3), each = 5*5)) %>%melt(id.var = c("Method", "CBT_prop")) %>%
+all_results %>%mutate(CBT_prop = rep(CBT_prop_list, each = 3*5)) %>%melt(id.var = c("Method", "CBT_prop")) %>%
   ggplot() +geom_boxplot(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
   geom_point(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
   facet_grid(variable~CBT_prop, scales = "free") +theme(axis.text.x = element_text(angle = 45))
-ggsave("results.pdf")
+ggsave("results_with_con.pdf")
 
+qplot(1:2500,temp$beta_rank[,11]) + 
+  geom_point(aes(1:2500,temp$beta_micro[,11]), colour = "red")+
+  geom_line(aes(1:2500,temp$mu_beta[,10]), alpha = I(.4))
 
 data.frame(parameter = colnames(X_CBT)[-1],
            mu_beta = mu_beta_mean,
@@ -197,7 +202,7 @@ data.frame(parameter = colnames(X_CBT)[-1],
   labs(x = "Coefficient ", y = "Estimate") +
   scale_colour_brewer("Parameter", palette = "Set1") +
   theme_bw()
-#ggsave("coefficients.pdf", width = 6, height = 10)
+ggsave("coefficients.pdf", width = 6, height = 10)
 
 p1 <-ggplot(data = test_data) + 
   geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+

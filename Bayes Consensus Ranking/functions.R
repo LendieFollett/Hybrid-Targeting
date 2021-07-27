@@ -198,9 +198,9 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
   sigma2 <- c(1/rep(omega_rank, length(beta_rank[-1])),
               1/rep(omega_micro, length(beta_rank[-1])))
   
-  con_prop <- con_old + rnorm(1, 0, .5)
+  con_prop <- con_old + rnorm(1, 0, .05)
   while(con_prop < 0){
-    con_prop <- con_old + rnorm(1, 0, .5)
+    con_prop <- con_old + rnorm(1, 0, .05)
   }
   
  lik_old <-  dnorm(y, mu, sqrt(con_old*sigma2), log=TRUE) %>%sum
@@ -314,7 +314,7 @@ BCTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
   if(is.null(initial.list$beta_micro)|is.null(Y_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
-  if(is.null(initial.list$con)){con <- .10}else{ con <- initial.list$con  } 
+  if(is.null(initial.list$con)){con <- .01}else{ con <- initial.list$con  } 
   mu_beta <- cbind(beta_rank[-1], beta_micro[-1]) %>%apply(1, mean)
   
   ## initial values for weights
