@@ -191,10 +191,11 @@ ggsave(paste0("coefficients_",CBT_prop, "_", i, ".pdf"), width = 6, height = 10)
 
 
 #Fit logistic regression for Community Based Targeting
-#lr <- glm(prop_rank<=0.3 ~ ., data = CBT_data[,c("prop_rank", m3)])
+lr <- glm(prop_rank<=0.3 ~ ., data = CBT_data[,c("prop_rank", m3)], family =binomial(link = "logit"))
+#---> predict P(selected beneficiary | X)
 
 #Fit linear model for community based targeting
-m <- lm(prop_rank ~ ., data = CBT_data[,c("prop_rank", m3)])
+#m <- lm(prop_rank ~ ., data = CBT_data[,c("prop_rank", m3)])
 
 #get back on log(consumption scale) --->sigma*predicted + mu
 #HYBRID-BASED PREDICTION
@@ -205,7 +206,7 @@ Program_data$hybrid_prediction_noelite <-(X_program%*%Hybrid_beta_rank_mean) #ap
 Program_data$cbt_model_prediction <- (X_program%*%CB_beta_rank_mean)
 
 #BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
-Program_data$CBT_noshrink_prediction<- predict(m, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
+Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
 
 #OLS-BASED PMT PREDICTION
 Program_data$PMT_prediction <- (X_program[,-1]%*%beta_start[-1])#beta_start is the OLS estimate of beta
@@ -217,13 +218,13 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          cbt_model_rank = rank(cbt_model_prediction)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village),
-         CBT_noshrink_rank = rank(CBT_noshrink_prediction)/length(village)) %>%
+         CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) %>%
   mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
          hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
          pmt_inclusion = pmt_rank <= poverty_rate,
          consumption_inclusion = consumption_rank<=poverty_rate,
          cbt_model_inclusion = cbt_model_rank<=poverty_rate,
-         CBT_noshrink_inclusion = CBT_noshrink_rank<=poverty_rate,
+         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
          cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
@@ -233,8 +234,8 @@ r[[i]] <- rbind(#confusionMatrix(Program_data$hybrid_inclusion,   Program_data$c
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$CBT_noshrink_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Model","CBT Score Bayesian", "PMT OLS", "CBT OLS"),
+confusionMatrix(Program_data$CBT_LR_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS", "CBT Logit"),
          CBT_prop = CBT_prop,
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
