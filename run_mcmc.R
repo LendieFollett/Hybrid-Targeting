@@ -65,13 +65,13 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .2)  
+CBT_prop_list <- c(.05,.1, .2, .3)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
    HybridESS <- list()
    CBESS <- list()
-  for(rep in c(1:3)){
+  for(rep in c(1:5)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
