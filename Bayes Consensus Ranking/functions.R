@@ -212,8 +212,8 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
  lik_old <-  dnorm(y, mu, sqrt(con_old*sigma2), log=TRUE) %>%sum
  lik_prop <- dnorm(y, mu, sqrt(con_prop*sigma2), log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 0, 2.5, log=TRUE)#prior constant ~ N(0,1)
-  prior_prop<- dnorm(con_prop, 0, 2.5, log = TRUE)
+  prior_old <- dnorm(con_old, 1, 2.5, log=TRUE)#prior constant ~ N(0,1)
+  prior_prop<- dnorm(con_prop, 1, 2.5, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
   
@@ -336,7 +336,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                     mu = X_CBT %*% beta_rank, 
                                     omega_rank = omega_rank, 
                                     R = R )
-    Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
+    #Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
     
     # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
@@ -492,7 +492,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                     mu = X_CBT %*% beta_rank, 
                                     omega_rank = omega_rank, 
                                     R = R )
-    Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
+    #Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
     
     # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,

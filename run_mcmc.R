@@ -29,8 +29,8 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1000   ## Gibbs sampler burn-in iterations 
+iter_keep = 1500   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =1500   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -61,9 +61,7 @@ PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(uni
 #Note: the hh index for program is everything else, e.g. , full_data[-PMT_idx,]
 #a subset of the program data is CBT
 
-
-
-
+full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
@@ -100,15 +98,13 @@ while(any(apply(CBT_data[,m3], 2, var) == 0)){
   CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
   PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
 }
+
 Program_data <- full_data[Program_idx,]
 
 
-X_PMT <- cbind(1,PMT_data[,m3] %>%
-  mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}))%>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
-X_CBT <- cbind(1,CBT_data[,m3] %>%
-                 mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}))%>%as.matrix()
-X_program <- cbind(1,Program_data[,m3] %>%
-                     mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}))%>%as.matrix()
+X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
+X_CBT <-     cbind(1,CBT_data[,m3]) %>%as.matrix()
+X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
 X_program_noelite <- X_program
 X_program_noelite[,"connected"] <- 0
 Y_micro <- as.matrix(log(PMT_data$consumption))
@@ -171,8 +167,6 @@ CBtemp <- CBTarget(Tau=Tau,
 #CBESS[[i]] <- apply(CBtemp$beta_rank,2, doESS)[-1] 
 
 
-
-
 Hybrid_mu_beta_mean <- apply(Hybridtemp$mu_beta, 2, mean)
 Hybrid_beta_rank_mean <- apply(Hybridtemp$beta_rank, 2, mean)
 Hybrid_beta_micro_mean <- apply(Hybridtemp$beta_micro, 2, mean)
@@ -205,10 +199,10 @@ m <- lm(prop_rank ~ ., data = CBT_data[,c("prop_rank", m3)])
 #get back on log(consumption scale) --->sigma*predicted + mu
 #HYBRID-BASED PREDICTION
 Program_data$hybrid_prediction <-        (X_program%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu, 2, mean)
-Program_data$hybrid_prediction_noelite <-(X_program_noelite%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu_noelite, 2, mean)
+Program_data$hybrid_prediction_noelite <-(X_program%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu_noelite, 2, mean)
 
 #CBT SCORE-BASED PREDICTION
-Program_data$cbt_model_prediction <- (X_program_noelite%*%CB_beta_rank_mean)
+Program_data$cbt_model_prediction <- (X_program%*%CB_beta_rank_mean)
 
 #BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
 Program_data$CBT_noshrink_prediction<- predict(m, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
@@ -254,7 +248,7 @@ print(r[[i]])
   }, mc.cores = length(CBT_prop_list))
 
 all_results_1 <- unlist(results, recursive = FALSE)
-all_results <- do.call("rbind", all_results_1[1:(5*length(CBT_prop_list))])
+all_results <- do.call("rbind", all_results_1)
 
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
