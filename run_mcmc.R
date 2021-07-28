@@ -65,7 +65,7 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .2, .3)  
+CBT_prop_list <- c(.05,.1, .25,)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
