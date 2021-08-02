@@ -65,7 +65,7 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .25,)  
+CBT_prop_list <- c(.05,.1, .2, .3)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
@@ -251,6 +251,7 @@ print(r[[i]])
 all_results_1 <- unlist(results, recursive = FALSE)
 all_results <- do.call("rbind", all_results_1)
 
+write.csv(all_results, "all_results.csv")
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
   ggplot() +geom_boxplot(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
