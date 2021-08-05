@@ -110,7 +110,7 @@ P <- ncol(X) - 1
 Sigma_inv_y<-omega*diag(n) 
 
 if(!rank){  
-  Sigma_inv_beta <- diag(c(1/2.5^2, (1/con)*omega*rep(1, P))) #prior covariance matrix #omega = 1/sigma^2 prior variance on beta = N(mu_beta, sigma^2/10)
+  Sigma_inv_beta <- diag(c(1/2.5^2, (1/con^2)*rep(1, P))) #prior variance on beta is con^2 beta = N(mu_beta, con^2) (removed omega)
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
 
@@ -123,7 +123,7 @@ if(!rank){
   alpha_beta <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
   
 }else{
-  Sigma_inv_beta <- diag((1/con)*omega*rep(1, P)) #prior covariance matrix
+  Sigma_inv_beta <- diag((1/con^2)*rep(1, P)) #prior covariance matrix (removed omega)
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
   
@@ -150,8 +150,8 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
   
   P <- max(length(beta_rank), length(beta_micro)) - 1
 
-  Omega_rank <-  diag(1/omega_rank*rep(1, P))*con#diag(P + 1)*1/omega_rank
-  Omega_micro <- diag(1/omega_micro*rep(1, P))*con#diag(P + 1)*1/omega_micro
+  Omega_rank <-  diag(rep(1, P))*con^2#diag(P + 1)*1/omega_rank  (removed omega)
+  Omega_micro <- diag(rep(1, P))*con^2#diag(P + 1)*1/omega_micro  (removed omega)
   
   post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P)/1^2) #prior sd on mu_beta = 1
   
@@ -179,7 +179,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
       Row <- length(idx)
     log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
     }
-    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
+    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
   }
 #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
   log.post.prob = log.post.prob - max(log.post.prob)
@@ -196,24 +196,21 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
   if(!is.null(beta_micro)){
     y <- c(beta_rank[-1], beta_micro[-1])
     mu <- rep(mu_beta, 2)
-    sigma2 <- c(1/rep(omega_rank, length(beta_rank[-1])),
-                1/rep(omega_micro, length(beta_rank[-1])))
   }else{
     y <- c(beta_rank[-1])
     mu <- mu_beta
-    sigma2 <- c(1/rep(omega_rank, length(beta_rank[-1])))
   }
   
-  con_prop <- con_old + rnorm(1, 0, .05)
+  con_prop <- con_old + rnorm(1, 0, .05) #random walk on standard deviation scale
   while(con_prop < 0){
     con_prop <- con_old + rnorm(1, 0, .05)
   }
   
- lik_old <-  dnorm(y, mu, sqrt(con_old*sigma2), log=TRUE) %>%sum
- lik_prop <- dnorm(y, mu, sqrt(con_prop*sigma2), log=TRUE) %>%sum 
+ lik_old <-  dnorm(y, mu, con_old, log=TRUE) %>%sum
+ lik_prop <- dnorm(y, mu, con_prop, log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 1, 2.5, log=TRUE)#prior constant ~ N(0,1)
-  prior_prop<- dnorm(con_prop, 1, 2.5, log = TRUE)
+  prior_old <- dnorm(con_old, 0, 2.5, log=TRUE)#prior constant ~ N(0,2.5)
+  prior_prop<- dnorm(con_prop, 0, 2.5, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
   
