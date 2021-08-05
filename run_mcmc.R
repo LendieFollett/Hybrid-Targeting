@@ -35,7 +35,7 @@ print_opt = 100  ## print a message every print.opt steps
 
 
 full_data <- read.csv("Empirical Study/alatas.csv") %>%
-  select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
+  dplyr::select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
   mutate(prop_rank = rank) %>%
@@ -71,7 +71,7 @@ CBT_prop_list <- c(.05,.1, .2, .3)
    r <- list()
    HybridESS <- list()
    CBESS <- list()
-  for(rep in c(1:5)){
+  for(rep in c(1:3)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
