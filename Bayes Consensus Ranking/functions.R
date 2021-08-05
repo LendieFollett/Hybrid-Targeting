@@ -1,3 +1,4 @@
+library(DirichletReg)
 #--calculate pair.comp_{ij} = 1{Y_i < Y_j} --------------------------------
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
@@ -32,7 +33,7 @@ GibbsUpLatentGivenRankGroup <- function(pair.comp.ten, Z, mu, omega_rank , R = n
     #order from lowest ranked to highest (best well being to worst well being)
     up.order = sort( rowSums( pair.comp.ten[[r]], na.rm = TRUE ), decreasing = FALSE, index.return = TRUE )$ix
     #Z needs to be only individuals ranked by ranker r
-    Z[rcases,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[[r]], Z[rcases,r],up.order, mu[rcases], weight = omega_rank)
+    Z[rcases,r] = GibbsUpLatentGivenRankInd(pair.comp.ten[[r]], Z[rcases,r],up.order, mu[rcases], weight = omega_rank[r])
   }
   return(Z)
 }
@@ -91,6 +92,7 @@ P <- ncol(X) - 1
     
     n <- length(u)
     c <- ncol(Y)
+    Sigma_inv_y<-omega^2*diag(n) 
   } else{ #if it's rank
 
     if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
@@ -100,14 +102,14 @@ P <- ncol(X) - 1
       n <- length(u)
       c <- 1
     }
-    
+    Sigma_inv_y<-rep(omega^2, times = apply(Y, 2, function(x){sum(!is.na(x))}))*diag(n) 
   }
 
   if(!is.null(c)){
   X <-kronecker(rep(1, c), X) #(A*K)xP
   } 
 
-Sigma_inv_y<-omega*diag(n) 
+
 
 if(!rank){  
   Sigma_inv_beta <- diag(c(1/2.5^2, (1/con^2)*rep(1, P))) #prior variance on beta is con^2 beta = N(mu_beta, con^2) (removed omega)
@@ -166,7 +168,10 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
 
 ### Gibbs update for information quality weights omega_micro, omega_rank---------
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
-GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value))){
+#prior_prob will be current iteration's dirichlet weights in the case of updating omega_rank
+GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value)),rank=FALSE){
+  
+  if(!rank){ #if it's not omega_rank
   Col <- ncol(y)
   if(is.null(Col)){Col <- 1}
   n.prior.value <- length(weight_prior_value)
@@ -176,8 +181,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
   for(k in 1:n.prior.value){ #over potential values
     for( col in 1:Col){ #over information source within y
       idx <- which(!is.na(y[,col])) #in the case of omega_rank
-      Row <- length(idx)
-    log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
+      log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
     }
     log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
   }
@@ -188,6 +192,29 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
   weight_samp <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
   
   return(weight_samp)
+  }else{ #if it is omega_rank
+    Col <- ncol(y) #need to update an omega for every oclumn
+
+    n.prior.value <- length(weight_prior_value)
+    weight_samp <- rep(NA, Col)
+    
+  for( col in 1:Col){ #over information source within y
+    log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
+    idx <- which(!is.na(y[,col])) #in the case of omega_rank
+    for(k in 1:n.prior.value){ #over potential values
+        log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
+        log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
+    }
+    
+    log.post.prob = log.post.prob - max(log.post.prob)
+    post.prob = exp(log.post.prob)
+    
+    weight_samp[col] <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
+    
+    }
+    #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
+    return(weight_samp)
+  }
 }
 
 
@@ -209,7 +236,7 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
  lik_old <-  dnorm(y, mu, con_old, log=TRUE) %>%sum
  lik_prop <- dnorm(y, mu, con_prop, log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 0, 2.5, log=TRUE)#prior constant ~ N(0,2.5)
+  prior_old <- dnorm(con_old, 0, 2.5, log=TRUE)#prior constant ~ N^+(0,2.5)
   prior_prop<- dnorm(con_prop, 0, 2.5, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
@@ -221,6 +248,16 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
   }
   
   return(con)
+}
+
+GibbsUpLambda <- function(omega, prior_prob, prior_weights){
+  
+  sum1 <- sum(omega == prior_weights[1])
+  sum2 <- sum(omega == prior_weights[2])
+  sum3 <- sum(omega == prior_weights[3])
+  
+ return(rdirichlet(n=1,alpha = c(sum1 + prior_prob[1],sum2 + prior_prob[2],sum3 + prior_prob[3])))
+  
 }
 
 
@@ -298,7 +335,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     mu = array(NA, dim = c(iter_keep,nrow(X_program))),
     mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), #for debiasing
     omega_micro = array(NA, dim = c(iter_keep, 1) ),
-    omega_rank = array(NA, dim = c(iter_keep, 1) ),
+    omega_rank = array(NA, dim = c(iter_keep, R) ),
     con = array(NA, dim = c(iter_keep, 1) )
   )
   
@@ -322,7 +359,8 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   
   ## initial values for weights
   omega_micro = 1
-  omega_rank = 1
+  omega_rank = rep(1, R)
+  lambda <- prior_prob_rank
   
   ## Gibbs iteration
   for(iter in 1:(iter_burn + iter_keep)){
@@ -348,9 +386,10 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
                                         con = con,
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = lambda,
+                                        rank=TRUE)
 
-
+    lambda <- GibbsUpLambda(omega_rank, prior_prob = rep(1/3, 3), prior_weights=c(0.5, 1, 2 ))
     # ----> update beta_micro 
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_PMT,
@@ -391,7 +430,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
       draw$mu[j,] = mu
       draw$mu_noelite[j,] = mu_noelite
       draw$omega_micro[j] = omega_micro
-      draw$omega_rank[j] = omega_rank
+      draw$omega_rank[j,] = omega_rank
       draw$con[j] = con
     }
     # print iteration number
@@ -455,7 +494,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
     mu = array(NA, dim = c(iter_keep,nrow(X_program))),
     mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), #for debiasing
-    omega_rank = array(NA, dim = c(iter_keep, 1) ),
+    omega_rank = array(NA, dim = c(iter_keep, R) ),
     con = array(NA, dim = c(iter_keep, 1) )
   )
   
@@ -476,8 +515,8 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   if(is.null(initial.list$con)){con <- .5}else{ con <- initial.list$con  } 
   
   ## initial values for weights
-  omega_rank = 1
-  
+  omega_rank = rep(1, R)
+  lambda <- prior_prob_rank
   #prior mean on beta_rank
   mu_beta = rep(0, length(beta_rank)-1)
   ## Gibbs iteration
@@ -504,7 +543,8 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
                                         con = con,
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_rank)
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = lambda,rank=TRUE)
+    lambda <- GibbsUpLambda(omega_rank, prior_prob = rep(1/3, 3), prior_weights=c(0.5, 1, 2 ))
     
     # ----> update con    
     con <- GibbsUpConstant(beta_rank, NULL, mu_beta, omega_rank, NULL,con)
@@ -524,7 +564,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
       draw$beta_rank[j,] = beta_rank
       draw$mu[j,] = mu
       draw$mu_noelite[j,] = mu_noelite
-      draw$omega_rank[j] = omega_rank
+      draw$omega_rank[j,] = omega_rank
       draw$con[j] = con
     }
     # print iteration number

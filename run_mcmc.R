@@ -29,7 +29,7 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 1500   ## Gibbs sampler kept iterations (post burn-in)
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn =1500   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
@@ -65,13 +65,13 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .2, .3)  
+CBT_prop_list <- c(.05,.1, .2)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
    HybridESS <- list()
    CBESS <- list()
-  for(rep in c(1:3)){
+  for(rep in c(1:5)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
@@ -86,7 +86,7 @@ CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_i
 CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
 PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
 
-while(any(apply(CBT_data[,m3], 2, var) == 0)){
+while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
   Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
                                                           replace=FALSE, 
                                                           length(unique(full_data$community_id[-PMT_idx]))*0.5))
@@ -150,7 +150,12 @@ Hybridtemp <- HybridTarget(Tau=Tau,
                  iter_burn = iter_burn,
                   print_opt = print_opt,
                  initial.list = initial_list)
-
+#prior_prob_rank = c(.025, .025,.95);
+#prior_prob_micro = c(.95,.025, .025);
+#iter_keep = iter_keep;
+#iter_burn = iter_burn;
+#print_opt = print_opt;
+#initial.list = initial_list
 #Run MCMC for Bayesian Community Based Targeting
 CBtemp <- CBTarget(Tau=Tau, 
                  X_CBT = X_CBT,
