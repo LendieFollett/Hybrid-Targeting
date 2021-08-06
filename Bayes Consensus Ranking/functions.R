@@ -181,7 +181,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
   for(k in 1:n.prior.value){ #over potential values
     for( col in 1:Col){ #over information source within y
       idx <- which(!is.na(y[,col])) #in the case of omega_rank
-      log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
+      log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], 1/weight_prior_value[k], log = TRUE))
     }
     log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
   }
