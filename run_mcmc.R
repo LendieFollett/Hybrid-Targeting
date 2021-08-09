@@ -256,11 +256,11 @@ print(r[[i]])
 all_results_1 <- unlist(results, recursive = FALSE)
 all_results <- do.call("rbind", all_results_1)
 
-write.csv(all_results, "all_results.csv")
+#write.csv(all_results, "all_results.csv")
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
   group_by(Method, CBT_prop, variable) %>%
-  mutate(mean = mean(value ))%>%ungroup%>%
+  mutate(mean = median(value ))%>%ungroup%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
   geom_jitter(aes(x = CBT_prop, y = value, colour = Method),height = 0) + 
   geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
