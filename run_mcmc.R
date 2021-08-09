@@ -29,8 +29,8 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1500   ## Gibbs sampler burn-in iterations 
+iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =1000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -144,8 +144,8 @@ Hybridtemp <- HybridTarget(Tau=Tau,
                  X_program = X_program,
                  X_elite = "connected",
                  Y_micro = Y_micro, #needs to be a matrix, not vector
-                 prior_prob_rank = c(.025, .025,.95),
-                 prior_prob_micro = c(.95,.025, .025),
+                 prior_prob_rank = c(1,1,1)/3,
+                 prior_prob_micro = c(1,1,1)/3,
                  iter_keep = iter_keep,
                  iter_burn = iter_burn,
                   print_opt = print_opt,
@@ -161,7 +161,7 @@ CBtemp <- CBTarget(Tau=Tau,
                  X_CBT = X_CBT,
                  X_program = X_program,
                  X_elite = "connected",
-                 prior_prob_rank = c(.025, .025,.95),
+                 prior_prob_rank = c(1,1,1)/3,
                  iter_keep =iter_keep,
                  iter_burn = iter_burn,
                  print_opt = print_opt,
@@ -259,9 +259,14 @@ all_results <- do.call("rbind", all_results_1)
 write.csv(all_results, "all_results.csv")
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
-  ggplot() +geom_boxplot(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
-  geom_point(aes(x = Method, y = value,colour = Method, group = interaction(Method, CBT_prop))) + 
-  facet_grid(variable~CBT_prop, scales = "free") +theme(axis.text.x = element_text(angle = 45))
+  group_by(Method, CBT_prop, variable) %>%
+  mutate(mean = mean(value ))%>%ungroup%>%
+  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
+  geom_jitter(aes(x = CBT_prop, y = value, colour = Method),height = 0) + 
+  geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
+  facet_grid(variable~., scales = "free")+ theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
+  scale_colour_brewer(type = "qual", palette = "Dark2")
 ggsave("results_with_con.pdf")
 
 qplot(1:1000,temp$beta_rank[,21]) + 

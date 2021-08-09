@@ -92,7 +92,7 @@ P <- ncol(X) - 1
     
     n <- length(u)
     c <- ncol(Y)
-    Sigma_inv_y<-omega^2*diag(n) 
+    Sigma_inv_y<-omega*diag(n) 
   } else{ #if it's rank
 
     if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
@@ -102,7 +102,7 @@ P <- ncol(X) - 1
       n <- length(u)
       c <- 1
     }
-    Sigma_inv_y<-rep(omega^2, times = apply(Y, 2, function(x){sum(!is.na(x))}))*diag(n) 
+    Sigma_inv_y<-rep(omega, times = apply(Y, 2, function(x){sum(!is.na(x))}))*diag(n) 
   }
 
   if(!is.null(c)){
@@ -181,7 +181,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
   for(k in 1:n.prior.value){ #over potential values
     for( col in 1:Col){ #over information source within y
       idx <- which(!is.na(y[,col])) #in the case of omega_rank
-      log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], 1/weight_prior_value[k], log = TRUE))
+      log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
     }
     log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
   }
@@ -328,6 +328,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   
   ## store MCMC draws
   draw = list(
+    lambda = array(NA, dim = c(iter_keep, length(prior_prob_rank))),
     Z = array(NA, dim = c( iter_keep,N1)),
     mu_beta = array(NA, dim = c(iter_keep,P)),
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
@@ -360,8 +361,6 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   ## initial values for weights
   omega_micro = 1
   omega_rank = rep(1, R)
-  lambda <- prior_prob_rank
-  
   ## Gibbs iteration
   for(iter in 1:(iter_burn + iter_keep)){
     
@@ -382,6 +381,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                      rank=TRUE)
     
     # ----> update quality weights
+    lambda <- GibbsUpLambda(omega_rank, prior_prob =prior_prob_rank, prior_weights=c(0.5, 1, 2 ))
     omega_rank <- GibbsUpQualityWeights(y=Z , 
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
@@ -389,7 +389,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = lambda,
                                         rank=TRUE)
 
-    lambda <- GibbsUpLambda(omega_rank, prior_prob = rep(1/3, 3), prior_weights=c(0.5, 1, 2 ))
+
     # ----> update beta_micro 
     beta_micro = GibbsUpMuGivenLatentGroup(Y = Y_micro,
                                            X = X_PMT,
@@ -425,6 +425,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
       # store value at this iteration
       draw$Z[j,] = apply(Z, 1, function(x){sum(x,na.rm=TRUE)})
       draw$mu_beta[j,] = mu_beta
+      draw$lambda[j,] = lambda
       draw$beta_rank[j,] = beta_rank
       draw$beta_micro[j,] = beta_micro
       draw$mu[j,] = mu
