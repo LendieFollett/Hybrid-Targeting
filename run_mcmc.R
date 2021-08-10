@@ -29,8 +29,8 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1000   ## Gibbs sampler burn-in iterations 
+iter_keep = 1500   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =1500   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -65,13 +65,13 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .2)  
+CBT_prop_list <- c(.05,.1, .15)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
    HybridESS <- list()
    CBESS <- list()
-  for(rep in c(1:5)){
+  for(rep in c(1:7)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
@@ -204,11 +204,11 @@ lr <- glm(prop_rank<=0.3 ~ ., data = CBT_data[,c("prop_rank", m3)], family =bino
 
 #get back on log(consumption scale) --->sigma*predicted + mu
 #HYBRID-BASED PREDICTION
-Program_data$hybrid_prediction <-        (X_program%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu, 2, mean)
-Program_data$hybrid_prediction_noelite <-(X_program%*%Hybrid_beta_rank_mean) #apply(Hybridtemp$mu_noelite, 2, mean)
+Program_data$hybrid_prediction <-        apply(Hybridtemp$mu, 2, mean)
+Program_data$hybrid_prediction_noelite <-apply(Hybridtemp$mu_noelite, 2, mean)
 
 #CBT SCORE-BASED PREDICTION
-Program_data$cbt_model_prediction <- (X_program%*%CB_beta_rank_mean)
+Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)#(X_program%*%CB_beta_rank_mean)
 
 #BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
 Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
@@ -219,6 +219,7 @@ Program_data$PMT_prediction <- (X_program[,-1]%*%beta_start[-1])#beta_start is t
 Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
   mutate(#hybrid_rank =rank(hybrid_prediction)/length(village),
          hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
+         hybrid_rank =rank(hybrid_prediction)/length(village),
          pmt_rank =rank(PMT_prediction)/length(village),
          cbt_model_rank = rank(cbt_model_prediction)/length(village),
          consumption_rank = rank(consumption)/length(village),
@@ -226,6 +227,7 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) %>%
   mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
          hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
+         hybrid_inclusion = hybrid_rank <= poverty_rate,
          pmt_inclusion = pmt_rank <= poverty_rate,
          consumption_inclusion = consumption_rank<=poverty_rate,
          cbt_model_inclusion = cbt_model_rank<=poverty_rate,
@@ -237,10 +239,11 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
 
 r[[i]] <- rbind(#confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$CBT_LR_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS", "CBT Logit"),
+  mutate(Method = c( "Hybrid Score","Hybrid Score (corrected)","CBT Score", "PMT OLS", "CBT Logit"),
          CBT_prop = CBT_prop,
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
@@ -259,11 +262,12 @@ all_results <- do.call("rbind", all_results_1)
 #write.csv(all_results, "all_results.csv")
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"))) %>%
   group_by(Method, CBT_prop, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_jitter(aes(x = CBT_prop, y = value, colour = Method),height = 0) + 
-  geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
+  geom_boxplot(aes(x = CBT_prop, y = value, colour = Method, group = interaction(CBT_prop, Method)),height = 0) + 
+  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
   facet_grid(variable~., scales = "free")+ theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
   scale_colour_brewer(type = "qual", palette = "Dark2")

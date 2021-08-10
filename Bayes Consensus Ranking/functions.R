@@ -203,8 +203,7 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
     log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
     idx <- which(!is.na(y[,col])) #in the case of omega_rank
     for(k in 1:n.prior.value){ #over potential values
-        log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
-        log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
+        log.post.prob[k] <- sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))+ log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
     }
     
     log.post.prob = log.post.prob - max(log.post.prob)
@@ -237,8 +236,8 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
  lik_old <-  dnorm(y, mu, con_old, log=TRUE) %>%sum
  lik_prop <- dnorm(y, mu, con_prop, log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 0, .5, log=TRUE)#prior constant ~ N^+(0,2.5)
-  prior_prop<- dnorm(con_prop, 0, .5, log = TRUE)
+  prior_old <- dnorm(con_old, 0, 1, log=TRUE)#prior constant ~ N^+(0,1)
+  prior_prop<- dnorm(con_prop, 0, 1, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
   
@@ -414,9 +413,9 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     con <- GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
 
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
-    mu = as.vector( X_program %*% c(omega_micro[1],mu_beta ))
+    mu = as.vector( X_program[,-1] %*% beta_rank[-1] )
     if(!is.null(X_elite)){
-    mu_noelite = as.vector( X_program_noelite %*% c(omega_micro[1],mu_beta ) )
+    mu_noelite = as.vector( X_program_noelite[,-1] %*% beta_rank[-1] ) 
     }else{
       mu_noelite = mu
     }
