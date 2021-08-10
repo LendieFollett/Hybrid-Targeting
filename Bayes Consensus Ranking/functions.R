@@ -236,8 +236,8 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
  lik_old <-  dnorm(y, mu, con_old, log=TRUE) %>%sum
  lik_prop <- dnorm(y, mu, con_prop, log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 0, 1, log=TRUE)#prior constant ~ N^+(0,1)
-  prior_prop<- dnorm(con_prop, 0, 1, log = TRUE)
+  prior_old <- dnorm(con_old, 0, .25, log=TRUE)#prior constant ~ N^+(0,1)
+  prior_prop<- dnorm(con_prop, 0, .25, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
   

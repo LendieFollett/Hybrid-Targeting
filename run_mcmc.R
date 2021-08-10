@@ -53,7 +53,7 @@ m_bin <- c("connected","hhmale","hhmarried",
            "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
            "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
            "formal")#,"informal" lrf removed informal for now
-m3 <- c(m_num, m_bin)
+m3 <- c(m_num, m_bin, "hhage2", "hhsize2")
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption
 #set.seed(572319852)
@@ -61,26 +61,30 @@ PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(uni
 #Note: the hh index for program is everything else, e.g. , full_data[-PMT_idx,]
 #a subset of the program data is CBT
 
-full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
+full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) %>%
+  mutate(hhage2 = hhage^2,
+         hhsize2 = hhsize^2)
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(.05,.1, .15)  
+CBT_prop_list <- c(0.025,.05,.1, .5)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
    HybridESS <- list()
    CBESS <- list()
-  for(rep in c(1:7)){
+  for(rep in c(1:5)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
-Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
+whats_left <- unique(full_data$community_id[- PMT_idx])
+Program_idx <- which(full_data$community_id %in% sample(whats_left, 
                                                     replace=FALSE, 
-                                                    length(unique(full_data$community_id[-PMT_idx]))*0.5))
-CBT_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
+                                                    length(whats_left)*0.5))
+whats_left <- unique(full_data$community_id[-c(PMT_idx, Program_idx)])
+CBT_idx <- which(full_data$community_id %in% sample(whats_left, 
                                                    replace=FALSE, 
-                                                   length(unique(full_data$community_id[-c(PMT_idx, Program_idx)]))*CBT_prop))
+                                                   length(whats_left)*CBT_prop))
 
 
 CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
@@ -266,9 +270,9 @@ all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
   group_by(Method, CBT_prop, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_boxplot(aes(x = CBT_prop, y = value, colour = Method, group = interaction(CBT_prop, Method)),height = 0) + 
+  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),height = 0) + 
   #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
-  facet_grid(variable~., scales = "free")+ theme_bw() +
+  facet_grid(variable~CBT_prop, scales = "free")+ theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
   scale_colour_brewer(type = "qual", palette = "Dark2")
 ggsave("results_with_con.pdf")
