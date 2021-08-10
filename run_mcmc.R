@@ -269,13 +269,14 @@ all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"))) %>%
   group_by(Method, CBT_prop, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
+  subset(Method != "CBT Logit")%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
   geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),height = 0) + 
   #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
   facet_grid(variable~CBT_prop, scales = "free")+ theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
   scale_colour_brewer(type = "qual", palette = "Dark2")
-ggsave("results_with_con.pdf")
+ggsave("results_with_con_nologit.pdf")
 
 qplot(1:1000,temp$beta_rank[,21]) + 
   geom_point(aes(1:1000,temp$beta_micro[,21]), colour = "red")+
