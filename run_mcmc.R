@@ -73,7 +73,7 @@ CBT_prop_list <- c(0.025,.05,.1, .5)
    r <- list()
    HybridESS <- list()
    CBESS <- list()
-  for(rep in c(1:5)){
+  for(rep in c(1:10)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_prop, "**************"))
     i = i + 1
     
@@ -183,9 +183,10 @@ Hybrid_beta_micro_mean <- apply(Hybridtemp$beta_micro, 2, mean)
 CB_beta_rank_mean <- apply(CBtemp$beta_rank, 2, mean)
 
 data.frame(parameter = m3,
-           mu_beta = Hybrid_mu_beta_mean,
-           beta_rank = Hybrid_beta_rank_mean[-1],
-           beta_micro=Hybrid_beta_micro_mean[-1])%>%
+           mu_beta_Hybrid = Hybrid_mu_beta_mean,
+           beta_rank_Hybrid = Hybrid_beta_rank_mean[-1],
+           beta_micro_Hybrid=Hybrid_beta_micro_mean[-1],
+           beta_rank_CBT = CB_beta_rank_mean[-1])%>%
   melt(id.var = "parameter") %>%
   mutate(parameter = factor(parameter, levels = colnames(X_CBT)[-1][order(Hybrid_mu_beta_mean)]))%>%
   ggplot() +
@@ -200,7 +201,7 @@ ggsave(paste0("coefficients_",CBT_prop, "_", i, ".pdf"), width = 6, height = 10)
 
 
 #Fit logistic regression for Community Based Targeting
-lr <- glm(prop_rank<=0.3 ~ ., data = CBT_data[,c("prop_rank", m3)], family =binomial(link = "logit"))
+lr <- glm(prop_rank<=0.3 ~ ., data = CBT_data[,c("prop_rank", m3)], family =binomial(link = "probit"))
 #---> predict P(selected beneficiary | X)
 
 #Fit linear model for community based targeting
@@ -266,17 +267,21 @@ all_results <- do.call("rbind", all_results_1)
 #write.csv(all_results, "all_results.csv")
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"))) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"),
+                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
   group_by(Method, CBT_prop, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
-  subset(Method != "CBT Logit")%>%
+  #subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
   geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),height = 0) + 
+  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),
+               fun=mean, geom="point", color="black")+
   #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
   facet_grid(variable~CBT_prop, scales = "free")+ theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
-  scale_colour_brewer(type = "qual", palette = "Dark2")
-ggsave("results_with_con_nologit.pdf")
+  scale_colour_brewer(type = "qual", palette = "Dark2")# +
+  #scale_y_log10()
+ggsave("results_all.pdf")
 
 qplot(1:1000,temp$beta_rank[,21]) + 
   geom_point(aes(1:1000,temp$beta_micro[,21]), colour = "red")+
