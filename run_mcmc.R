@@ -265,7 +265,7 @@ print(r[[i]])
 all_results_1 <- unlist(results, recursive = FALSE)
 all_results <- do.call("rbind", all_results_1)
 
-#write.csv(all_results, "all_results.csv")
+write.csv(all_results, "all_results.csv")
 
 all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"),
@@ -282,10 +282,23 @@ all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
   scale_colour_brewer(type = "qual", palette = "Dark2")# +
   #scale_y_log10()
-ggsave("results_all.pdf")
+ggsave("results_bayesian_only.pdf")
 
-qplot(1:1000,temp$beta_rank[,21]) + 
-  geom_point(aes(1:1000,temp$beta_micro[,21]), colour = "red")+
-  geom_line(aes(1:1000,temp$mu_beta[,20]), alpha = I(.4))
+all_results %>%
+  mutate(rep = rep(rep(1:10, times = rep(5, 10)),4))%>%
+  melt(id.var = c("Method", "CBT_prop", "rep")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"),
+                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
+  group_by(Method, CBT_prop, variable) %>%
+  mutate(mean = median(value ))%>%ungroup%>%
+  subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
+  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
+  geom_line(aes(x = Method, y = value,  group = interaction(CBT_prop, rep))) + 
+  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),
+               fun=mean, geom="point", color="black")+
+  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
+  facet_grid(variable~CBT_prop, scales = "free")+ theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
+  scale_colour_brewer(type = "qual", palette = "Dark2")
 
 
