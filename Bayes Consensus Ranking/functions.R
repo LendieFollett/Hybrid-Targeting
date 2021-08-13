@@ -199,19 +199,19 @@ GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value =
     n.prior.value <- length(weight_prior_value)
     weight_samp <- rep(NA, Col)
     
+    log.post.prob = rep(0, n.prior.value) #re-initialize for next information source     
   for( col in 1:Col){ #over information source within y
-    log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
+   # log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
     idx <- which(!is.na(y[,col])) #in the case of omega_rank
     for(k in 1:n.prior.value){ #over potential values
-        log.post.prob[k] <- sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))+ log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
+        log.post.prob[k] <- log.post.prob[k] + sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
     }
     
+  }
+    log.post.prob <- log.post.prob + log(prior_prob)
     log.post.prob = log.post.prob - max(log.post.prob)
     post.prob = exp(log.post.prob)
-    
-    weight_samp[col] <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
-    
-    }
+    weight_samp[1:Col] <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
     #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
     return(weight_samp)
   }
@@ -236,8 +236,8 @@ GibbsUpConstant <- function(beta_rank, beta_micro, mu_beta, omega_rank, omega_mi
  lik_old <-  dnorm(y, mu, con_old, log=TRUE) %>%sum
  lik_prop <- dnorm(y, mu, con_prop, log=TRUE) %>%sum 
   
-  prior_old <- dnorm(con_old, 0, .25, log=TRUE)#prior constant ~ N^+(0,1)
-  prior_prop<- dnorm(con_prop, 0, .25, log = TRUE)
+  prior_old <- dnorm(con_old, 0, 1, log=TRUE)#prior constant ~ N^+(0,1)
+  prior_prop<- dnorm(con_prop, 0, 1, log = TRUE)
   
   alpha <- lik_prop + prior_prop - lik_old - prior_old
   
@@ -381,12 +381,13 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                      rank=TRUE)
     
     # ----> update quality weights
-    lambda <- GibbsUpLambda(omega_rank, prior_prob =prior_prob_rank, prior_weights=c(0.5, 1, 2 ))
+    #lambda <- GibbsUpLambda(omega_rank, prior_prob =prior_prob_rank, prior_weights=c(0.5, 1, 2 ))
+    lambda = prior_prob_rank
     omega_rank <- GibbsUpQualityWeights(y=Z , 
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
                                         con = con,
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = lambda,
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob =prior_prob_rank,# lambda,
                                         rank=TRUE)
 
 
@@ -544,9 +545,10 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
                                         con = con,
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = lambda,rank=TRUE)
-    lambda <- GibbsUpLambda(omega_rank, prior_prob = rep(1/3, 3), prior_weights=c(0.5, 1, 2 ))
-    
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),#lambda,
+                                        rank=TRUE)
+    #lambda <- GibbsUpLambda(omega_rank, prior_prob = rep(1/3, 3), prior_weights=c(0.5, 1, 2 ))
+    lambda = prior_prob_rank
     # ----> update con    
     con <- GibbsUpConstant(beta_rank, NULL, mu_beta, omega_rank, NULL,con)
     

@@ -29,9 +29,9 @@ source("Bayes Consensus Ranking/functions.R")
 
 
 poverty_rate <- .3
-iter_keep = 1500   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1500   ## Gibbs sampler burn-in iterations 
-print_opt = 100  ## print a message every print.opt steps
+iter_keep = 4000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =4000   ## Gibbs sampler burn-in iterations 
+print_opt = 1000  ## print a message every print.opt steps
 
 
 full_data <- read.csv("Empirical Study/alatas.csv") %>%
@@ -40,6 +40,7 @@ full_data <- read.csv("Empirical Study/alatas.csv") %>%
   group_by(village, province, district, subdistrict)%>%
   mutate(prop_rank = rank) %>%
   mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup
+
 #x variables to include in model
 m_num <- c("hhsize","hhage",
         "age04","depratio","pcfloor",
@@ -49,10 +50,10 @@ m_bin <- c("connected","hhmale","hhmarried",
            "hheduc2","hheduc3","hheduc4",
            "higheduc2","higheduc3","higheduc4",
            "tfloor","twall", "toilet","water","lighting", "troof",
-           "fcook","house", "computer","radio","tv", "dvd","satellite", #LRF REMOVED AC FOR NOW
+           "fcook","house", "computer","radio","tv", "dvd","satellite", "ac",
            "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
            "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
-           "formal")#,"informal" lrf removed informal for now
+           "formal", "informal")# lrf removed informal for now
 m3 <- c(m_num, m_bin, "hhage2", "hhsize2")
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption
@@ -67,7 +68,7 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_prop_list <- c(0.025,.05,.1, .5)  
+CBT_prop_list <- c(0.025,.05,.1, .2)  
  results <-  mclapply(CBT_prop_list, function(CBT_prop){
    i <- 0
    r <- list()
@@ -242,13 +243,13 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
 
 
 
-r[[i]] <- rbind(#confusionMatrix(Program_data$hybrid_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+r[[i]] <- rbind(
 confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$CBT_LR_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score","Hybrid Score (corrected)","CBT Score", "PMT OLS", "CBT Logit"),
+  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score", "PMT OLS", "CBT Logit"),
          CBT_prop = CBT_prop,
          TD = Sensitivity - (1-Specificity)) %>%
   dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
@@ -271,9 +272,9 @@ all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
                          labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
   group_by(Method, CBT_prop, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
-  #subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
+  subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),height = 0) + 
+  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method))) + 
   stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),
                fun=mean, geom="point", color="black")+
   #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
@@ -287,26 +288,4 @@ qplot(1:1000,temp$beta_rank[,21]) +
   geom_point(aes(1:1000,temp$beta_micro[,21]), colour = "red")+
   geom_line(aes(1:1000,temp$mu_beta[,20]), alpha = I(.4))
 
-
-
-p1 <-ggplot(data = test_data) + 
-  geom_boxplot(aes(x = connected, y = consumption_rank,group=connected, colour = elite))+
-  geom_jitter(aes(x = connected, y = consumption_rank,group=elite,colour = elite))
-
-
-p2 <-qplot(Z_mean, cbt_rank, colour = pmt_rank,data = test_data)
-
-p3 <-ggplot(data = test_data) +
-  geom_point(aes(cbt_rank,Z_mean, colour = pmt_rank)) +
-  geom_line(aes(x = cbt_rank, y = Z_mean, group = community_id), alpha = I(.3))
-
-ggplot(data = test_data) + 
- geom_point(aes(log(consumption),cbt_rank, colour = cbt_rank),width = .025, height = .025) #+
- # geom_hline(aes(yintercept = poverty_rate)) +
- # geom_vline(aes(xintercept = poverty_rate))
-
-p1 <- ggplot(test_data) +
-  geom_point(aes(x = hybrid_prediction, y = consumption)) +
-  geom_abline(aes(intercept = 0, slope = 1))+
-  ggtitle("Hybrid") +scale_y_continuous(limits = c(-2,2))
 
