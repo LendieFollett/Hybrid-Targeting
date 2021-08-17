@@ -6,3 +6,676 @@
 .DS_Store
 .DS_Store
 .DS_Store
+Data/Burkina Faso/Hillebrecht Files/codes/01_macros.do
+Data/Burkina Faso/Hillebrecht Files/codes/02_adjust_data.do
+Data/Burkina Faso/Hillebrecht Files/codes/03_produce_summary_stat.do
+Data/Burkina Faso/Hillebrecht Files/codes/04_construct_PMTs.do
+Data/Burkina Faso/Hillebrecht Files/codes/05_targeting_datasets.do
+Data/Burkina Faso/Hillebrecht Files/codes/06_esttab_many_area0.do
+Data/Burkina Faso/Hillebrecht Files/codes/06_esttab_many_area1.do
+Data/Burkina Faso/Hillebrecht Files/codes/06_store_many_area0.do
+Data/Burkina Faso/Hillebrecht Files/codes/06_store_many_area1.do
+Data/Burkina Faso/Hillebrecht Files/data/data_hhsurvey_and_ranking.dta
+Data/Burkina Faso/Hillebrecht Files/data/data_hhsurvey_and_ranking_and_village.dta
+Data/Burkina Faso/Hillebrecht Files/data/data_rankings.dta
+Data/Burkina Faso/Hillebrecht Files/data/tarlong.dta
+Data/Burkina Faso/Hillebrecht Files/data/tarwide.dta
+Data/Burkina Faso/Hillebrecht Files/master.do
+Data/Burkina Faso/Hillebrecht Files/README.txt
+Data/Burkina Faso/Hillebrecht Files/results/all_differences_area0.csv
+Data/Burkina Faso/Hillebrecht Files/results/am__differences_area0.csv
+Data/Burkina Faso/Hillebrecht Files/results/mp__differences_area0.csv
+Data/Burkina Faso/Hillebrecht Files/results/np__differences_area0.csv
+Data/Burkina Faso/Hillebrecht Files/results/TAB2_cbt_and_commun_charact.csv
+Data/Burkina Faso/Hillebrecht Files/results/TAB3_hhs_summary_stats.csv
+Data/Burkina Faso/Hillebrecht Files/results/TAB5_targeting_errors.csv
+Data/Burkina Faso/Hillebrecht Files/results/TAB6_MTEs_by_consmpt.csv
+Data/Burkina Faso/Hillebrecht Files/results/TAB7_TEs_and_commun_charac.xml
+Data/Burkina Faso/Hillebrecht Files/results/TAB8_determinants_cbt.xml
+Data/Burkina Faso/Hillebrecht Files/results/TAB_A3_weights_econometric_pmt.csv
+Data/Burkina Faso/Hillebrecht Files/results/xp__differences_area0.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ar1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ar2.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_bh1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_bh2.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr00.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr01.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr02a.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr02b.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr02c.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr02d.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr02e.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr03a.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr03b.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr03c.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr03d.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr03e.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr04a.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr04b.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05aa.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05ab.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05ba.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05bb.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05ca.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05cb.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05da.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05db.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05ea.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr05eb.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_cr06.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ge.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_hr1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_hr2_renamed.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_kd.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_kf.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_kl.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_kp.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_kr.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_krt.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ks1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ks2.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ksr1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ksr2.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ksr3.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ksr4.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ksr5.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_ksr6.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_lk.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_pl.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_pm1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_pm2.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_pm3.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_sv.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_sw.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_tf1.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_tf2.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_tf3.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_hh_tr.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_ad.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_id.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_pd.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_pp.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_sr.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_sw.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_ts.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_baseline/codebook_English_k_uc.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_endline/codebook_English_e_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_endline/codebook_English_e_data.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_endline/codebook_English_e_lk.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_c_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_c_cp.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_c_data.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f1a_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f1a_dh.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f1b_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f1b_dh.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f2_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f2_data.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f3_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f3_kla.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f4a_ap.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f4a_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f4b_ap.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f4b_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f5_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f5_dk.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f6_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f6_kr.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f7a_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f7a_ranking.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f7b_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f7b_ranking.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f8_cf.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f8_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f8_tt.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9a_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9a_ub1a.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9a_ub1b.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9b_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9b_ub2a.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9b_ub2b.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9b_ub2c.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9c_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_f9c_ub3.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_fd_a.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_fd_b.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_fd_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_rts_cov.dta.csv
+Data/Indonesia/Alatas Files/Codebooks/codebooks_mitra/codebook_English_rts_data.dta.csv
+Data/Indonesia/Alatas Files/codeddata/aggregatevar_new.dta
+Data/Indonesia/Alatas Files/codeddata/analysis01.dta
+Data/Indonesia/Alatas Files/codeddata/analysis3.dta
+Data/Indonesia/Alatas Files/codeddata/analysis8.dta
+Data/Indonesia/Alatas Files/codeddata/coding_suseti_pmt.dta
+Data/Indonesia/Alatas Files/codeddata/finalranks.dta
+Data/Indonesia/Alatas Files/codeddata/hh_ar2.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/aggregatevar.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis0.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis1_hh.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis1_hha.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis1_village.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis2_main.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis2_RT0.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis2_RT1.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/analysis2_RTA.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/c_data.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/characteristic_respondent.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/children.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/coding_endline.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/coding_gps.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/coding_podes08.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/coding_treatment.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/COMMRANK.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/complain.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/conspicuousness.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/consumption.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/data_h_rtm.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/data_p_rtm.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/disabled.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f1_hhattend.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f2_data.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f2_gps.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f3_kla.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f7b_bps.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f7b_ranking.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f9a.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/f9b_ub2c.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/fd_a.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/fd_b.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/formalleader.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/gendertarget.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/haji.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hh_cr01.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hh_lk.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hh_pm2.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hh_rank.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hh_sw.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhasset.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhblt.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhcharacteristic.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhhead.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhrts.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhshock.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhtreatrank_main.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhtreatrank_RT0.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhtreatrank_RT1.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/hhtreatrank_RTA.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/indebtdness.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/inequality.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/informalleader.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/listing_gps.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/match_suseti_experiment.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/minority.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/nELITE.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/pmt_hybrid.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/pmt_p2k08.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/RANK.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/rank_rthead.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/rank_survey.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/rankconsumption.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/ranking_time.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/rthead.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/rthead2.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/RTS_community.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/rts_hybrid.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/selfassessment.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/socialconnection.dta
+Data/Indonesia/Alatas Files/codeddata/intermediate_data/ud.dta
+Data/Indonesia/Alatas Files/codeddata/mistargeting.dta
+Data/Indonesia/Alatas Files/codeddata/mistargeting_CORRECTED.dta
+Data/Indonesia/Alatas Files/codeddata/randomizationdata.dta
+Data/Indonesia/Alatas Files/codeddata/rankcorrelation.dta
+Data/Indonesia/Alatas Files/codeddata/satisfaction_community.dta
+Data/Indonesia/Alatas Files/codeddata/satisfaction_rthead.dta
+Data/Indonesia/Alatas Files/codeddata/Temp_Files/temp.dta
+Data/Indonesia/Alatas Files/codeddata/Temp_Files/temp2.dta
+Data/Indonesia/Alatas Files/codeddata/Temp_Files/temp_demo.dta
+Data/Indonesia/Alatas Files/codeddata/Temp_Files/temp_treatmentstatus.dta
+Data/Indonesia/Alatas Files/codeddata/Temp_Files/tempelite.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/disabled.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ar1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ar2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_bh1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_bh2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cov.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr00.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr01.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr02a.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr02b.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr02c.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr02d.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr02e.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr03a.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr03b.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr03c.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr03d.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr03e.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr04a.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr04b.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05aa.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05ab.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05ba.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05bb.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05ca.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05cb.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05da.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05db.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05ea.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr05eb.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_cr06.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ge.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_hr1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_hr2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_kd.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_kf.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_kl.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_kp.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_kr.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_krt.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ks1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ks2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ksr1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ksr2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ksr3.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ksr4.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ksr5.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_ksr6.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_lk.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_pl.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_pm1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_pm2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_pm3.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_sv.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_sw.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_tf1.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_tf2.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_tf3.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_hh_tr.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_ad.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_cov.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_id.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_pd.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_pp.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_sr.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_sw.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_ts.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/English_k_uc.dta
+Data/Indonesia/Alatas Files/Data/baseline (english)/hh_ar2_fix.dta
+Data/Indonesia/Alatas Files/Data/baseline/disabled.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ar1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ar2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ar2_fix.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_bh1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_bh2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cov.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr00.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr01.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr02a.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr02b.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr02c.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr02d.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr02e.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr03a.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr03b.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr03c.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr03d.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr03e.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr04a.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr04b.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05aa.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05ab.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05ba.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05bb.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05ca.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05cb.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05da.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05db.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05ea.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr05eb.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_cr06.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ge.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_hr1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_hr2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_kd.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_kf.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_kl.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_kp.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_kr.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_krt.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ks1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ks2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ksr1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ksr2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ksr3.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ksr4.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ksr5.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_ksr6.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_lk.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_pl.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_pm1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_pm2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_pm3.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_sv.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_sw.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_tf1.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_tf2.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_tf3.dta
+Data/Indonesia/Alatas Files/Data/baseline/hh_tr.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_ad.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_cov.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_id.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_pd.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_pp.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_sr.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_sw.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_ts.dta
+Data/Indonesia/Alatas Files/Data/baseline/k_uc.dta
+Data/Indonesia/Alatas Files/Data/bps/data_h_art.dta
+Data/Indonesia/Alatas Files/Data/bps/data_h_rmt.dta
+Data/Indonesia/Alatas Files/Data/bps/data_p_art.dta
+Data/Indonesia/Alatas Files/Data/bps/data_p_rmt.dta
+Data/Indonesia/Alatas Files/Data/bps/f7b.dta
+Data/Indonesia/Alatas Files/Data/bps/pmt_hybrid.dta
+Data/Indonesia/Alatas Files/Data/bps/pmt_p2k08.dta
+Data/Indonesia/Alatas Files/Data/bps/ud.dta
+Data/Indonesia/Alatas Files/Data/endline (english)/English_e_cov.dta
+Data/Indonesia/Alatas Files/Data/endline (english)/English_e_data.dta
+Data/Indonesia/Alatas Files/Data/endline (english)/English_e_lk.dta
+Data/Indonesia/Alatas Files/Data/endline/e_cov.dta
+Data/Indonesia/Alatas Files/Data/endline/e_data.dta
+Data/Indonesia/Alatas Files/Data/endline/e_lk.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_c_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_c_cp.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_c_data.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f1a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f1a_dh.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f1b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f1b_dh.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f2_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f2_data.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f3_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f3_kla.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f4a_ap.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f4a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f4b_ap.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f4b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f5_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f5_dk.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f6_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f6_kr.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f7a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f7a_ranking.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f7b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f7b_ranking.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f8_cf.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f8_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f8_tt.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9a_ub1a.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9a_ub1b.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9b_ub2a.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9b_ub2b.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9b_ub2c.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9c_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_f9c_ub3.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_fd_a.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_fd_b.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_fd_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_rts_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra (english)/English_rts_data.dta
+Data/Indonesia/Alatas Files/Data/mitra/c_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/c_cp.dta
+Data/Indonesia/Alatas Files/Data/mitra/c_data.dta
+Data/Indonesia/Alatas Files/Data/mitra/f1a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f1a_dh.dta
+Data/Indonesia/Alatas Files/Data/mitra/f1b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f1b_dh.dta
+Data/Indonesia/Alatas Files/Data/mitra/f2_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f2_data.dta
+Data/Indonesia/Alatas Files/Data/mitra/f3_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f3_kla.dta
+Data/Indonesia/Alatas Files/Data/mitra/f4a_ap.dta
+Data/Indonesia/Alatas Files/Data/mitra/f4a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f4b_ap.dta
+Data/Indonesia/Alatas Files/Data/mitra/f4b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f5_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f5_dk.dta
+Data/Indonesia/Alatas Files/Data/mitra/f6_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f6_kr.dta
+Data/Indonesia/Alatas Files/Data/mitra/f7a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f7a_ranking.dta
+Data/Indonesia/Alatas Files/Data/mitra/f7b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f7b_ranking.dta
+Data/Indonesia/Alatas Files/Data/mitra/f8_cf.dta
+Data/Indonesia/Alatas Files/Data/mitra/f8_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f8_tt.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9a_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9a_ub1a.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9a_ub1b.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9b_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9b_ub2a.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9b_ub2b.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9b_ub2c.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9c_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/f9c_ub3.dta
+Data/Indonesia/Alatas Files/Data/mitra/fd_a.dta
+Data/Indonesia/Alatas Files/Data/mitra/fd_b.dta
+Data/Indonesia/Alatas Files/Data/mitra/fd_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/rts_cov.dta
+Data/Indonesia/Alatas Files/Data/mitra/rts_data.dta
+Data/Indonesia/Alatas Files/Data/other/090129 fund_order_rt.dta
+Data/Indonesia/Alatas Files/Data/other/090129 quota.dta
+Data/Indonesia/Alatas Files/Data/other/headcount.dta
+Data/Indonesia/Alatas Files/Data/other/hhid_all_survey_update.dta
+Data/Indonesia/Alatas Files/Data/other/jml3pro.dta
+Data/Indonesia/Alatas Files/Data/other/listing exp.dta
+Data/Indonesia/Alatas Files/Data/other/listing_all_survey_update.dta
+Data/Indonesia/Alatas Files/Data/other/notes.docx
+Data/Indonesia/Alatas Files/Data/other/nsumatera.dta
+Data/Indonesia/Alatas Files/Data/other/pds2008.dta
+Data/Indonesia/Alatas Files/Data/other/randomizationresults.dta
+Data/Indonesia/Alatas Files/Data/other/rtshybrid.dta
+Data/Indonesia/Alatas Files/Data/other/sc100.dta
+Data/Indonesia/Alatas Files/Data/other/uc100.dta
+Data/Indonesia/Alatas Files/Data/other/urban village.dta
+Data/Indonesia/Alatas Files/Data/simulation/data_sim.dta
+Data/Indonesia/Alatas Files/MANIFEST.TXT
+Data/Indonesia/Alatas Files/Output/aggregatevar_new.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/aggregatevar_new.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/analysis0.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/analysis01.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/analysis1.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/analysis2.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/analysis3.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/analysis8.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_baseline.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_bps.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_endline.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_gps.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_mitra.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_podes08.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_suseti_pmt.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/coding_treatment.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/Creating Rank Data.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/Fix_Mistarget.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/match_suseti_community.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/mistargeting.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/randomizationdata.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/rankcorrelation.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/satisfaction_community.log
+Data/Indonesia/Alatas Files/Output/Coding_files_output/satisfaction_rthead.log
+Data/Indonesia/Alatas Files/Output/Figures/Figure 1/graph_rts_pdf_bene.gph
+Data/Indonesia/Alatas Files/Output/Figures/Figure 1/graph_rts_pdf_nonbene.gph
+Data/Indonesia/Alatas Files/Output/Figures/Figure 1/graph_rts_pdfbene.gph
+Data/Indonesia/Alatas Files/Output/Figures/Figure3/analysis8.gph
+Data/Indonesia/Alatas Files/Output/Figures/Figure3/analysis8_COMM.gph
+Data/Indonesia/Alatas Files/Output/Figures/Figure3/analysis8_HYBRID.gph
+Data/Indonesia/Alatas Files/Output/mistargeting.log
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table2/AppdxT2_Randomizationcheck.dta
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table2/AppdxTable2.out
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table2/Table2.log
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table3/Table3_timelapsed.log
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table3/Table3_timelapsed.txt
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table3/Table3_timelapsed.xml
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table4/Table4.log
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table4/Table4.txt
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table4/Table4.xml
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table6/Table6.txt
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table6/Table6.xml
+Data/Indonesia/Alatas Files/Output/Tables/Appendix/Table7/Table7.log
+Data/Indonesia/Alatas Files/Output/Tables/Table10/Table10.log
+Data/Indonesia/Alatas Files/Output/Tables/Table10/Table10.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table10/Table10.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table11/Table11.log
+Data/Indonesia/Alatas Files/Output/Tables/Table11/Table11.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table11/Table11.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table12/Table12.log
+Data/Indonesia/Alatas Files/Output/Tables/Table12/Table12.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table12/Table12.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table12/Table12data.dta
+Data/Indonesia/Alatas Files/Output/Tables/Table2/T2_Means.dta
+Data/Indonesia/Alatas Files/Output/Tables/Table2/T2_Means.out
+Data/Indonesia/Alatas Files/Output/Tables/Table2/Table2.log
+Data/Indonesia/Alatas Files/Output/Tables/Table3/Table3.log
+Data/Indonesia/Alatas Files/Output/Tables/Table3/Table3.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table3/Table3.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table4/Table4_Heterogeneity.log
+Data/Indonesia/Alatas Files/Output/Tables/Table4/Table4_Heterogeneity.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table4/Table4_Heterogeneity.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table5/Table5.log
+Data/Indonesia/Alatas Files/Output/Tables/Table6/T6_Satisfaction_fe.dta
+Data/Indonesia/Alatas Files/Output/Tables/Table6/T6_Satisfaction_fe.out
+Data/Indonesia/Alatas Files/Output/Tables/Table6/T6_Satisfaction_fec.dta
+Data/Indonesia/Alatas Files/Output/Tables/Table6/T6_Satisfaction_fec.out
+Data/Indonesia/Alatas Files/Output/Tables/Table6/T6_Satisfaction_nofe.dta
+Data/Indonesia/Alatas Files/Output/Tables/Table6/T6_Satisfaction_nofe.out
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6.log
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6_PanelA.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6_PanelA.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6_PanelB.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6_PanelB.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6_PanelC.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table6/Table6_PanelC.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table7/Table7.log
+Data/Indonesia/Alatas Files/Output/Tables/Table7/Table7.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table7/Table7.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table8/Table8.log
+Data/Indonesia/Alatas Files/Output/Tables/Table8/Table8.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table8/Table8.xml
+Data/Indonesia/Alatas Files/Output/Tables/Table9/Table9.log
+Data/Indonesia/Alatas Files/Output/Tables/Table9/Table9.txt
+Data/Indonesia/Alatas Files/Output/Tables/Table9/Table9.xml
+Data/Indonesia/Alatas Files/ReadMe.docx
+Data/Indonesia/Alatas Files/Replication Files/adofiles/fanreg.ado
+Data/Indonesia/Alatas Files/Replication Files/adofiles/HeadCount.ado
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/aggregatevar_new.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/analysis0.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/analysis01.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/analysis1.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/analysis2.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/analysis3.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/analysis8.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/coding_baseline.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/coding_bps.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/coding_endline.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/coding_mitra.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/coding_podes08.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/coding_suseti_pmt.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/Creating Rank Data.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/Data for Simulations.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/Fix Mistarget.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/master_Dec09.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/match_suseti_experiment.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/mistargeting.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/newsetglobal.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/randomizationdata.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/rankcorrelation.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/satisfaction_community.do
+Data/Indonesia/Alatas Files/Replication Files/Coding_files/satisfaction_rthead.do
+Data/Indonesia/Alatas Files/Replication Files/setglobal.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Appendix_Table 2.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Appendix_Table 3.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Appendix_Table 4.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Appendix_Table 5.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Appendix_Table 6.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Appendix_Table 7.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 10.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 11.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 12.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 2.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 3 and Figure 1.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 4.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 5 and Figure 2.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 6.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 7.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 8 and Figure 3.do
+Data/Indonesia/Alatas Files/Replication Files/Tables_Figures/Table 9.do
+Data/Indonesia/Alatas Files/Replication Files/whole_paper_dofile.do
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/English/081023 - RT head survey english.doc
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/English/110608 SETPRO PQX finalEnglish.doc
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/Indonesia/081023 - RT head survey with tracked changes.doc
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/Indonesia/Manual Data Operator Suseti.pdf
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/Indonesia/manual RThead_print.doc
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/Indonesia/manual_suseti_print.doc
+Data/Indonesia/Alatas Files/Surveys/Baseline questionnaire/Indonesia/SUSETI_print.doc
+Data/Indonesia/Alatas Files/Surveys/BPS questionnaire/BUKU PEDOMAN KA BPS revised (5).doc
+Data/Indonesia/Alatas Files/Surveys/BPS questionnaire/BUKU PEDOMAN PCS (6) REVISED.doc
+Data/Indonesia/Alatas Files/Surveys/BPS questionnaire/P2K08UD-ID.doc
+Data/Indonesia/Alatas Files/Surveys/Endline questionnaire/English/kuesioner_suseti_II_27_02_09ENGLISH.doc
+Data/Indonesia/Alatas Files/Surveys/Endline questionnaire/English/kuesioner_suseti_II_27_02_09ENGLISH_erata.doc
+Data/Indonesia/Alatas Files/Surveys/Endline questionnaire/Indonesia/Daftar_Konsensus_Suseti_2_LM.doc
+Data/Indonesia/Alatas Files/Surveys/Endline questionnaire/Indonesia/kuesioner_suseti_II_27_02_09.doc
+Data/Indonesia/Alatas Files/Surveys/Endline questionnaire/Indonesia/kuesioner_suseti_II_27_02_09_erata.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/090217 Complaint form HH _ english.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/English.zip
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/F9b. Facilitator's Feedback-2.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 1a Attendance for community.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 1b Attendance for Elites.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 2 General Meeting Information.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 3 Updated HH from Clarification.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 4a Meeting Agenda Method 1.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 4b Meeting Agenda Method 2.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 5 Welfare Criteria.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 6 Ten Poorest HH.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 7 Final HH Ranking.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 7 Temporary Household Ranking.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 8 Unranked HH.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 9a Facilitator's Feedback-1.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/Form 9c Facilitator's Feedback-3.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/fund distribution form.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/English/RT Head Complaint form.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 Distribusi Dana.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F2. Informasi Umum Pertemuan.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F3. Perubahan Daftar RT Hasil Klarifikasi.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F4a. Agenda Pertemuan Metode 1- Tanpa Diskusi 10 RT Termiskin.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F4b. Agenda Pertemuan Metode 2-dengan diskusi 10 RT Termiskin.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F6. Daftar 10 RT Termiskin.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F7a. Ranking RT sementara.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F7b. Ranking RT Final.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F8. RT yang Tidak Teranking.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F9a. Umpan Balik Fasilitator-1.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081210 F9b. Umpan Balik Fasilitator-2.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081212 F1a. Daftar Hadir Pertemuan Warga.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081212 F1b. Daftar Hadir Pertemuan Tokoh Masyarakat.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081212 F5. Diskusi Kesejahteraan.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081214 F9c. Umpan Balik Fasilitator-3.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/081214 manual_forms_P2KRT.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/090127_Daftar_Rumah_Tangga_Sasaran.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/090128_Complain_form_RT_Head.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/090217 Complaint form HH.doc
+Data/Indonesia/Alatas Files/Surveys/MS questionnaire/Indonesia/kuesioner komunitas.zip
+Data/Indonesia/Cleaning/2007Smith.pdf
+Data/Indonesia/Cleaning/alatas(missing).csv
+Data/Indonesia/Cleaning/alatas(missing).dta
+Data/Indonesia/Cleaning/alatas.csv
+Data/Indonesia/Cleaning/alatas.dta
+Data/Indonesia/Cleaning/cleaning.do
+Data/Indonesia/Cleaning/FAO Dietary Diversity Guidelines 2011.pdf
+Data/Indonesia/Cleaning/food.dta
+Data/Indonesia/Cleaning/notes.docx
+Data/Indonesia/Cleaning/ranks.dta
+Data/Indonesia/Cleaning/variables.csv
+Data/Indonesia/Cleaning/xvars.dta
