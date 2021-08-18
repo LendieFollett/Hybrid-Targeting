@@ -93,22 +93,31 @@ P <- ncol(X) - 1
     n <- length(u)
     c <- ncol(Y)
     Sigma_inv_y<-omega*diag(n) 
+    if(!is.null(c)){
+      X <-kronecker(rep(1, c), X) #(A*K)xP
+    } 
   } else{ #if it's rank
 
     if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
       #LRF needs to address: condition for when a person is ranked by multiple sources
+      u <- as.vector(Y)
+      rows <- which(!is.na(u))
+      rows2 <- apply(Y, 2, function(x){which(!is.na(x))})
+      u <- u[rows]
+      n <- length(u)
+      X <- X[unlist(rows2),]
+      Sigma_inv_y<-rep(omega, times =lapply(rows2, length))*diag(n) 
     }else{
       u <- apply(Y, 1, function(x){sum(x, na.rm=TRUE)}) #basically take the only non-NA element
       n <- length(u)
       c <- 1
+      Sigma_inv_y<-rep(omega, times = apply(Y, 2, function(x){sum(!is.na(x))}))*diag(n) 
+      X <- X
     }
-    Sigma_inv_y<-rep(omega, times = apply(Y, 2, function(x){sum(!is.na(x))}))*diag(n) 
     #LRF:THIS ASSUMES WE'RE ORDERED BY COMMUNITY....
   }
 
-  if(!is.null(c)){
-  X <-kronecker(rep(1, c), X) #(A*K)xP
-  } 
+
 
 
 
