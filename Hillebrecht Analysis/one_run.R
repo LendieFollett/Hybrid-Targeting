@@ -137,6 +137,58 @@ temp <- HybridTarget(Tau=Tau,
                      print_opt = print_opt,
                      initial.list = initial_list)
 
+CBtemp <- CBTarget(Tau=Tau, 
+                   X_CBT = X_CBT,
+                   X_program = X_program,
+                   X_elite = NULL,
+                   prior_prob_rank = c(1,1,1)/3,
+                   iter_keep =iter_keep,
+                   iter_burn = iter_burn,
+                   print_opt = print_opt,
+                   initial.list = initial_list)
+
+
+#HYBRID-BASED PREDICTION
+Program_data$hybrid_prediction <-        apply(temp$mu, 2, mean)
+#CBT SCORE-BASED PREDICTION
+Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)#(X_program%*%CB_beta_rank_mean)
+
+#BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
+#how to define for multiple rankers?
+#Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
+
+#OLS-BASED PMT PREDICTION
+Program_data$PMT_prediction <- (X_program[,-1]%*%beta_start[-1])#beta_start is the OLS estimate of beta
+
+Program_data <- Program_data%>%group_by(community) %>%
+  mutate(
+    hybrid_rank =rank(hybrid_prediction)/length(community),
+    pmt_rank =rank(PMT_prediction)/length(community),
+    cbt_model_rank = rank(cbt_model_prediction)/length(community),
+    consumption_rank = rank(consumption)/length(community),
+    cbt_rank = (informant1/3 + informant2/3 + informant3/3)/length(community) #SO AD HOC - BETTER?
+    #CBT_LR_rank = rank(CBT_LR_prediction)/length(village)
+    ) %>%
+  mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
+    hybrid_inclusion = hybrid_rank <= poverty_rate,
+    pmt_inclusion = pmt_rank <= poverty_rate,
+    consumption_inclusion = consumption_rank<=poverty_rate,
+    cbt_model_inclusion = cbt_model_rank<=poverty_rate,
+    #CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
+    cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+
+
+rbind(
+  confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS"),
+         CBT_prop = CBT_prop,
+         TD = Sensitivity - (1-Specificity)) %>%
+  dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
+
 
 apply(temp$omega_rank, 2, mean); apply(Hybridtemp$omega_rank, 2, var)
 
