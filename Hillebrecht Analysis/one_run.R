@@ -36,10 +36,9 @@ print_opt = 100  ## print a message every print.opt steps
 
 full_data <- read.csv("Hillebrecht Analysis/hillebrecht.csv") %>%
   group_by(community)%>%
-  arrange(community)%>%
-  mutate(informant1 = ifelse(is.na(informant1), NA, floor(rank(informant1))),
-         informant2 = ifelse(is.na(informant2), NA, floor(rank(informant2))),
-         informant3 = ifelse(is.na(informant3), NA, floor(rank(informant3)))) %>%ungroup
+  mutate(informant1 = ifelse(is.na(informant1), NA, floor(rank(-informant1))),
+         informant2 = ifelse(is.na(informant2), NA, floor(rank(-informant2))),
+         informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))))%>%ungroup%>%  arrange(community)
 #x variables to include in model
 m_num <- c("rooms")
 
@@ -54,16 +53,18 @@ PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
 full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) 
 
 
-CBT_prop <- 0.7
+CBT_ncomm <- 25#c(5,10,15,25)
 
 whats_left <- unique(full_data$community[- PMT_idx])
 Program_idx <- which(full_data$community %in% sample(whats_left, 
                                                         replace=FALSE, 
-                                                        length(whats_left)*0.5))
+                                                        length(whats_left)*0.5)) #this will leave 26 communities for the CBT
 whats_left <- unique(full_data$community[-c(PMT_idx, Program_idx)])
+length(whats_left)
+whats_left
 CBT_idx <- which(full_data$community %in% sample(whats_left, 
                                                     replace=FALSE, 
-                                                    length(whats_left)*CBT_prop))
+                                                    CBT_ncomm))
 
 
 CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
@@ -79,8 +80,8 @@ while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete
                                                    replace=FALSE, 
                                                    length(whats_left)*CBT_prop))
   
-  CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
-  PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+  CBT_data <- full_data[CBT_idx,] #this (can be) a subset of the program data!
+  PMT_data <- full_data[PMT_idx,]
   
   
 }
@@ -165,8 +166,7 @@ Program_data <- Program_data%>%group_by(community) %>%
     hybrid_rank =rank(hybrid_prediction)/length(community),
     pmt_rank =rank(PMT_prediction)/length(community),
     cbt_model_rank = rank(cbt_model_prediction)/length(community),
-    consumption_rank = rank(consumption)/length(community),
-    cbt_rank = (informant1/3 + informant2/3 + informant3/3)/length(community) #SO AD HOC - BETTER?
+    consumption_rank = rank(consumption)/length(community)
     #CBT_LR_rank = rank(CBT_LR_prediction)/length(village)
     ) %>%
   mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
@@ -175,7 +175,7 @@ Program_data <- Program_data%>%group_by(community) %>%
     consumption_inclusion = consumption_rank<=poverty_rate,
     cbt_model_inclusion = cbt_model_rank<=poverty_rate,
     #CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
-    cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
+    cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 
