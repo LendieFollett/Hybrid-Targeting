@@ -28,9 +28,9 @@ source("Bayes Consensus Ranking/functions.R")
 #parameters for simulation
 
 
-poverty_rate <- .3
-iter_keep = 1500   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1500   ## Gibbs sampler burn-in iterations 
+poverty_rate <- .2
+iter_keep = 4000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =4000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -38,7 +38,8 @@ full_data <- read.csv("Hillebrecht Analysis/hillebrecht.csv") %>%
   group_by(community)%>%
   mutate(informant1 = ifelse(is.na(informant1), NA, floor(rank(-informant1))),
          informant2 = ifelse(is.na(informant2), NA, floor(rank(-informant2))),
-         informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))))%>%ungroup%>%  arrange(community)
+         informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))),
+         treat_rate = sum(treated)/length(treated)) %>% ungroup%>%  arrange(community)
 #x variables to include in model
 m_num <- c("rooms")
 
@@ -53,7 +54,7 @@ PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
 full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) 
 
 CBT_ncomm_list <- c(5,10,15,25)
-nrep <- 5
+nrep <- 10
 results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
   i <- 0
   r <- list()
@@ -68,12 +69,11 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
                                                          replace=FALSE, 
                                                          length(whats_left)*0.5)) #this will leave 26 communities for the CBT 'training'
     whats_left <- unique(full_data$community[-c(PMT_idx, Program_idx)])
-    length(whats_left)
-    whats_left
+    #length(whats_left)
+    #whats_left
     CBT_idx <- which(full_data$community %in% sample(whats_left, 
                                                      replace=FALSE, 
                                                      CBT_ncomm))
-    
     
     CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
     PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
@@ -156,6 +156,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
                        print_opt = print_opt,
                        initial.list = initial_list)
     
+    lr <- glm(treated~ ., data = CBT_data[,c("treated", m3)], family =binomial(link = "probit"))
     
     #HYBRID-BASED PREDICTION
     Program_data$hybrid_prediction <-        apply(temp$mu, 2, mean)
@@ -164,8 +165,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     #BAYESIAN LOGISTIC REGRESSION CBT-BASED PREDICTION
     #how to define for multiple rankers?
-    #Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
-    
+    Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1]))
     #OLS-BASED PMT PREDICTION
     Program_data$PMT_prediction <- (X_program[,-1]%*%beta_start[-1])#beta_start is the OLS estimate of beta
     
@@ -174,15 +174,15 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
         hybrid_rank =rank(hybrid_prediction)/length(community),
         pmt_rank =rank(PMT_prediction)/length(community),
         cbt_model_rank = rank(cbt_model_prediction)/length(community),
-        consumption_rank = rank(consumption)/length(community)
-        #CBT_LR_rank = rank(CBT_LR_prediction)/length(village)
+        consumption_rank = rank(consumption)/length(community),
+        CBT_LR_rank = rank(CBT_LR_prediction)/length(community)
       ) %>%
       mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
-        hybrid_inclusion = hybrid_rank <= poverty_rate,
-        pmt_inclusion = pmt_rank <= poverty_rate,
-        consumption_inclusion = consumption_rank<=poverty_rate,
-        cbt_model_inclusion = cbt_model_rank<=poverty_rate,
-        #CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
+        hybrid_inclusion = hybrid_rank <= treat_rate,
+        pmt_inclusion = pmt_rank <= treat_rate,
+        consumption_inclusion = consumption_rank<=treat_rate,
+        cbt_model_inclusion = cbt_model_rank<=treat_rate,
+        CBT_LR_inclusion = CBT_LR_rank<=treat_rate,
         cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
       mutate_at(vars(matches("inclusion")), as.factor)
     
@@ -191,8 +191,9 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     r[[i]] <- rbind(
       confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-      mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS"),
+      confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$CBT_LR_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+      mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS", "CBT Probit"),
              CBT_ncomm = CBT_ncomm,
              TD = Sensitivity - (1-Specificity)) %>%
       dplyr::select(c(Method,CBT_ncomm,Sensitivity, Specificity, TD))
@@ -202,4 +203,26 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
   
   return(r)
 }, mc.cores = length(CBT_ncomm_list))
+
+all_results_1 <- unlist(results, recursive = FALSE)
+all_results <- do.call("rbind", all_results_1)
+
+write.csv(all_results, "Hillebrecht Analysis/all_results.csv")
+
+all_results %>%melt(id.var = c("Method", "CBT_ncomm")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"),
+                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
+  group_by(Method, CBT_ncomm, variable) %>%
+  mutate(mean = median(value ))%>%ungroup%>%
+  #subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
+  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
+  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method))) + 
+  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method)),
+               fun=mean, geom="point", color="black")+
+  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
+  facet_grid(variable~CBT_ncomm, scales = "free")+ theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
+  scale_colour_brewer(type = "qual", palette = "Dark2")# +
+#scale_y_log10()
+ggsave("Hillebrecht Analysis/results.pdf")
 
