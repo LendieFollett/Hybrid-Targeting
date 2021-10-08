@@ -134,7 +134,6 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                           rank=TRUE)
     
     # ----> update quality weights
-    lambda = prior_prob_rank
     omega_rank <- GibbsUpQualityWeights(y=Z , 
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  mu_beta,
@@ -155,7 +154,8 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                         mu=X_PMT %*% beta_micro,
                                         beta_micro, mu_beta, 
                                         con = con,
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = prior_prob_micro)
+                                        weight_prior_value = c(0.5, 1, 2 ), 
+                                        prior_prob = prior_prob_micro)
     
     
     # ----> update mu_beta

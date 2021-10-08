@@ -63,6 +63,15 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     Z <- initial.list$Z
   }
   
+  #If using random effects
+  #ISSUE: ASSUMING EACH PERSON IS RANKED BY THE SAME NUMBER OF RANKERS
+  if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
+    nrank = apply(Z, 1, function(x){sum(!is.na(x))}) #how many times was each of the N1 households ranked
+    if(sd(nrank)>0){
+      stop("Differing number of rankers per household")
+    }
+    X_RAND<- kronecker(diag(N1),rep(1, nrank[1])) #
+  }
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
   if(is.null(initial.list$con)){con <- .5}else{ con <- initial.list$con  } 
@@ -73,18 +82,25 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   #prior mean on beta_rank
   mu_beta = rep(0, length(beta_rank)-1)
   ## Gibbs iteration
+  
+  
+  ## initial values for random effects
+  alpha <- rep(0, N1)
+  alpha_mat <- array(0, dim = dim(Z))
+  sigma_alpha <- 2.5
+  
   for(iter in 1:(iter_burn + iter_keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, 
                                     Z = Z, 
-                                    mu = X_CBT %*% beta_rank, 
+                                    mu = X_CBT %*% beta_rank+ alpha, 
                                     omega_rank = omega_rank, 
                                     R = R )
-    #Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
+
     
     # ----> update beta_rank
-    beta_rank = GibbsUpMuGivenLatentGroup(Y = Z,
+    beta_rank = GibbsUpMuGivenLatentGroup(Y = Z - alpha_mat,
                                           X = X_CBT,
                                           omega = omega_rank,
                                           mu_beta = mu_beta,
@@ -98,10 +114,21 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                         con = con,
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),#lambda,
                                         rank=TRUE)
-    #lambda <- GibbsUpLambda(omega_rank, prior_prob = rep(1/3, 3), prior_weights=c(0.5, 1, 2 ))
+
     lambda = prior_prob_rank
     # ----> update con    
     con <- GibbsUpConstant(beta_rank, NULL, mu_beta, omega_rank, NULL,con)
+    
+    
+    # ----> update random effect parameters IF multiple rankers per household
+    # (this is kind of slow....)
+    if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
+      
+      alpha <- GibbsUpGammaGivenLatentGroup(Z,      X_CBT %*% beta_rank, X_RAND, omega_rank, sigma2_alpha = sigma2_alpha) 
+      sigma2_alpha <- GibbsUpsigma_alpha(alpha, nu=3, tau2=25)  
+      
+      alpha_mat <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})*alpha #reformatted alpha
+    }
     
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
     mu = as.vector( X_program %*% beta_rank )
