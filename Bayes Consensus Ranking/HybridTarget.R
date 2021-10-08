@@ -114,13 +114,14 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   ## initial values for random effects
   alpha <- rep(0, N1)
   alpha_mat <- array(0, dim = dim(Z))
+  sigma_alpha <- 2.5
   
   for(iter in 1:(iter_burn + iter_keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
     Z = GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, 
                                     Z = Z, 
-                                    mu = X_CBT %*% beta_rank, 
+                                    mu = X_CBT %*% beta_rank + alpha, 
                                     omega_rank = omega_rank, 
                                     R = R )
 
@@ -166,12 +167,13 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     
     
     # ----> update random effect parameters IF multiple rankers per household
-    if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
+    # (this is kind of slow....)
+    if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
       
-    alpha <- GibbsUpGammaGivenLatentGroup(Z,      X_CBT %*% beta, X_RAND, omega_rank, sigma_gamma = sigma2_alpha) 
+    alpha <- GibbsUpGammaGivenLatentGroup(Z,      X_CBT %*% beta_rank, X_RAND, omega_rank, sigma2_alpha = sigma2_alpha) 
     sigma2_alpha <- GibbsUpsigma_alpha(alpha, nu=3, tau2=25)  
     
-    alpha_mat <- apply(Z, 1:2, function(x){ifelse(x != 0, 1, 0)})*alpha #reformatted alpha
+    alpha_mat <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})*alpha #reformatted alpha
     }
     
     

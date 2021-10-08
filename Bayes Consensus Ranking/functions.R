@@ -308,29 +308,28 @@ GibbsUpLambda <- function(omega, prior_prob, prior_weights){
 #omega is a vector error variance of the scores (potentially heterogeneous)
 #sigma_alpha is the standard deviation on that source's random effect
 
-GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_alpha = 2.5){
+GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma2_alpha = 2.5^2){
   
   N <- nrow(y) #number of random effects to estimate = number of rows
-  #ISSUE: ONLY APPLIES WHEN MULTIPLE SOURCES OF SAME KIND AVAILABLE..
   #Update conditionally if ncol > 1
   Col <- ncol(y)
   
   #Complete 'data' vector
-  u <- as.vector(y)
-  #LRF - 
-  Sigma_inv_diag <- c(rep(omega, each =nrow(y)))
+  u <- c( t( y- xbeta%*%array(1, dim = c(1, ncol(y))) ) )
+  u <- u[complete.cases(u)]
+
+  nperson = apply(y, 2, function(x){sum(!is.na(x))})
+  Sigma_inv_diag <- c(rep(omega, times =nperson))
+
+  pt1 <- (u)^T%*%(Sigma_inv_diag*diag(length(Sigma_inv_diag)))%*%Xr
   
-  Xf <- rep(xbeta, Col)
-  
-  pt1 <- (u-Xf)^T%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr
-  
-  pt2 <- t(Xr)%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr + diag(N)/(sigma_alpha^2)
+  pt2 <- t(Xr)%*%(Sigma_inv_diag*diag(length(Sigma_inv_diag)))%*%Xr + diag(N)/(sigma2_alpha)
   
   pt2_inv <- solve(pt2)
   
-  gamma <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
+  alpha <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
   
-  return(gamma)
+  return(alpha)
 }
 
 
