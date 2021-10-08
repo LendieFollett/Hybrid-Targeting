@@ -67,7 +67,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   
   ## store MCMC draws
   draw = list(
-    lambda = array(NA, dim = c(iter_keep, length(prior_prob_rank))),
+    #lambda = array(NA, dim = c(iter_keep, length(prior_prob_rank))),
     Z = array(NA, dim = c( iter_keep,N1)),
     mu_beta = array(NA, dim = c(iter_keep,P)),
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
@@ -99,6 +99,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
       stop("Differing number of rankers per household")
     }
     X_RAND<- kronecker(diag(N1),rep(1, nrank[1])) #
+    Z_bin <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})
   }
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
@@ -114,7 +115,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   ## initial values for random effects
   alpha <- rep(0, N1)
   alpha_mat <- array(0, dim = dim(Z))
-  sigma_alpha <- 2.5
+  sigma2_alpha <- 2.5^2
   
   for(iter in 1:(iter_burn + iter_keep)){
     
@@ -173,7 +174,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     alpha <- GibbsUpGammaGivenLatentGroup(Z,      X_CBT %*% beta_rank, X_RAND, omega_rank, sigma2_alpha = sigma2_alpha) 
     sigma2_alpha <- GibbsUpsigma_alpha(alpha, nu=3, tau2=25)  
     
-    alpha_mat <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})*alpha #reformatted alpha
+    alpha_mat <- Z_bin*alpha #reformatted alpha
     }
     
     
@@ -190,7 +191,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
       # store value at this iteration
       draw$Z[j,] = apply(Z, 1, function(x){sum(x,na.rm=TRUE)})
       draw$mu_beta[j,] = mu_beta
-      draw$lambda[j,] = lambda
+     # draw$lambda[j,] = lambda
       draw$beta_rank[j,] = beta_rank
       draw$beta_micro[j,] = beta_micro
       draw$mu[j,] = mu

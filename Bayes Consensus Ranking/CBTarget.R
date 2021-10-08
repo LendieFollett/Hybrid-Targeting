@@ -78,7 +78,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   
   ## initial values for weights
   omega_rank = rep(1, R)
-  lambda <- prior_prob_rank
+  #lambda <- prior_prob_rank
   #prior mean on beta_rank
   mu_beta = rep(0, length(beta_rank)-1)
   ## Gibbs iteration
@@ -111,7 +111,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     omega_rank <- GibbsUpQualityWeights(y=Z , 
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),#lambda,
+                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),
                                         rank=TRUE)
 
 
