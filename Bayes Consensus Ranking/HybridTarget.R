@@ -30,11 +30,12 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                         iter_burn = 5000,
                         print_opt = 100,
                         initial.list = NULL){
-  #pair.com.ten An \eqn{N1} by \eqn{N1} by \eqn{R} pairwise comparison array for all \eqn{N1} entities and \eqn{R} rankers, 
-  #where the (\eqn{i},\eqn{j},\eqn{r}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 
+  #pair.com.ten A list of length R with elements: \eqn{N1[k]} by \eqn{N1[k]}  pairwise comparison array
+  #where the (\eqn{i},\eqn{j}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 
   #0 if \eqn{i} is ranker lower than \eqn{j}, 
   #and NA if the relation between \eqn{i} and \eqn{j} is missing. 
   #Note that the diagonal elements (\eqn{i},\eqn{i},\eqn{r})'s for all rankers should be set to NA as well.
+  
   #create pair.comp.ten matrix
   pair.comp.ten = list()#array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
   for(r in 1:R){
@@ -91,9 +92,13 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   }
   
   #If using random effects
+  #ISSUE: ASSUMING EACH PERSON IS RANKED BY THE SAME NUMBER OF RANKERS
   if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
-    nrank = apply(Y, 1, function(x){sum(!is.na(x))}) 
-    X_RAND<- kronecker(rep(1,nrank), diag(N1))
+    nrank = apply(Z, 1, function(x){sum(!is.na(x))}) #how many times was each of the N1 households ranked
+    if(sd(nrank)>0){
+      stop("Differing number of rankers per household")
+    }
+    X_RAND<- kronecker(diag(N1),rep(1, nrank[1])) #
   }
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
@@ -118,8 +123,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                     mu = X_CBT %*% beta_rank, 
                                     omega_rank = omega_rank, 
                                     R = R )
-    #Z <- (Z -mean(Z, na.rm = TRUE))/sd(Z, na.rm = TRUE)
-    
+
     # ----> update beta_rank
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z -alpha_mat,
                                           X = X_CBT,
