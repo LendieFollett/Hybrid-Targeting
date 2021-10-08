@@ -302,3 +302,52 @@ GibbsUpLambda <- function(omega, prior_prob, prior_weights){
   
 }
 
+# Update random effects for scores
+#y is the Z score matrix
+#mu is the corresponding mean x*delta
+#omega is a vector error variance of the scores (potentially heterogeneous)
+#sigma_alpha is the standard deviation on that source's random effect
+
+GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma_alpha = 2.5){
+  
+  N <- nrow(y) #number of random effects to estimate = number of rows
+  #ISSUE: ONLY APPLIES WHEN MULTIPLE SOURCES OF SAME KIND AVAILABLE..
+  #Update conditionally if ncol > 1
+  Col <- ncol(y)
+  
+  #Complete 'data' vector
+  u <- as.vector(y)
+  #LRF - 
+  Sigma_inv_diag <- c(rep(omega, each =nrow(y)))
+  
+  Xf <- rep(xbeta, Col)
+  
+  pt1 <- (u-Xf)^T%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr
+  
+  pt2 <- t(Xr)%*%(Sigma_inv_diag*Diagonal(length(Sigma_inv_diag)))%*%Xr + diag(N)/(sigma_alpha^2)
+  
+  pt2_inv <- solve(pt2)
+  
+  gamma <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
+  
+  return(gamma)
+}
+
+
+### Gibbs update for variances on random effects
+### Gibbs update for sigma2, given prior sigma2 ~ Scale-Inv-chi2(nu, tau2) and data iid ~ N(0, sigma2)
+GibbsUpsigma_alpha <- function(x, nu, tau2){
+  if(nu < Inf){
+    n.x = length(x)
+    
+    nu.post = nu + n.x
+    tau2.post = ( nu * tau2 + sum(x^2) )/(nu + n.x)
+    
+    sigma2 = tau2.post * nu.post/rchisq(1, df = nu.post)
+  }else{
+    sigma2 = tau2
+  }
+  
+  return(sigma2)
+}
+
