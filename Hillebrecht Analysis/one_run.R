@@ -25,6 +25,7 @@ doESS <- function(x){
 }
 
 source("Bayes Consensus Ranking/functions.R")
+source("Bayes Consensus Ranking/HybridTarget.R")
 #parameters for simulation
 
 

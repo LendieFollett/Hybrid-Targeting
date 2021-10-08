@@ -179,7 +179,7 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
 ### Gibbs update for information quality weights omega_micro, omega_rank---------
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
 #prior_prob will be current iteration's dirichlet weights in the case of updating omega_rank
-GibbsUpQualityWeights <- function(y, mu, beta, mu_beta,con, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value)),rank=FALSE){
+GibbsUpQualityWeights <- function(y, mu, beta, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value)),rank=FALSE){
   
   if(!rank){ #if it's not omega_rank
   Col <- ncol(y)

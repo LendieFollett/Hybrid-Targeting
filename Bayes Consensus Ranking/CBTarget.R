@@ -110,12 +110,11 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     # ----> update quality weights
     omega_rank <- GibbsUpQualityWeights(y=Z , 
                                         mu=X_CBT %*% beta_rank, 
-                                        beta_rank,  mu_beta,
-                                        con = con,
+                                        beta_rank,  
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),#lambda,
                                         rank=TRUE)
 
-    lambda = prior_prob_rank
+
     # ----> update con    
     con <- GibbsUpConstant(beta_rank, NULL, mu_beta, omega_rank, NULL,con)
     
