@@ -30,7 +30,7 @@ source("Bayes Consensus Ranking/functions.R")
 
 poverty_rate <- .2
 iter_keep = 4000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =4000   ## Gibbs sampler burn-in iterations 
+iter_burn = 4000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
