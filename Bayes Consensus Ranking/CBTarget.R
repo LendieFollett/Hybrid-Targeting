@@ -1,10 +1,14 @@
 
+#If multiple rankers and heterogeneous qualities:
+# - groups will index ranker type (length(groups) = ncol(Tau))
+# - prior_prob_rank will be a list with # of elements equal to the # of distinct ranker types, in order
 
 #CBT RANKING ONLY
 CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                     X_elite = NULL,
                     weight_prior_value = c(0.5, 1, 2), 
-                    prior_prob_rank = rep(1/length(weight_prior_value), length(weight_prior_value)),
+                    prior_prob_rank = list(rep(1/length(weight_prior_value), length(weight_prior_value))), #override if heterogeneous
+                    groups = rep(1, ncol(Tau)), #Defaults to homogeneous weights
                     N1 = dim(X_CBT)[1], #how many people in test set
                     R = ncol(Tau), #how many rankers. often will be equal to K
                     iter_keep = 5000,

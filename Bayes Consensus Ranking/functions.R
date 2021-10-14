@@ -228,7 +228,7 @@ GibbsUpQualityWeightsHeter <- function(y, groups, mu, beta, mu_beta,con, weight_
           log.post.prob[k] <- log.post.prob[k] + sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
         }
       }
-      log.post.prob <- log.post.prob + log(prior_prob)
+      log.post.prob <- log.post.prob + log(prior_prob[[g]]) #the g'th prior (specific to ranker type group)
       log.post.prob = log.post.prob - max(log.post.prob)
       post.prob = exp(log.post.prob)
       weight_samp[cols] <- sample(x=weight_prior_value,size = 1, prob= post.prob)
