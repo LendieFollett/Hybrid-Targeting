@@ -177,32 +177,11 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
 
 
 ### Gibbs update for information quality weights omega_micro, omega_rank---------
-#y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
-#prior_prob will be current iteration's dirichlet weights in the case of updating omega_rank
+#y is Z (N1xR)
+#prior_prob is weights in the case of updating omega_rank
 GibbsUpQualityWeights <- function(y, mu, beta, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value)),rank=FALSE){
   
-  if(!rank){ #if it's not omega_rank
-  Col <- ncol(y)
-  if(is.null(Col)){Col <- 1}
-  n.prior.value <- length(weight_prior_value)
-  weight_samp <- rep(NA, Col)
-
-  log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
-  for(k in 1:n.prior.value){ #over potential values
-    for( col in 1:Col){ #over information source within y
-      idx <- which(!is.na(y[,col])) #in the case of omega_rank
-      log.post.prob[k] <-  log.post.prob[k] +sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
-    }
-    log.post.prob[k] <- log.post.prob[k] + log(prior_prob[k])#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
-  }
-#note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
-  log.post.prob = log.post.prob - max(log.post.prob)
-  post.prob = exp(log.post.prob)
-  
-  weight_samp <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
-  
-  return(weight_samp)
-  }else{ #if it is omega_rank
+ #if it is omega_rank
     Col <- ncol(y) #need to update an omega for every oclumn
 
     n.prior.value <- length(weight_prior_value)
@@ -223,14 +202,14 @@ GibbsUpQualityWeights <- function(y, mu, beta, weight_prior_value = c(0.5, 1, 2)
     weight_samp[1:Col] <- weight_prior_value[sample(c(1,2,3),size = 1, prob= post.prob)]
     #note: w = 1/sigma^2; sigma^2 = 1/w; sigma = 1/sqrt(w)
     return(weight_samp)
-  }
+
 }
 
 
 ### Gibbs update for information quality weights omega_rank when ranks are of varying qualities---------
 #y is either Y_comm (KxA), Y_micro (N0xM), or Z (N1xR)
 #prior_prob will be current iteration's dirichlet weights in the case of updating omega_rank
-#groups is an id vector of length ncol(y) = ncol(z), indexing unique rankers.
+#groups is an id vector of length ncol(y) = ncol(z), indexing unique rankers type e.g., groups = c(1,2,3,1,2,3,1,2,3,...)
 #each unique grouping of rankers will share the same omega (score error variance)
 GibbsUpQualityWeightsHeter <- function(y, groups, mu, beta, mu_beta,con, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value)),rank=FALSE){
   
@@ -240,9 +219,9 @@ GibbsUpQualityWeightsHeter <- function(y, groups, mu, beta, mu_beta,con, weight_
     n.prior.value <- length(weight_prior_value)
     weight_samp <- rep(NA, Col)
     
-    log.post.prob = rep(0, n.prior.value) #re-initialize for next information source     
-    for( g in unique(groups)){ #over information source within y
-      cols <- which(groups == g) #within any group there will be (possibly) multiple columns
+    for( g in unique(groups)){ #over unique ranker groups (e.g., women, leaders, etc...)
+      log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
+      cols <- which(groups == g) #within any group there will be multiple columns
       for(k in 1:n.prior.value){ #over potential values
         for (col in cols){
           idx <- which(!is.na(y[,col])) #in the case of omega_rank
@@ -321,9 +300,9 @@ GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma2_alpha = 2.5
   nperson = apply(y, 2, function(x){sum(!is.na(x))})
   Sigma_inv_diag <- c(rep(omega, times =nperson))
 
-  pt1 <- (u)^T%*%(Sigma_inv_diag*diag(length(Sigma_inv_diag)))%*%Xr
-  
-  pt2 <- t(Xr)%*%(Sigma_inv_diag*diag(length(Sigma_inv_diag)))%*%Xr + diag(N)/(sigma2_alpha)
+  pt1 <- (u)^T%*%(diag(Sigma_inv_diag))%*%Xr
+  #https://www.sciencedirect.com/topics/computer-science/diagonal-matrix
+  pt2 <- (t(Xr)*Sigma_inv_diag)%*%Xr + diag(N)/(sigma2_alpha)
   
   pt2_inv <- solve(pt2)
   

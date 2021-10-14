@@ -108,7 +108,8 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                           rank=TRUE)
     
     # ----> update quality weights
-    omega_rank <- GibbsUpQualityWeights(y=Z , 
+    omega_rank <- GibbsUpQualityWeightsHeter(y=Z , 
+                                             groups = groups,
                                         mu=X_CBT %*% beta_rank, 
                                         beta_rank,  
                                         weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),
