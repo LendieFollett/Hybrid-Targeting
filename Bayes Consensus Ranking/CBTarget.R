@@ -91,7 +91,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   ## initial values for random effects
   alpha <- rep(0, N1)
   alpha_mat <- array(0, dim = dim(Z))
-  sigma_alpha <- 2.5
+  sigma2_alpha <- 2.5^2
   
   for(iter in 1:(iter_burn + iter_keep)){
     

@@ -177,7 +177,7 @@ Program_data <- Program_data%>%group_by(community) %>%
     cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
-
+CBT_prop <- .3
 
 rbind(
   confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,

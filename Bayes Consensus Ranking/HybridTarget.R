@@ -151,7 +151,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                            con = con)
     
     # ----> update quality weights    
-    omega_micro <- GibbsUpsigma_alpha(Y_micro-X_PMT %*% beta_micro, nu=3, tau2=25)  
+    omega_micro <- 1/GibbsUpsigma_alpha(Y_micro-X_PMT %*% beta_micro, nu=3, tau2=25)  
     
     
     # ----> update mu_beta

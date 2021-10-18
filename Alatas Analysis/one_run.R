@@ -25,6 +25,8 @@ doESS <- function(x){
 }
 
 source("Bayes Consensus Ranking/functions.R")
+source("Bayes Consensus Ranking/HybridTarget.R")
+source("Bayes Consensus Ranking/CBTarget.R")
 #parameters for simulation
 
 
@@ -34,7 +36,7 @@ iter_burn =1500   ## Gibbs sampler burn-in iterations
 print_opt = 100  ## print a message every print.opt steps
 
 
-full_data <- read.csv("Empirical Study/alatas.csv") %>%
+full_data <- read.csv("Alatas Analysis/alatas.csv") %>%
   dplyr::select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
@@ -67,7 +69,7 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
          hhsize2 = hhsize^2)
 
 
-CBT_prop <- 0.1
+CBT_prop <- 0.25
 
 
 whats_left <- unique(full_data$community_id[- PMT_idx])
@@ -141,12 +143,18 @@ temp <- HybridTarget(Tau=Tau,
                            X_program = X_program,
                            X_elite = "connected",
                            Y_micro = Y_micro, #needs to be a matrix, not vector
-                           prior_prob_rank = c(1,1,1)/3,
-                           prior_prob_micro = c(1,1,1)/3,
                            iter_keep = iter_keep,
                            iter_burn = iter_burn,
                            print_opt = print_opt,
                            initial.list = initial_list)
+
+
+Hybrid_mu_beta_mean <- apply(temp$mu_beta, 2, mean)
+Hybrid_beta_rank_mean <- apply(temp$beta_rank, 2, mean)
+Hybrid_beta_micro_mean <- apply(temp$beta_micro, 2, mean)
+
+data.frame(x = colnames(X_PMT)[-1],Hybrid_mu_beta_mean,Hybrid_beta_rank_mean[-1],Hybrid_beta_micro_mean[-1]) %>%
+  write.csv("Alatas Analysis/coefficients.csv")
 
 
 apply(temp$omega_rank, 2, mean); apply(Hybridtemp$omega_rank, 2, var)
