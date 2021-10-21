@@ -12,7 +12,8 @@ library(Rcpp)
 #devtools::install_github("adzemski/rtnorm")
 #sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
-
+source("Bayes Consensus Ranking/HybridTarget.R")
+source("Bayes Consensus Ranking/CBTarget.R")
 #parameters for simulation
 
 doESS <- function(x){
@@ -23,8 +24,9 @@ doESS <- function(x){
     return(ESS(x))
   }
 }
-K = R = 200 ## number of communities equal to number of rankers
-M = 2   ## number of micro-level variables captured
+K = 100
+R = 200 ## number of communities equal to number of rankers
+M = 1   ## number of micro-level variables captured
 N0 = 1000## number of unranked/training items
 N1 = 1000 ## number of ranked/test items
 P = 6  ## number of covariates
@@ -35,7 +37,7 @@ iter_burn =500   ## Gibbs sampler burn-in iterations
 print_opt = 100  ## print a message every print.opt steps
 
 #simulate data based on parameters
-source("Bayes Consensus Ranking/simulate_data.R")
+source("Simulation Study/simulate_data.R")
 
 
 #starting values for random effects
@@ -44,21 +46,20 @@ temp_data <- data.frame(y = as.vector(apply(apply(Y_micro, 2, function(x){(x - m
 form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_micro1), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
-initial_list <- list(#gamma_rank = gamma_start,
-                     beta_rank = beta_start,
-                     beta_comm = beta_start,
+initial_list <- list(beta_rank = beta_start,
                      beta_micro = beta_start)
 
 #Run MCMC for Bayesian Consensus Targeting
-temp <- BCTarget(Tau=Tau, 
-                 X_micro0 = X_micro0, 
-                 X_micro1 = X_micro1,
-                 X_elite = 7,#7th position (including intercept)
-                 Y_micro = Y_micro,
-                 iter_keep = iter_keep,
-                 iter_burn = iter_burn,
-                 print_opt = print_opt,
-                 initial.list = initial_list)
+temp <- HybridTarget(Tau=Tau, 
+                     X_PMT = X_micro0, 
+                     X_CBT = X_micro0,
+                     X_program = X_micro1,
+                     X_elite = 7,
+                     Y_micro = Y_micro, #needs to be a matrix, not vector
+                     iter_keep = iter_keep,
+                     iter_burn = iter_burn,
+                     print_opt = print_opt,
+                     initial.list = initial_list)
 
 lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
 

@@ -99,14 +99,14 @@ P <- ncol(X) - 1
   } else{ #if it's rank
 
     if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
-      #LRF needs to address: condition for when a person is ranked by multiple sources
+      # condition for when a person is ranked by multiple sources
       u <- as.vector(Y)
       rows <- which(!is.na(u))
       rows2 <- apply(Y, 2, function(x){which(!is.na(x))})
       u <- u[rows]
       n <- length(u)
-      X <- X[unlist(rows2),]
-      Sigma_inv_y<-rep(omega, times =lapply(rows2, length))*diag(n) 
+      if(is.list(rows2)){X <- X[unlist(rows2),]}else{X <- X[as.vector(rows2),]}
+      if(is.list(rows2)){Sigma_inv_y<-rep(omega, times =lapply(rows2, length))*diag(n)}else{Sigma_inv_y<-rep(omega, times =rep(nrow(rows2), length(omega)))*diag(n)} 
     }else{
       u <- apply(Y, 1, function(x){sum(x, na.rm=TRUE)}) #basically take the only non-NA element
       n <- length(u)

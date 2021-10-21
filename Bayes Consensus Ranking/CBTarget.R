@@ -121,8 +121,9 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
 
 
     # ----> update con    
-    con <- GibbsUpConstant(beta_rank, NULL, mu_beta, omega_rank, NULL,con)
+    con <- GibbsUpsigma_alpha(c(beta_rank[-1], beta_micro[-1]) - c(mu_beta, mu_beta), nu=3, tau2=25)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
     
+  
     
     # ----> update random effect parameters IF multiple rankers per household
     # (this is kind of slow....)

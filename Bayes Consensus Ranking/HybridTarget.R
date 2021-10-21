@@ -65,19 +65,6 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   N0 <- nrow(Y_micro)
   N1 <- dim(X_CBT)[1]
   
-  ## store MCMC draws
-  draw = list(
-    #lambda = array(NA, dim = c(iter_keep, length(prior_prob_rank))),
-    Z = array(NA, dim = c( iter_keep,N1)),
-    mu_beta = array(NA, dim = c(iter_keep,P)),
-    beta_rank = array(NA, dim = c(iter_keep,P+1)),
-    beta_micro = array(NA, dim = c(iter_keep,P+1)),
-    mu = array(NA, dim = c(iter_keep,nrow(X_program))),
-    mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), #for debiasing
-    omega_micro = array(NA, dim = c(iter_keep, 1) ),
-    omega_rank = array(NA, dim = c(iter_keep, R) ),
-    con = array(NA, dim = c(iter_keep, 1) )
-  )
   
   ## set initial values for parameters, where given
   if(is.null(initial.list$Z)){
@@ -116,6 +103,21 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   alpha <- rep(0, N1)
   alpha_mat <- array(0, dim = dim(Z))
   sigma2_alpha <- 2.5^2
+  
+  ## store MCMC draws
+  draw = list(
+    Z = array(NA, dim = c( iter_keep,N1)),
+    mu_beta = array(NA, dim = c(iter_keep,P)),
+    beta_rank = array(NA, dim = c(iter_keep,P+1)),
+    beta_micro = array(NA, dim = c(iter_keep,P+1)),
+    mu = array(NA, dim = c(iter_keep,nrow(X_program))),
+    mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), 
+    omega_micro = array(NA, dim = c(iter_keep, 1) ),
+    omega_rank = array(NA, dim = c(iter_keep, R) ),
+    con = array(NA, dim = c(iter_keep, 1) ),
+    alpha = array(NA, dim = c(iter_keep, N1)),
+    sigma2_alpha = array(NA, dim = c(iter_keep, 1))
+  )
   
   for(iter in 1:(iter_burn + iter_keep)){
     
@@ -159,7 +161,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                       omega_rank, omega_micro ,con)
     
     # ----> update Omega (shared variance of delta, gamma around mu_beta)
-    con <- GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
+    con <- GibbsUpsigma_alpha(c(beta_rank[-1], beta_micro[-1]) - c(mu_beta, mu_beta), nu=3, tau2=25)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
     
     
     # ----> update random effect parameters IF multiple rankers per household
@@ -194,6 +196,8 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
       draw$omega_micro[j] = omega_micro
       draw$omega_rank[j,] = omega_rank
       draw$con[j] = con
+      draw$alpha[j,] = alpha
+      draw$sigma2_alpha[j,] = sigma2_alpha
     }
     # print iteration number
     if(iter %% print_opt == 0){

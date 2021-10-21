@@ -22,7 +22,7 @@ omega_rank_true <- rep(2, R)
 beta_rank_true = c(1.5,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
 beta_micro_true = c(-1,sample(c(0,1), size = P, replace=TRUE)) 
 mu_beta <- apply(cbind(beta_rank_true,beta_micro_true), 1, mean)
-
+sigma2_rank <- 1
 #Fill "responses"
 
 #gamma_micro_true <-  rnorm(N0, 0, sigma2_micro^.5)
@@ -34,22 +34,28 @@ for (m in 1:M){ #fill micro-data
   Y_micro1[,m] <-  rnorm(N0, X_micro1 %*%mu_beta , sqrt(1/omega_micro_true[m])) #+ gamma_micro_true
 }
 
-#gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)
+gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)
 for (r in 1:R){ #fill latent Z scores
-  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_rank_true, sqrt(1/omega_rank_true[r])) #+gamma_rank_true
+  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_rank_true, sqrt(1/omega_rank_true[r])) +gamma_rank_true
 }
 
 
 
-Tau <- apply(Z, 2, rank)
+#Tau <- apply(Z, 2, rank)
 
 #incomplete rankings
 Tau <- data.frame(Z, community=community[1:N1]) %>% 
   group_by(community) %>%
   mutate_all(rank)  #rank within community
+#If there are R rankers and K communities,
+#then each community had R/K unique rankers
 
-for ( idx in 1:R){ #loop over columns
-  Tau[Tau$community != idx,idx] <- NA
+j=0
+for ( idx in 1:K){ #loop over columns
+  for (idx2 in 1:(R/K)){
+    j = j + 1
+  Tau[Tau$community != idx,j] <- NA
+  }
 }
 Tau <- subset(Tau, select = -c(community)) %>%
   as.matrix() #R rankings (what we actually observe)
@@ -59,7 +65,6 @@ Tau <- subset(Tau, select = -c(community)) %>%
 
 
 #remove parameters we wouldn't have
-rm(A)
 rm(N1)
 rm(N0)
 rm(R)
