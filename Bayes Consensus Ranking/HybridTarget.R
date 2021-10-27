@@ -85,7 +85,8 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     if(sd(nrank)>0){
       stop("Differing number of rankers per household")
     }
-    X_RAND<- kronecker(diag(N1),rep(1, nrank[1])) #
+    X_RAND<- kronecker(diag(N1),
+                       rep(1, nrank[1])) #
     Z_bin <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})
   }
   
@@ -153,7 +154,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                            con = con)
     
     # ----> update quality weights    
-    omega_micro <- 1/GibbsUpsigma_alpha(Y_micro-X_PMT %*% beta_micro, nu=3, tau2=25)  
+    omega_micro <- 1/GibbsUpsigma_alpha(Y_micro-X_PMT %*% beta_micro, nu=1, tau2=1)  
     
     
     # ----> update mu_beta
@@ -161,7 +162,8 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                       omega_rank, omega_micro ,con)
     
     # ----> update Omega (shared variance of delta, gamma around mu_beta)
-    con <- GibbsUpsigma_alpha(c(beta_rank[-1], beta_micro[-1]) - c(mu_beta, mu_beta), nu=3, tau2=25)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
+    #changed from nu = 3, tau2 = 25
+    con <- GibbsUpsigma_alpha(c(beta_rank[-1], beta_micro[-1]) - c(mu_beta, mu_beta), nu=1, tau2=1)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
     
     
     # ----> update random effect parameters IF multiple rankers per household
@@ -169,7 +171,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
       
     alpha <- GibbsUpGammaGivenLatentGroup(Z,      X_CBT %*% beta_rank, X_RAND, omega_rank, sigma2_alpha = sigma2_alpha) 
-    sigma2_alpha <- GibbsUpsigma_alpha(alpha, nu=3, tau2=25)  
+    sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
     
     alpha_mat <- Z_bin*alpha #reformatted alpha
     }

@@ -117,10 +117,6 @@ P <- ncol(X) - 1
     #LRF:THIS ASSUMES WE'RE ORDERED BY COMMUNITY....
   }
 
-
-
-
-
 if(!rank){  
   Sigma_inv_beta <- diag(c(1/2.5^2, (1/con^2)*rep(1, P))) #prior variance on beta is con^2 beta = N(mu_beta, con^2) (removed omega)
   
@@ -294,15 +290,17 @@ GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma2_alpha = 2.5
   Col <- ncol(y)
   
   #Complete 'data' vector
-  u <- c( t( y- xbeta%*%array(1, dim = c(1, ncol(y))) ) )
+  resid <- y- xbeta%*%array(1, dim = c(1, ncol(y)))
+  u <- c( t( resid) ) 
   u <- u[complete.cases(u)]
 
+  #calculate number of people per ranker
   nperson = apply(y, 2, function(x){sum(!is.na(x))})
   Sigma_inv_diag <- c(rep(omega, times =nperson))
 
   pt1 <- (u)^T%*%(diag(Sigma_inv_diag))%*%Xr
   #https://www.sciencedirect.com/topics/computer-science/diagonal-matrix
-  pt2 <- (t(Xr)*Sigma_inv_diag)%*%Xr + diag(N)/(sigma2_alpha)
+  pt2 <- (t(Xr)*Sigma_inv_diag)%*%Xr + diag(N)/(sigma2_alpha) #Inverse of posterior covariance 
   
   pt2_inv <- solve(pt2)
   

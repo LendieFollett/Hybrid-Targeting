@@ -26,14 +26,15 @@ doESS <- function(x){
 }
 K = 100
 R = 200 ## number of communities equal to number of rankers
-M = 1   ## number of micro-level variables captured
-N0 = 1000## number of unranked/training items
-N1 = 1000 ## number of ranked/test items
+#assumption: R/K is the number of rankers per person...
+N_PMT = 300## number of unranked/training items
+N_CBT = 300 ## number of ranked/test items
+N_Program = 300 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
 
 iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =500   ## Gibbs sampler burn-in iterations 
+iter_burn =1000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 #simulate data based on parameters
@@ -41,9 +42,8 @@ source("Simulation Study/simulate_data.R")
 
 
 #starting values for random effects
-temp_data <- data.frame(y = as.vector(apply(apply(Y_micro, 2, function(x){(x - mean(x,na.rm=TRUE))/sd(x,na.rm=TRUE)}), 1, function(x){mean(x, na.rm=TRUE)})),
-                        kronecker(rep(1, ncol(Y_micro)), X_micro0))
-form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_micro1), collapse = "+")))
+temp_data <- data.frame(y = Y_micro,X_CBT)
+form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_CBT), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(beta_rank = beta_start,
@@ -51,9 +51,9 @@ initial_list <- list(beta_rank = beta_start,
 
 #Run MCMC for Bayesian Consensus Targeting
 temp <- HybridTarget(Tau=Tau, 
-                     X_PMT = X_micro0, 
-                     X_CBT = X_micro0,
-                     X_program = X_micro1,
+                     X_PMT = X_PMT, 
+                     X_CBT = X_CBT,
+                     X_program = X_Program,
                      X_elite = 7,
                      Y_micro = Y_micro, #needs to be a matrix, not vector
                      iter_keep = iter_keep,
@@ -67,11 +67,19 @@ mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
+alpha_mean <- apply(temp$alpha, 2, mean)
+plot(alpha_true,alpha_mean)
+plot(temp$sigma2_alpha)
+mean(sqrt(temp$sigma2_alpha))
+
+plot(temp$omega_micro)
+
 #true coefficients:
 beta_rank_true #intercept is irrelevant
 beta_micro_true
 
-
+apply(temp$omega_rank, 2, mean)
+omega_rank_true
 
 data.frame(parameter = paste("Parameter", c(1:length(mu_beta_mean))),
            mu_beta = mu_beta_mean,

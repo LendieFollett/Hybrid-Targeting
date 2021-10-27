@@ -1,42 +1,45 @@
 
-#SIMULATION CODE ASSUMES EACH COMMUNITY HAS ONE RANKING SYSTEM FOR THEIR MEMBERS ONLY
-#I.E., K = R
 
-community <- rep(1:K, (N0+N1)/K) #each training + testing household assigned to a community
+
+#SIMULATION CODE ASSUMES EACH COMMUNITY HAS R/K RANKING SYSTEMS FOR THEIR MEMBERS 
+
+community_PMT <- rep(1:K, N_PMT/K) #each training + testing household assigned to a community
+community_CBT <- rep(1:K, N_CBT/K) #each training + testing household assigned to a community
+community_Program <- rep(1:K, N_Program/K) #each training + testing household assigned to a community
 
 # X_MICRO - both training and testing has same micro covariate information
-X_micro = cbind(rmvnorm(N0 + N1, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
-                rbinom(n = N0 + N1, size = 1, p = .1)) #indicator for elite connection
-X_micro <- cbind(1, X_micro) #add intercept
-X_micro1 = X_micro[1:N1,] ## covariate matrix for ALL sampled individuals
-X_micro0 = X_micro[-c(1:N1),]
+X_PMT = cbind(rmvnorm(N_PMT, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
+                rbinom(n = N_PMT, size = 1, p = .1)) #indicator for elite connection
+X_PMT <- cbind(1, X_PMT) #add intercept
+
+X_CBT = cbind(rmvnorm(N_CBT, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
+              rbinom(n = N_CBT, size = 1, p = .1)) #indicator for elite connection
+X_CBT <- cbind(1, X_CBT) #add intercept
 
 
-Y_micro <- array(NA, dim = c(N0, M)) #only training has micro response (e.g., consumption)
-Y_micro1 <- array(NA, dim = c(N1, M)) #true 'testing' response
-Z <- array(NA, dim = c(N1, R)) #only testing has latent ranks (e.g., consumption)
+X_Program = cbind(rmvnorm(N_Program, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
+              rbinom(n = N_Program, size = 1, p = .1)) #indicator for elite connection
+X_Program <- cbind(1, X_Program) #add intercept
+
+Z <- array(NA, dim = c(N_CBT, R)) #only testing has latent ranks (e.g., consumption)
 
 #parameter values
-omega_micro_true <- rep(.5, M)
-omega_rank_true <- rep(2, R)
+omega_micro_true <- 0.5
+set.seed(46340)
+omega_rank_true <- rep(sample(x=c(.5, 1, 2), replace=TRUE, size = R/K),K)
 beta_rank_true = c(1.5,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
 beta_micro_true = c(-1,sample(c(0,1), size = P, replace=TRUE)) 
 mu_beta <- apply(cbind(beta_rank_true,beta_micro_true), 1, mean)
-sigma2_rank <- 1
+sigma2_alpha <- 1
 #Fill "responses"
 
 #gamma_micro_true <-  rnorm(N0, 0, sigma2_micro^.5)
-for (m in 1:M){ #fill micro-data
-  Y_micro[,m] <-  rnorm(N0, X_micro0 %*% beta_micro_true, sqrt(1/omega_micro_true[m])) #+ gamma_micro_true
-}
+Y_micro <-  rnorm(N_PMT, X_PMT %*% beta_micro_true, sqrt(1/omega_micro_true)) #+ gamma_micro_true
 
-for (m in 1:M){ #fill micro-data
-  Y_micro1[,m] <-  rnorm(N0, X_micro1 %*%mu_beta , sqrt(1/omega_micro_true[m])) #+ gamma_micro_true
-}
-
-gamma_rank_true <-  rnorm(N1, 0, sigma2_rank^.5)
+set.seed(4296724)
+alpha_true <-  rnorm(N_CBT, 0, sigma2_alpha^.5)
 for (r in 1:R){ #fill latent Z scores
-  Z[,r] <-  rnorm(N1, X_micro1 %*% beta_rank_true, sqrt(1/omega_rank_true[r])) +gamma_rank_true
+  Z[,r] <-  rnorm(N_CBT, X_CBT %*% beta_rank_true, sqrt(1/omega_rank_true[r])) +alpha_true
 }
 
 
@@ -44,29 +47,29 @@ for (r in 1:R){ #fill latent Z scores
 #Tau <- apply(Z, 2, rank)
 
 #incomplete rankings
-Tau <- data.frame(Z, community=community[1:N1]) %>% 
+Tau <- data.frame(Z, community=community_CBT) %>% 
   group_by(community) %>%
   mutate_all(rank)  #rank within community
 #If there are R rankers and K communities,
 #then each community had R/K unique rankers
+Ztemp <- data.frame(Z, community=community_CBT)
 
 j=0
 for ( idx in 1:K){ #loop over columns
   for (idx2 in 1:(R/K)){
     j = j + 1
   Tau[Tau$community != idx,j] <- NA
+  Ztemp[Ztemp$community!=idx,j] <- NA
   }
 }
+
 Tau <- subset(Tau, select = -c(community)) %>%
+  as.matrix() #R rankings (what we actually observe)
+Ztemp <- subset(Ztemp, select = -c(community)) %>%
   as.matrix() #R rankings (what we actually observe)
 
 #real life observe: Tau, Y_micro ('test' only), Y_comm 
 #do NOT observe: Z
 
 
-#remove parameters we wouldn't have
-rm(N1)
-rm(N0)
-rm(R)
-rm(M)
-rm(P)
+
