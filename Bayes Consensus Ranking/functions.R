@@ -79,7 +79,8 @@ GibbsUpMuGivenLatentGroup <- function(X ,
                                       omega ,
                                       mu_beta,
                                       rank = FALSE,
-                                      con){
+                                      con,
+                                      multiple_rankers){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -98,15 +99,20 @@ P <- ncol(X) - 1
     } 
   } else{ #if it's rank
 
-    if (any(apply(Y, 1, function(x){sum(!is.na(x))}) > 1)){
+    if (multiple_rankers){ 
       # condition for when a person is ranked by multiple sources
-      u <- as.vector(Y)
+      u <- as.vector(Y) #stacked columns (ordered by ranker)
       rows <- which(!is.na(u))
       rows2 <- apply(Y, 2, function(x){which(!is.na(x))})
       u <- u[rows]
       n <- length(u)
-      if(is.list(rows2)){X <- X[unlist(rows2),]}else{X <- X[as.vector(rows2),]}
-      if(is.list(rows2)){Sigma_inv_y<-rep(omega, times =lapply(rows2, length))*diag(n)}else{Sigma_inv_y<-rep(omega, times =rep(nrow(rows2), length(omega)))*diag(n)} 
+      
+        if(is.list(rows2)){ #if differing number of people per ranker*community combo
+          X <- X[unlist(rows2),]
+          Sigma_inv_y<-rep(omega, times =lapply(rows2, length))*diag(n)
+          }else{
+          X <- X[as.vector(rows2),]
+          Sigma_inv_y<-rep(omega, times =rep(nrow(rows2), length(omega)))*diag(n)} 
     }else{
       u <- apply(Y, 1, function(x){sum(x, na.rm=TRUE)}) #basically take the only non-NA element
       n <- length(u)
@@ -118,7 +124,7 @@ P <- ncol(X) - 1
   }
 
 if(!rank){  
-  Sigma_inv_beta <- diag(c(1/2.5^2, (1/con^2)*rep(1, P))) #prior variance on beta is con^2 beta = N(mu_beta, con^2) (removed omega)
+  Sigma_inv_beta <- diag(c(1/2.5^2, (1/con)*rep(1, P))) #prior variance on non-intercept beta is sigma2_beta ; beta ~ N(mu_beta, sigma2_beta) 
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
 
@@ -131,7 +137,7 @@ if(!rank){
   alpha_beta <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
   
 }else{
-  Sigma_inv_beta <- diag((1/con^2)*rep(1, P)) #prior covariance matrix (removed omega)
+  Sigma_inv_beta <- diag((1/con)*rep(1, P)) #prior covariance matrix (removed omega)
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
   
@@ -158,8 +164,8 @@ GibbsUpGlobalMuGivenMu<- function(beta_rank = NULL,
   
   P <- max(length(beta_rank), length(beta_micro)) - 1
 
-  Omega_rank <-  diag(rep(1, P))*con^2#diag(P + 1)*1/omega_rank  (removed omega)
-  Omega_micro <- diag(rep(1, P))*con^2#diag(P + 1)*1/omega_micro  (removed omega)
+  Omega_rank <-  diag(rep(1, P))*con#diag(P + 1)*1/omega_rank  (removed omega)
+  Omega_micro <- diag(rep(1, P))*con#diag(P + 1)*1/omega_micro  (removed omega)
   
   post_Sigma <- solve(solve(Omega_rank) + solve(Omega_micro) + diag(P)/1^2) #prior sd on mu_beta = 1
   
