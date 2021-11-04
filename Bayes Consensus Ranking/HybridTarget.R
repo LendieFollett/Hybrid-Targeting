@@ -134,7 +134,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   for(iter in 1:(iter_burn + iter_keep)){
     
     # ----> update Z 
-    Z <- GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, 
+  Z <- GibbsUpLatentGivenRankGroup(pair.comp.ten = pair.comp.ten, 
                                     Z = Z, 
                                     mu = X_CBT %*% beta_rank + alpha, 
                                     omega_rank = omega_rank, 
@@ -188,7 +188,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                           X_RAND, 
                                           omega_rank, 
                                           sigma2_alpha = sigma2_alpha) 
-    sigma2_alpha <- 2.5#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
+    sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
     
     alpha_mat <- Z_bin*alpha #reformatted alpha
     }

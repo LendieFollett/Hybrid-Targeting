@@ -10,7 +10,7 @@ library(ggplot2)
 library(Rcpp)
 
 #devtools::install_github("adzemski/rtnorm")
-#sourceCpp("functions.cpp")
+sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
 source("Bayes Consensus Ranking/HybridTarget.R")
 source("Bayes Consensus Ranking/CBTarget.R")
@@ -24,14 +24,13 @@ doESS <- function(x){
     return(ESS(x))
   }
 }
-K = 50
-R = 200 
-#assumption: R/K is the number of rankers per person...
+K = 30 # 50 communities
+R = 150 #200/50 rankers per community (may or may not be crossed)
+N_CBT = 10*K ## number of ranked/test items (10 per community here)
 N_PMT = 300## number of unranked/training items
-N_CBT = 500 ## number of ranked/test items
 N_Program = 300 ## number of ranked/test items
 P = 6  ## number of covariates
-rho=0 ## correlation for covariates
+
 
 iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn =1000   ## Gibbs sampler burn-in iterations 
@@ -48,10 +47,9 @@ form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_PMT), collapse = "+")))
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(beta_rank = beta_start,
                      beta_micro = beta_start)
-groups <- rep(1:4, ncol(Tau)/4)
+groups <- rep(1:3, ncol(Tau)/3)
 weight_prior_value = c(0.5, 1, 2)
 prior_prob_rank=list(rep(1/length(weight_prior_value), length(weight_prior_value)),
-                     rep(1/length(weight_prior_value), length(weight_prior_value)),
                      rep(1/length(weight_prior_value), length(weight_prior_value)),
                      rep(1/length(weight_prior_value), length(weight_prior_value)))
 #Run MCMC for Bayesian Consensus Targeting
@@ -89,9 +87,10 @@ mean(sqrt(temp$sigma2_alpha))
 plot(temp$omega_micro)
 
 #true coefficients:
-beta_rank_true #intercept is irrelevant
+beta_rank_true[-1] #intercept is irrelevant
+beta_rank_mean[-1]
 beta_micro_true
-
+beta_micro_mean
 apply(temp$omega_rank, 2, mean)
 omega_rank_true
 
