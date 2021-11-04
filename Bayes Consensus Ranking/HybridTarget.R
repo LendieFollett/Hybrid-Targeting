@@ -116,8 +116,6 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   sigma2_alpha <-1
   
   
-
-  
   ## store MCMC draws
   draw = list(
     Z = array(NA, dim = c( iter_keep,N_CBT)),
@@ -132,7 +130,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     alpha = array(NA, dim = c(iter_keep, N_CBT)),
     sigma2_alpha = array(NA, dim = c(iter_keep, 1))
   )
-  
+
   for(iter in 1:(iter_burn + iter_keep)){
     
     # ----> update Z 
@@ -144,19 +142,19 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
 
     # ----> update beta_rank
     beta_rank <- GibbsUpMuGivenLatentGroup(Y = Z -alpha_mat,
-                                          X = X_CBT,
-                                          omega = omega_rank,
-                                          mu_beta = mu_beta,
-                                          con = sigma2_beta,
-                                          rank=TRUE,
-                                          multiple_rankers = multiple_rankers)
-    
+                                           X = X_CBT,
+                                           omega = omega_rank,
+                                           mu_beta = mu_beta,
+                                           con = sigma2_beta,
+                                           rank=TRUE,
+                                           multiple_rankers = multiple_rankers)
+       
     # ----> update quality weights, potentially heterogeneous
     omega_rank <- GibbsUpQualityWeightsHeter(y=Z , 
                                              groups = groups,
-                                        mu=X_CBT %*% beta_rank, 
-                                        beta_rank, 
-                                        weight_prior_value = c(0.5, 1, 2 ), 
+                                        mu=X_CBT %*% beta_rank + alpha, 
+                                        beta = beta_rank, 
+                                        weight_prior_value = weight_prior_value, 
                                         prior_prob =prior_prob_rank,
                                         rank=TRUE)
     
@@ -190,7 +188,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                           X_RAND, 
                                           omega_rank, 
                                           sigma2_alpha = sigma2_alpha) 
-    sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
+    sigma2_alpha <- 2.5#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
     
     alpha_mat <- Z_bin*alpha #reformatted alpha
     }

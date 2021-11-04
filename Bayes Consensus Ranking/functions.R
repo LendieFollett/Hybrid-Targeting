@@ -216,20 +216,22 @@ GibbsUpQualityWeights <- function(y, mu, beta, weight_prior_value = c(0.5, 1, 2)
 GibbsUpQualityWeightsHeter <- function(y, groups, mu, beta, mu_beta,con, weight_prior_value = c(0.5, 1, 2), prior_prob = rep(1/length(weight_prior_value), length(weight_prior_value)),rank=FALSE){
   
  #if it is omega_rank
-    Col <- ncol(y) #need to update an omega for every column
+    R <- ncol(y) #need to update an omega for every column
     
     n.prior.value <- length(weight_prior_value)
-    weight_samp <- rep(NA, Col)
+    weight_samp <- rep(NA, R)
     
     for( g in unique(groups)){ #over unique ranker groups (e.g., women, leaders, etc...)
       log.post.prob = rep(0, n.prior.value) #re-initialize for next information source   
       cols <- which(groups == g) #within any group there will be multiple columns
-      for(k in 1:n.prior.value){ #over potential values
-        for (col in cols){
-          idx <- which(!is.na(y[,col])) #in the case of omega_rank
-          log.post.prob[k] <- log.post.prob[k] + sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))#+ sum(dnorm(beta[-1], mean = mu_beta, sd =sqrt(con/weight_prior_value[k]), log = TRUE ))
+        for(k in 1:n.prior.value){ #over potential values
+          
+          for (col in cols){ 
+            idx <- which(!is.na(y[,col])) #in the case of omega_rank
+            log.post.prob[k] <- log.post.prob[k] + sum(dnorm(y[idx,col], mu[idx], sqrt(1/weight_prior_value[k]), log = TRUE))
+          }
+          
         }
-      }
       log.post.prob <- log.post.prob + log(prior_prob[[g]]) #the g'th prior (specific to ranker type group)
       log.post.prob = log.post.prob - max(log.post.prob)
       post.prob = exp(log.post.prob)

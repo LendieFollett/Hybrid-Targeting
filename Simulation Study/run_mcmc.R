@@ -24,11 +24,11 @@ doESS <- function(x){
     return(ESS(x))
   }
 }
-K = 100
-R = 200 ## number of communities equal to number of rankers
+K = 50
+R = 200 
 #assumption: R/K is the number of rankers per person...
 N_PMT = 300## number of unranked/training items
-N_CBT = 300 ## number of ranked/test items
+N_CBT = 500 ## number of ranked/test items
 N_Program = 300 ## number of ranked/test items
 P = 6  ## number of covariates
 rho=0 ## correlation for covariates
@@ -42,24 +42,38 @@ source("Simulation Study/simulate_data.R")
 
 
 #starting values for random effects
-temp_data <- data.frame(y = Y_micro,X_CBT)
-form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_CBT), collapse = "+")))
+temp_data <- data.frame(y = Y_micro,X_PMT)
+form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_PMT), collapse = "+")))
 #gamma_start <- ranef(lmer(form, data = temp_data))[[1]]$`(Intercept)` 
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(beta_rank = beta_start,
                      beta_micro = beta_start)
-
+groups <- rep(1:4, ncol(Tau)/4)
+weight_prior_value = c(0.5, 1, 2)
+prior_prob_rank=list(rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)))
 #Run MCMC for Bayesian Consensus Targeting
 temp <- HybridTarget(Tau=Tau, 
                      X_PMT = X_PMT, 
                      X_CBT = X_CBT,
                      X_program = X_Program,
                      X_elite = 7,
+                     groups = groups,
+                     prior_prob_rank = prior_prob_rank,
+                     weight_prior_value =weight_prior_value,
                      Y_micro = Y_micro, #needs to be a matrix, not vector
                      iter_keep = iter_keep,
                      iter_burn = iter_burn,
                      print_opt = print_opt,
                      initial.list = initial_list)
+X_program = X_Program
+X_elite = 7
+initial.list = initial_list
+#weight_prior_value = c(0.5, 1, 2)
+#prior_prob_rank = list(rep(1/length(weight_prior_value), length(weight_prior_value))) #override if heterogeneous
+#groups = rep(1, ncol(Tau))
 
 lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
 

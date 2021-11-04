@@ -25,7 +25,7 @@ Z <- array(NA, dim = c(N_CBT, R)) #only testing has latent ranks (e.g., consumpt
 
 #parameter values
 omega_micro_true <- 0.5
-set.seed(46340)
+set.seed(4632340)
 omega_rank_true <- rep(sample(x=c(.5, 1, 2), replace=TRUE, size = R/K),K)
 beta_rank_true = c(1.5,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
 beta_micro_true = c(-1,sample(c(0,1), size = P, replace=TRUE)) 
