@@ -137,6 +137,8 @@ for ( idx in unique(CBT_data$community_id)){ #loop over columns
 
 #Run MCMC for Bayesian Consensus Targeting
 
+
+
 temp <- HybridTarget(Tau=Tau, 
                            X_PMT = X_PMT, 
                            X_CBT = X_CBT,
@@ -153,14 +155,14 @@ Hybrid_mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 Hybrid_beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 Hybrid_beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-data.frame(x = colnames(X_PMT)[-1],Hybrid_mu_beta_mean,Hybrid_beta_rank_mean[-1],Hybrid_beta_micro_mean[-1]) %>%
-  write.csv("Alatas Analysis/coefficients.csv")
+#data.frame(x = colnames(X_PMT)[-1],Hybrid_mu_beta_mean,Hybrid_beta_rank_mean[-1],Hybrid_beta_micro_mean[-1]) %>%
+#  write.csv("Alatas Analysis/coefficients.csv")
 
 
 apply(temp$omega_rank, 2, mean); apply(Hybridtemp$omega_rank, 2, var)
 
 plot(temp$con)
-plot(temp$Z[,2])
+plot(temp$Z[,6])
 
 i = i + 1
 plot(temp$beta_micro[,i])

@@ -141,7 +141,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                     R = R )
 
     # ----> update beta_rank
-    beta_rank <- GibbsUpMuGivenLatentGroup(Y = Z -alpha_mat,
+    beta_rank <-GibbsUpMuGivenLatentGroup(Y = Z -alpha_mat,
                                            X = X_CBT,
                                            omega = omega_rank,
                                            mu_beta = mu_beta,
@@ -183,11 +183,12 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     # (this is kind of slow....)
     if (multiple_rankers){ #evaluates to TRUE only when multiple ranks per household
       
-    alpha <- GibbsUpGammaGivenLatentGroup(Z, 
-                                          X_CBT %*% beta_rank, 
-                                          X_RAND, 
+    alpha <- GibbsUpGammaGivenLatentGroup(y=Z, 
+                                          xbeta = X_CBT %*% beta_rank, 
+                                          Xr = X_RAND, 
                                           omega_rank, 
-                                          sigma2_alpha = sigma2_alpha) 
+                                          sigma2_alpha = sigma2_alpha,
+                                          Z_bin = Z_bin) 
     sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
     
     alpha_mat <- Z_bin*alpha #reformatted alpha

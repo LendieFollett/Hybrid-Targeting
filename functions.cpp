@@ -87,6 +87,7 @@ arma::vec GibbsUpGammaGivenLatentGroupRCPP(arma::mat y, arma::vec xbeta, arma::m
   arma::mat temp(1, Col);
   temp.ones();
   
+  
 //Complete 'data' vector
   arma::mat resid = y- (xbeta*temp);
 // stack columns
@@ -104,7 +105,7 @@ arma::mat Sigma_inv_diag(n_non_na, n_non_na);
 arma::vec nperson(Col);
 nperson.zeros();
 
-std::cout <<Rcpp::NumericVector::is_na(y(0, 0))<< std::endl;
+
 
 int j = -1;
 for (int idx = 0; idx < Col; idx++){
@@ -113,27 +114,28 @@ for (int idx = 0; idx < Col; idx++){
       //j = j;
       }else{
     j +=1;
-    u(j) = y(idx2, idx);
+    u(j) = resid(idx2, idx);
     nperson(idx) = nperson(idx) + 1;
     Sigma_inv_diag(j,j) = omega(idx);
       }
     }
 }
-  
+
     arma::mat UnityMatrix = arma::eye(Xr.n_cols,Xr.n_cols);
-std::cout << "first  "  << std::endl;
+std::cout << u.submat(0,0,20,0) << std::endl;
     arma::mat pt1 =arma::trans(u)*Sigma_inv_diag*Xr;
-    std::cout << "second  "  << std::endl;
+//    std::cout << "second  "  << std::endl;
 //https://www.sciencedirect.com/topics/computer-science/diagonal-matrix
-  arma::mat pt2_prelim(Xr.n_rows, Xr.n_cols);
+  arma::mat pt2_prelim(Xr.n_cols, Xr.n_rows);
+  arma::mat Xr_trans = arma::trans(Xr);
   
-  for (int c = 0; c < Xr.n_rows; c++){
-    pt2_prelim.row(c) = Xr.row(c)*Sigma_inv_diag(c,c);
+  for (int c = 0; c < Xr_trans.n_cols; c++){
+    pt2_prelim.col(c) = Xr_trans.col(c)*Sigma_inv_diag(c,c);
   }
-    arma::mat pt2 = arma::trans(pt2_prelim)*Xr + UnityMatrix/(sigma2_alpha);// #Inverse of posterior covariance 
-    std::cout << "third  "  << std::endl;
+    arma::mat pt2 = pt2_prelim*Xr + UnityMatrix/(sigma2_alpha);// #Inverse of posterior covariance 
+   // std::cout << "third  "  << std::endl;
     arma::mat pt2_inv = inv(pt2);
-    std::cout << "inv  "  << std::endl;
+  //  std::cout << "inv  "  << std::endl;
     arma::vec alpha = arma::trans(mvrnormArma(1, arma::trans(pt1*pt2_inv), pt2_inv));
     
   return alpha;

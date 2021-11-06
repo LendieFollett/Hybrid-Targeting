@@ -10,11 +10,11 @@ community_Program <- rep(1:K, N_Program/K) #each training + testing household as
 # X_MICRO - both training and testing has same micro covariate information
 X_PMT = cbind(rmvnorm(N_PMT, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
                 rbinom(n = N_PMT, size = 1, p = .1)) #indicator for elite connection
-X_PMT <- cbind(1, X_PMT) #add intercept
+X_PMT = cbind(1, X_PMT) #add intercept
 
 X_CBT = cbind(rmvnorm(N_CBT, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
               rbinom(n = N_CBT, size = 1, p = .1)) #indicator for elite connection
-X_CBT <- cbind(1, X_CBT) #add intercept
+X_CBT = cbind(1, X_CBT) #add intercept
 
 
 X_Program = cbind(rmvnorm(N_Program, mean = rep(0, P-1), sigma = diag(P-1)), #regular demographic
@@ -26,9 +26,9 @@ Z <- array(NA, dim = c(N_CBT, R)) #only testing has latent ranks (e.g., consumpt
 #parameter values
 omega_micro_true <- 0.5
 set.seed(4632340)
-omega_rank_true <- rep(sample(x=c(.5, 1, 2), replace=TRUE, size = R/K),K)
-set.seed(357357)
-beta_rank_true = 2*c(0,sample(c(0,-1), size = P, replace=TRUE))  #first column is intercept
+omega_rank_true <- rep(sample(x=c(.5, 1, 2), replace=TRUE, size = R/K),K)#, prob = c(0,0,1)
+set.seed(3527357)
+beta_rank_true = 2*c(0,sample(c(0,1), size = P, replace=TRUE))  #first column is intercept
 set.seed(68568)
 beta_micro_true = beta_rank_true + c(0,rnorm(P, mean = 0, sd = .25))
 mu_beta <- apply(cbind(beta_rank_true,beta_micro_true), 1, mean)

@@ -33,7 +33,7 @@ P = 6  ## number of covariates
 
 
 iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1000   ## Gibbs sampler burn-in iterations 
+iter_burn =3000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 #simulate data based on parameters
@@ -47,9 +47,11 @@ form <- formula(paste0("y~-1+", paste0("X", 1:ncol(X_PMT), collapse = "+")))
 beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 initial_list <- list(beta_rank = beta_start,
                      beta_micro = beta_start)
-groups <- rep(1:3, ncol(Tau)/3)
+groups <- rep(c(1:(R/K)), K)
 weight_prior_value = c(0.5, 1, 2)
 prior_prob_rank=list(rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
                      rep(1/length(weight_prior_value), length(weight_prior_value)),
                      rep(1/length(weight_prior_value), length(weight_prior_value)))
 #Run MCMC for Bayesian Consensus Targeting

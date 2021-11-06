@@ -291,7 +291,7 @@ GibbsUpLambda <- function(omega, prior_prob, prior_weights){
 #omega is a vector error variance of the scores (potentially heterogeneous)
 #sigma_alpha is the standard deviation on that source's random effect
 
-GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma2_alpha = 2.5^2){
+GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma2_alpha = 2.5^2, Z_bin){
   
   N <- nrow(y) #number of random effects to estimate = number of rows
   #Update conditionally if ncol > 1
@@ -299,14 +299,16 @@ GibbsUpGammaGivenLatentGroup <- function(y, xbeta, Xr, omega, sigma2_alpha = 2.5
   
   #Complete 'data' vector
   resid <- y- xbeta%*%array(1, dim = c(1, ncol(y)))
-  u <- c( t( resid) ) 
+  u <- c( t( resid) )  # stacked rows (ordered by person,then ranker within person) consistent with XRAND
   u <- u[complete.cases(u)]
 
   #calculate number of people per ranker
-  nperson = apply(y, 2, function(x){sum(!is.na(x))})
-  Sigma_inv_diag <- c(rep(omega, times =nperson))
+  #nperson = apply(y, 2, function(x){sum(!is.na(x))})
+  Sigma_inv_diag <-c(t(Z_bin)*omega) 
+  Sigma_inv_diag <- ifelse(Sigma_inv_diag == 0, NA, Sigma_inv_diag) 
+  Sigma_inv_diag <- Sigma_inv_diag[complete.cases(Sigma_inv_diag)]
 
-  pt1 <- (u)^T%*%(diag(Sigma_inv_diag))%*%Xr
+  pt1 <- (u*Sigma_inv_diag)^T%*%Xr
   #https://www.sciencedirect.com/topics/computer-science/diagonal-matrix
   pt2 <- (t(Xr)*Sigma_inv_diag)%*%Xr + diag(N)/(sigma2_alpha) #Inverse of posterior covariance 
   

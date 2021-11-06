@@ -46,48 +46,43 @@ m_num <- c("rooms")
 
 m_bin <- colnames(full_data)[which(colnames(full_data)=="floor"):which(colnames(full_data)=="pig")]
 m3 <- c(m_num, m_bin)
-
-#50% of the full data is surveyed for PMT. get both X and y=consumption
-#set.seed(572319852)
-PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
-
-
 full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) 
 
+#50% of the full data is surveyed for PMT. get both X and y=consumption
+
+PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
+PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+
+full_data_left <- full_data[-PMT_idx,]
 
 CBT_ncomm <- 25#c(5,10,15,25)
 
-whats_left <- unique(full_data$community[- PMT_idx])
-Program_idx <- which(full_data$community %in% sample(whats_left, 
+whats_left <- unique(full_data_left$community) #all 2009 data
+Program_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                         replace=FALSE, 
                                                         length(whats_left)*0.5)) #this will leave 26 communities for the CBT
-whats_left <- unique(full_data$community[-c(PMT_idx, Program_idx)])
+whats_left <- unique(full_data_left$community[-c( Program_idx)])
 length(whats_left)
 whats_left
-CBT_idx <- which(full_data$community %in% sample(whats_left, 
+CBT_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                     replace=FALSE, 
                                                     CBT_ncomm))
 
 
-CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
-PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+CBT_data <- full_data_left[CBT_idx,] #this is a subset of the program data!
 
 while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
-  whats_left <- unique(full_data$community[- PMT_idx])
-  Program_idx <- which(full_data$community %in% sample(whats_left, 
+  whats_left <- unique(full_data_left$community)
+  Program_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                        replace=FALSE, 
                                                        length(whats_left)*0.5))
-  whats_left <- unique(full_data$community[-c(PMT_idx, Program_idx)])
-  CBT_idx <- which(full_data$community %in% sample(whats_left, 
+  whats_left <- unique(full_data_left$community[-c(PMT_idx, Program_idx)])
+  CBT_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                    replace=FALSE, 
-                                                   length(whats_left)*CBT_prop))
-  
-  CBT_data <- full_data[CBT_idx,] #this (can be) a subset of the program data!
-  PMT_data <- full_data[PMT_idx,]
-  
-  
-}
+                                                   CBT_ncomm))
+  CBT_data <- full_data_left[CBT_idx,] #this (can be) a subset of the program data!
 
+}
 Program_data <- full_data[Program_idx,]
 
 
@@ -97,10 +92,10 @@ X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
 Y_micro <- as.matrix(log(PMT_data$consumption + .1)) #ROUGH FIX - USE OTHER TRANSFORMATION
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
-R = 3*(CBT_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
+R = 3*length(unique(CBT_data$community))#(CBT_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
 M = 1  ## just consumption
-N0 = PMT_data %>%nrow
-N1 = CBT_data %>%nrow
+N_PMT = PMT_data %>%nrow
+N_CBT = CBT_data %>%nrow
 P = ncol(PMT_data)-1 #(-1 since i've included the intercept)
 
 
@@ -115,8 +110,8 @@ initial_list <- list(#gamma_rank = gamma_start,
   beta_micro = beta_start,
   mu_beta = beta_start[-1])
 
-#create rank matrix: one column per 'ranker' (community)
-Tau <- array(NA, dim = c(nrow(CBT_data), R*3))
+#create rank matrix: one column per 'ranker' (within community)
+Tau <- array(NA, dim = c(N_CBT, R))
 j = 0
 for ( idx in unique(CBT_data$community)){ #loop over columns
   for (infmt in c("informant1", "informant2", "informant3")){
@@ -126,7 +121,13 @@ for ( idx in unique(CBT_data$community)){ #loop over columns
 }
 
 #Run MCMC for Bayesian Consensus Targeting
-
+groups <- rep(1, R)
+weight_prior_value = c(0.5, 1, 2)
+prior_prob_rank=list(rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)),
+                     rep(1/length(weight_prior_value), length(weight_prior_value)))
 temp <- HybridTarget(Tau=Tau, 
                      X_PMT = X_PMT, 
                      X_CBT = X_CBT,
