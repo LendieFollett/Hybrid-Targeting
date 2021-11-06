@@ -96,7 +96,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     X_RAND<- kronecker(diag(N_CBT),
                        rep(1, nrank[1])) #
     #Binary matrix indicating positions of ranker*household observations
-    Z_bin <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})
+    Z_bin <- apply(Z, 1:2, function(x){ifelse( !is.na(x), 1, 0)}) #x != 0 & removed
   }
 
   
