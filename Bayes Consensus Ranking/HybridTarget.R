@@ -189,6 +189,10 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
                                           omega_rank, 
                                           sigma2_alpha = sigma2_alpha,
                                           Z_bin = Z_bin) 
+    #y=Z 
+    #xbeta = X_CBT %*% beta_rank 
+    #Xr = X_RAND
+    #omega = omega_rank
     sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
     
     alpha_mat <- Z_bin*alpha #reformatted alpha

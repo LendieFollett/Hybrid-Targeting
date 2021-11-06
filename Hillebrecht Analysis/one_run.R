@@ -116,28 +116,31 @@ j = 0
 for ( idx in unique(CBT_data$community)){ #loop over columns
   for (infmt in c("informant1", "informant2", "informant3")){
   j = j + 1
-  Tau[CBT_data$community == idx,j] <- pull(CBT_data[CBT_data$community == idx,], infmt)
+  Tau[CBT_data$community == idx,j] <- floor(rank(pull(CBT_data[CBT_data$community == idx,], infmt)))
   }
 }
 
 #Run MCMC for Bayesian Consensus Targeting
-groups <- rep(1, R)
+groups <- rep(1, R) #there are 3 rankers per comm. but they aren't crossed
 weight_prior_value = c(0.5, 1, 2)
-prior_prob_rank=list(rep(1/length(weight_prior_value), length(weight_prior_value)),
-                     rep(1/length(weight_prior_value), length(weight_prior_value)),
-                     rep(1/length(weight_prior_value), length(weight_prior_value)),
-                     rep(1/length(weight_prior_value), length(weight_prior_value)),
-                     rep(1/length(weight_prior_value), length(weight_prior_value)))
+prior_prob_rank=list(rep(1/length(weight_prior_value), length(weight_prior_value)))
+
 temp <- HybridTarget(Tau=Tau, 
                      X_PMT = X_PMT, 
                      X_CBT = X_CBT,
                      X_program = X_program,
                      X_elite = NULL,
+                     groups = groups,
+                     weight_prior_value = weight_prior_value,
+                     prior_prob_rank=prior_prob_rank,
                      Y_micro = Y_micro, #needs to be a matrix, not vector
                      iter_keep = iter_keep,
                      iter_burn = iter_burn,
                      print_opt = print_opt,
                      initial.list = initial_list)
+X_program = X_program
+X_elite = NULL
+initial.list = initial_list
 
 CBtemp <- CBTarget(Tau=Tau, 
                    X_CBT = X_CBT,
