@@ -76,7 +76,7 @@ while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete
   Program_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                        replace=FALSE, 
                                                        length(whats_left)*0.5))
-  whats_left <- unique(full_data_left$community[-c(PMT_idx, Program_idx)])
+  whats_left <- unique(full_data_left$community[-c(Program_idx)])
   CBT_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                    replace=FALSE, 
                                                    CBT_ncomm))

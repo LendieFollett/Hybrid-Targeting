@@ -48,10 +48,10 @@ m3 <- c(m_num, m_bin)
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption
 #set.seed(572319852)
+full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
+
 PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
-
-
-full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) 
+full_data_left <- full_data[-PMT_idx,]
 
 CBT_ncomm_list <- c(5,10,15,25)
 nrep <- 10
@@ -64,37 +64,37 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     
     
-    whats_left <- unique(full_data$community[- PMT_idx])
-    Program_idx <- which(full_data$community %in% sample(whats_left, 
+    whats_left <- unique(full_data_left$community)
+    Program_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                          replace=FALSE, 
                                                          length(whats_left)*0.5)) #this will leave 26 communities for the CBT 'training'
-    whats_left <- unique(full_data$community[-c(PMT_idx, Program_idx)])
+    whats_left <- unique(full_data_left$community[-c( Program_idx)])
     #length(whats_left)
     #whats_left
-    CBT_idx <- which(full_data$community %in% sample(whats_left, 
+    CBT_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                      replace=FALSE, 
                                                      CBT_ncomm))
     
-    CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
-    PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+    CBT_data <- full_data_left[CBT_idx,] #this is a subset of the program data!
+    PMT_data <- full_data_left[PMT_idx,] #%>% subset(community == 0)
     
     while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
-      whats_left <- unique(full_data$community[- PMT_idx])
-      Program_idx <- which(full_data$community %in% sample(whats_left, 
+      whats_left <- unique(full_data_left$community)
+      Program_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                            replace=FALSE, 
                                                            length(whats_left)*0.5))
-      whats_left <- unique(full_data$community[-c(PMT_idx, Program_idx)])
-      CBT_idx <- which(full_data$community %in% sample(whats_left, 
+      whats_left <- unique(full_data_left$community[-c(Program_idx)])
+      CBT_idx <- which(full_data_left$community %in% sample(whats_left, 
                                                        replace=FALSE, 
                                                        CBT_ncomm))
       
-      CBT_data <- full_data[CBT_idx,] #this (can be) a subset of the program data!
-      PMT_data <- full_data[PMT_idx,]
+      CBT_data <- full_data_left[CBT_idx,] #this (can be) a subset of the program data!
+      PMT_data <- full_data_left[PMT_idx,]
       
       
     }
     
-    Program_data <- full_data[Program_idx,]
+    Program_data <- full_data_left[Program_idx,]
     
     
     X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
@@ -195,8 +195,8 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
       confusionMatrix(Program_data$CBT_LR_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS", "CBT Probit"),
              CBT_ncomm = CBT_ncomm,
-             TD = Sensitivity - (1-Specificity)) %>%
-      dplyr::select(c(Method,CBT_ncomm,Sensitivity, Specificity, TD))
+             TD = Sensitivity - (1-Specificity)) #%>%
+      #dplyr::select(c(Method,CBT_ncomm,Sensitivity, Specificity, TD))
     
     
   }
