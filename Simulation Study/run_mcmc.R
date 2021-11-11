@@ -32,8 +32,8 @@ N_Program = 300 ## number of ranked/test items
 P = 6  ## number of covariates
 
 
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =3000   ## Gibbs sampler burn-in iterations 
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =2000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 #simulate data based on parameters
@@ -77,11 +77,13 @@ initial.list = initial_list
 
 lapply(temp[c("mu_beta", "beta_rank", "beta_micro")], doESS) 
 
+apply(temp$Z, 2, mean) %>%hist
+
 mu_beta_mean <- apply(temp$mu_beta, 2, mean)
 beta_rank_mean <- apply(temp$beta_rank, 2, mean)
 beta_micro_mean <- apply(temp$beta_micro, 2, mean)
 
-alpha_mean <- apply(temp$alpha, 2, mean)
+alpha_mean <- apply(temp$alpha, 2, mean) 
 plot(alpha_true,alpha_mean)
 plot(temp$sigma2_alpha)
 mean(sqrt(temp$sigma2_alpha))

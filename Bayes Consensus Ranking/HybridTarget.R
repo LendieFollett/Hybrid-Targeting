@@ -98,7 +98,7 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     #Binary matrix indicating positions of ranker*household observations
     Z_bin <- apply(Z, 1:2, function(x){ifelse( !is.na(x), 1, 0)}) #x != 0 & removed
   }
-
+  n_non_na <- sum(Z_bin)
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
   if(is.null(initial.list$beta_micro)|is.null(Y_micro)){beta_micro <- rep(0, P+1)}else{  beta_micro <-  initial.list$beta_micro } 
@@ -183,16 +183,14 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
     # (this is kind of slow....)
     if (multiple_rankers){ #evaluates to TRUE only when multiple ranks per household
       
-    alpha <- GibbsUpGammaGivenLatentGroup(y=Z, 
+    alpha  <- GibbsUpGammaGivenLatentGroupRCPP(y=Z, 
                                           xbeta = X_CBT %*% beta_rank, 
                                           Xr = X_RAND, 
                                           omega_rank, 
                                           sigma2_alpha = sigma2_alpha,
-                                          Z_bin = Z_bin) 
-    #y=Z 
-    #xbeta = X_CBT %*% beta_rank 
-    #Xr = X_RAND
-    #omega = omega_rank
+                                          n_non_na = n_non_na) %>%c()
+    
+
     sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
     
     alpha_mat <- Z_bin*alpha #reformatted alpha
