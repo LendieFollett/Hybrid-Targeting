@@ -31,8 +31,8 @@ source("Bayes Consensus Ranking/CBTarget.R")
 
 
 poverty_rate <- .3
-iter_keep = 4000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =4000   ## Gibbs sampler burn-in iterations 
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =2000   ## Gibbs sampler burn-in iterations 
 print_opt = 1000  ## print a message every print.opt steps
 
 
@@ -71,7 +71,7 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 #parallelized across CBT proportions via mcapply
 CBT_ncomm_list <- c(10, 25, 50, 200) 
- results <-  mclapply(CBT_prop_list, function(CBT_ncomm){
+ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
    i <- 0
    r <- list()
    c <- list()
@@ -123,7 +123,7 @@ M = 1  ## just consumption
 
 #starting values for random effects
 
-which_noelite <- which(colnames(X_CBT) == "connected")
+which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
 temp_data <- data.frame(Y_micro = Y_micro,
                         X_PMT)
@@ -189,7 +189,7 @@ CBtemp_noelite <- CBTarget(Tau=Tau,
                  iter_keep =iter_keep,
                  iter_burn = iter_burn,
                  print_opt = print_opt,
-                 initial.list = initial_list)
+                 initial.list = initial_list_noelite)
 
 #Run MCMC for Bayesian Community Based Targeting -  WITHOUT CORRECTION
 CBtemp <- CBTarget(Tau=Tau, 
@@ -215,12 +215,12 @@ Hybrid_mu_beta_mean_noelite <- apply(Hybridtemp_noelite$mu_beta, 2, mean)
 Hybrid_beta_rank_mean_noelite <- apply(Hybridtemp_noelite$beta_rank, 2, mean)
 Hybrid_beta_micro_mean_noelite <- apply(Hybridtemp_noelite$beta_micro, 2, mean)
 
-Hybrid_mu_beta_mean<- apply(Hybridtemp$mu_beta, 2, mean)
-Hybrid_beta_rank_mean <- apply(Hybridtemp$beta_rank, 2, mean)
-Hybrid_beta_micro_mean <- apply(Hybridtemp$beta_micro, 2, mean)
+Hybrid_mu_beta_mean<- append( apply(Hybridtemp$mu_beta, 2, mean), 0, after = which_noelite-2)
+Hybrid_beta_rank_mean <- append(apply(Hybridtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
+Hybrid_beta_micro_mean <- append(apply(Hybridtemp$beta_micro, 2, mean), 0, after = which_noelite-1)
 
 CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
-CB_beta_rank_mean <- apply(CBtemp$beta_rank, 2, mean)
+CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
 
 c[[i]] <- data.frame(parameter = m3,
                     rep = rep,
@@ -236,12 +236,14 @@ c[[i]] <- data.frame(parameter = m3,
            CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
            CB_beta_rank_mean = CB_beta_rank_mean[-1],
            
-           PMT_beta = PMT_beta[-1])
+           PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2))
 
 
 
 #Fit probit regression for Community Based Targeting
-lr <- glm(prop_rank<=poverty_rate ~ ., data = CBT_data[,c("prop_rank", m3[-which(m3 == "connected")])], family =binomial(link = "probit"))
+lr <- glm(prop_rank<=poverty_rate ~ ., 
+          data = CBT_data[,c("prop_rank", m3[-which(m3 == "connected")])], 
+          family =binomial(link = "probit"))
 
 #HYBRID-BASED PREDICTION - WITH CORRECTION
 Program_data$hybrid_prediction_noelite <-apply(Hybridtemp_noelite$mu_noelite, 2, mean)
@@ -257,7 +259,7 @@ Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)
 Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
 
 #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
-Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%beta_PMT[-1])#beta_start is the OLS estimate of beta
+Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
 
 Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
   mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
@@ -281,12 +283,13 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
 
 
 r[[i]] <- rbind(
-confusionMatrix(Program_data$hybrid_noelite_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$CBT_LR_inclusion,          Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score", "PMT OLS", "CBT Logit"),
+confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
          CBT_ncomm = CBT_ncomm,
          TD = Sensitivity - (1-Specificity)) #%>%
   #dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
@@ -294,10 +297,10 @@ confusionMatrix(Program_data$CBT_LR_inclusion,          Program_data$cbt_inclusi
 
   }
 
-   return(r)
-  }, mc.cores = length(CBT_prop_list))
+   return(list(r=r, c=c))
+  }, mc.cores = length(CBT_ncomm_list))
 
-all_results_1 <- unlist(results, recursive = FALSE)
+all_results_1 <- unlist(results$r, recursive = FALSE)
 all_results <- do.call("rbind", all_results_1)
 
 write.csv(all_results, "Alatas Analysis/all_results.csv")

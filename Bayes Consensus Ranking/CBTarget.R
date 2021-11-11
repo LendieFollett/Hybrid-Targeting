@@ -80,14 +80,16 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                        rep(1, nrank[1])) #
     #Binary matrix indicating positions of ranker*household observations
     Z_bin <- apply(Z, 1:2, function(x){ifelse( !is.na(x), 1, 0)}) #x != 0 & removed
+    n_non_na <- sum(Z_bin)
   }
-  n_non_na <- sum(Z_bin)
+
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
-  mu_beta <- cbind(beta_rank[-1], beta_micro[-1]) %>%apply(1, mean)
+
   
   ## initial values for weights
   omega_rank = rep(1, R)
+  con <- 1
   ## Gibbs iteration
   
   ## initial values for random effects
@@ -120,7 +122,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z - alpha_mat,
                                           X = X_CBT,
                                           omega = omega_rank,
-                                          mu_beta = mu_beta,
+                                          mu_beta = rep(0, length(beta_rank)-1),
                                           con = con,
                                           rank=TRUE,
                                           multiple_rankers = multiple_rankers)
@@ -136,7 +138,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
 
 
     # ----> update con    
-    con <- GibbsUpsigma_alpha(c(beta_rank[-1], beta_micro[-1]) - c(mu_beta, mu_beta), nu=3, tau2=25)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
+    con <- GibbsUpsigma_alpha(beta_rank[-1], nu=1, tau2=1)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
     
   
     
