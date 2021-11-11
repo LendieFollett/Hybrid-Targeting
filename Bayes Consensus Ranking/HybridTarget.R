@@ -37,10 +37,9 @@ HybridTarget<- function(Tau, X_PMT=NULL, X_CBT=NULL, X_program=NULL,
   #and NA if the relation between \eqn{i} and \eqn{j} is missing. 
   #Note that the diagonal elements (\eqn{i},\eqn{i},\eqn{r})'s for all rankers should be set to NA as well.
   N_CBT <- dim(X_CBT)[1] #how many people in test set 
+  N_PMT <- dim(Y_micro)[1]#formerly N0
   M <- ncol(Y_micro)
   R <- ncol(Tau) #how many rankers total (not per community, but overall)
-  N_PMT <- nrow(Y_micro)#formerly N0
-  N_CBT <- dim(X_CBT)[1] #formerly N1
   
   # STRUCTURES ######################
   

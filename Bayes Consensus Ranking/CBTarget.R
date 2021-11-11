@@ -15,19 +15,27 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                     iter_burn = 5000,
                     print_opt = 100,
                     initial.list = NULL){
-  #pair.com.ten An \eqn{N1} by \eqn{N1} by \eqn{R} pairwise comparison array for all \eqn{N1} entities and \eqn{R} rankers, 
-  #where the (\eqn{i},\eqn{j},\eqn{r}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 
+  # DIMENSIONS ######################
+  
+  #pair.com.ten A list of length R with elements: \eqn{N_CBT[k]} by \eqn{N_CBT[k]}  pairwise comparison array where N_CBT[k] is the number of people in community k (ranked by ranker r)
+  #where the (\eqn{i},\eqn{j}) element equals 1 if \eqn{i} is ranked higher than \eqn{j} by ranker \eqn{r}, 
   #0 if \eqn{i} is ranker lower than \eqn{j}, 
   #and NA if the relation between \eqn{i} and \eqn{j} is missing. 
   #Note that the diagonal elements (\eqn{i},\eqn{i},\eqn{r})'s for all rankers should be set to NA as well.
+  N_CBT <- dim(X_CBT)[1] #how many people in test set 
+  R <- ncol(Tau) #how many rankers total (not per community, but overall)
+
+  
+  # STRUCTURES ######################
+  
+  #Matrix of latent scores
+  Z = matrix(NA, nrow = N_CBT, ncol = R)
+  
   #create pair.comp.ten matrix
-  pair.comp.ten = list()#array(NA, dim = c(N1, N1, R)) ## get pairwise comparison matrices from the ranking lists
+  pair.comp.ten = list()
   for(r in 1:R){
-    #pair.comp.ten[!is.na(Tau[,r]),!is.na(Tau[,r]),r] = as(FullRankToPairComp( Tau[,r][!is.na(Tau[,r])] ), "dgTMatrix")
     pair.comp.ten[[r]] = FullRankToPairComp( Tau[!is.na(Tau[,r]),r] )
   }
-  
-  
   
   if (!is.null(X_elite)){
     X_program_noelite <-  X_program
@@ -42,22 +50,12 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     P <- ncol(X_CBT)-1
   }
   
-  R <- length(pair.comp.ten)
-  N1 <- dim(X_CBT)[1]
   
-  ## store MCMC draws
-  draw = list(
-    Z = array(NA, dim = c( iter_keep,N1)),
-    beta_rank = array(NA, dim = c(iter_keep,P+1)),
-    mu = array(NA, dim = c(iter_keep,nrow(X_program))),
-    mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), #for debiasing
-    omega_rank = array(NA, dim = c(iter_keep, R) ),
-    con = array(NA, dim = c(iter_keep, 1) )
-  )
+  
+  # INITIAL VALUES ###################### 
   
   ## set initial values for parameters, where given
   if(is.null(initial.list$Z)){
-    Z = matrix(NA, nrow = N1, ncol = R)
     for(j in 1:R){
       rcases <- which(!is.na(Tau[,j]))
       nranked <- length(rcases)
@@ -68,31 +66,46 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   }
   
   #If using random effects
+  #for conditional random effect logic
+  multiple_rankers <- any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)
+  
   #ISSUE: ASSUMING EACH PERSON IS RANKED BY THE SAME NUMBER OF RANKERS
-  if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
-    nrank = apply(Z, 1, function(x){sum(!is.na(x))}) #how many times was each of the N1 households ranked
+  if (multiple_rankers){ #evaluates to TRUE only when multiple ranks per household
+    nrank = apply(Z, 1, function(x){sum(!is.na(x))}) #how many times was each of the N_CBT households ranked
     if(sd(nrank)>0){
       stop("Differing number of rankers per household")
     }
-    X_RAND<- kronecker(diag(N1),rep(1, nrank[1])) #
+    #Random effect design matrix: ordered by household, then ranker within household
+    X_RAND<- kronecker(diag(N_CBT),
+                       rep(1, nrank[1])) #
+    #Binary matrix indicating positions of ranker*household observations
+    Z_bin <- apply(Z, 1:2, function(x){ifelse( !is.na(x), 1, 0)}) #x != 0 & removed
   }
+  n_non_na <- sum(Z_bin)
   
   if(is.null(initial.list$beta_rank)){beta_rank <- rep(0, P+1)}else{  beta_rank <-  initial.list$beta_rank } 
-  if(is.null(initial.list$con)){con <- .5}else{ con <- initial.list$con  } 
+  mu_beta <- cbind(beta_rank[-1], beta_micro[-1]) %>%apply(1, mean)
   
   ## initial values for weights
   omega_rank = rep(1, R)
-  #lambda <- prior_prob_rank
-  #prior mean on beta_rank
-  mu_beta = rep(0, length(beta_rank)-1)
   ## Gibbs iteration
   
-  
   ## initial values for random effects
-  alpha <- rep(0, N1)
+  alpha <- rep(0, N_CBT)
   alpha_mat <- array(0, dim = dim(Z))
-  sigma2_alpha <- 2.5^2
+  sigma2_alpha <-1
   
+  
+  ## store MCMC draws
+  draw = list(
+    Z = array(NA, dim = c( iter_keep,N_CBT)),
+    beta_rank = array(NA, dim = c(iter_keep,P+1)),
+    mu = array(NA, dim = c(iter_keep,nrow(X_program))),
+    mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), 
+    omega_rank = array(NA, dim = c(iter_keep, R) ),
+    alpha = array(NA, dim = c(iter_keep, N_CBT)),
+    sigma2_alpha = array(NA, dim = c(iter_keep, 1))
+  )
   for(iter in 1:(iter_burn + iter_keep)){
     
     # update Z.mat given (alpha, beta) or equivalently mu
@@ -109,14 +122,16 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                           omega = omega_rank,
                                           mu_beta = mu_beta,
                                           con = con,
-                                          rank=TRUE)
+                                          rank=TRUE,
+                                          multiple_rankers = multiple_rankers)
     
     # ----> update quality weights
     omega_rank <- GibbsUpQualityWeightsHeter(y=Z , 
                                              groups = groups,
-                                        mu=X_CBT %*% beta_rank, 
-                                        beta_rank,  
-                                        weight_prior_value = c(0.5, 1, 2 ), prior_prob = rep(1/3, 3),
+                                        mu=X_CBT %*% beta_rank + alpha, 
+                                        beta = beta_rank,  
+                                        weight_prior_value = weight_prior_value, 
+                                        prior_prob = prior_prob_rank,
                                         rank=TRUE)
 
 
@@ -127,12 +142,19 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     
     # ----> update random effect parameters IF multiple rankers per household
     # (this is kind of slow....)
-    if (any(apply(Z, 1, function(x){sum(!is.na(x))}) > 1)){ #evaluates to TRUE only when multiple ranks per household
+    if (multiple_rankers){ #evaluates to TRUE only when multiple ranks per household
       
-      alpha <- GibbsUpGammaGivenLatentGroup(Z,      X_CBT %*% beta_rank, X_RAND, omega_rank, sigma2_alpha = sigma2_alpha) 
-      sigma2_alpha <- GibbsUpsigma_alpha(alpha, nu=3, tau2=25)  
+      alpha  <- GibbsUpGammaGivenLatentGroupRCPP(y=Z, 
+                                                 xbeta = X_CBT %*% beta_rank, 
+                                                 Xr = X_RAND, 
+                                                 omega_rank, 
+                                                 sigma2_alpha = sigma2_alpha,
+                                                 n_non_na = n_non_na) %>%c()
       
-      alpha_mat <- apply(Z, 1:2, function(x){ifelse(x != 0 & !is.na(x), 1, 0)})*alpha #reformatted alpha
+      
+      sigma2_alpha <- 1#GibbsUpsigma_alpha(alpha, nu=1, tau2=1)  
+      
+      alpha_mat <- Z_bin*alpha #reformatted alpha
     }
     
     #LRF TO ADDRESS: this is to be computed with the 'connections' dummy 0'd out
