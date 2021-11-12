@@ -23,7 +23,7 @@ doESS <- function(x){
     return(ESS(x))
   }
 }
-
+sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
 source("Bayes Consensus Ranking/HybridTarget.R")
 source("Bayes Consensus Ranking/CBTarget.R")
@@ -130,12 +130,14 @@ temp_data <- data.frame(Y_micro = Y_micro,
 form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT), collapse = "+")))
 
 PMT_beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
-
+PMT_beta_start[is.na(PMT_beta_start)] <- 0
 temp_data <- data.frame(rank = CBT_data$rank,
-                        X_CBT)
+                        X_CBT) %>%
+  mutate(rank = (rank - mean(rank))/sd(rank))
 form <- formula(paste0("rank~", paste0(colnames(X_CBT), collapse = "+")))
 
 CBT_beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
+CBT_beta_start[is.na(CBT_beta_start)] <- 0
 
 mu_beta_start <- apply(cbind(PMT_beta_start, CBT_beta_start), 1, mean) %>%c()
 
@@ -251,7 +253,7 @@ Program_data$hybrid_prediction_noelite <-apply(Hybridtemp_noelite$mu_noelite, 2,
 Program_data$hybrid_prediction <-apply(Hybridtemp$mu, 2, mean)
 
 #CBT SCORE-BASED PREDICTION -  WITH CORRECTION
-Program_data$cbt_model_prediction_noelite <- apply(CBtemp$mu_noelite, 2, mean)
+Program_data$cbt_model_prediction_noelite <- apply(CBtemp_noelite$mu_noelite, 2, mean)
 #CBT SCORE-BASED PREDICTION -  WITHOUT CORRECTION
 Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)
 
