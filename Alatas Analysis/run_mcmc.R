@@ -100,7 +100,7 @@ while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete
                                                           length(unique(full_data$community_id[-PMT_idx]))*0.5))
   CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
                                                      replace=FALSE, 
-                                                     length(unique(full_data$community_id[-c(PMT_idx, Program_idx)]))*CBT_prop))
+                                                     CBT_ncomm))
   
   
   CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
@@ -226,7 +226,7 @@ CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_n
 
 c[[i]] <- data.frame(parameter = m3,
                     rep = rep,
-                    
+                    CBT_ncomm=CBT_ncomm,
            Hybrid_mu_beta_mean_noelite = Hybrid_mu_beta_mean_noelite,
            Hybrid_beta_rank_mean_noelite = Hybrid_beta_rank_mean_noelite[-1],
            Hybrid_beta_micro_mean_noelite=Hybrid_beta_micro_mean_noelite[-1],
@@ -293,7 +293,8 @@ confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclus
 confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
   mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
          CBT_ncomm = CBT_ncomm,
-         TD = Sensitivity - (1-Specificity)) #%>%
+         TD = Sensitivity - (1-Specificity),
+         rep = rep) #%>%
   #dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
 
 
@@ -302,23 +303,40 @@ confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclus
    return(list(r=r, c=c))
   }, mc.cores = length(CBT_ncomm_list))
 
-all_results_1 <- unlist(results$r, recursive = FALSE)
-all_results <- do.call("rbind", all_results_1)
+ 
+ all_results_1 <- unlist(results, recursive = FALSE)
+ #collect accuracies
+ all_results_2 <- list()
+ for( i in seq(1,4*2-1, by = 2)){
+   all_results_2[[i]] <- do.call("rbind", all_results_1[[i]])
+ }
+ all_results <- do.call("rbind", all_results_2)
+ 
+#collect coefficients 
+ all_coef_2 <- list()
+ for( i in seq(2,4*2, by = 2)){
+   all_coef_2[[i]] <- do.call("rbind", all_results_1[[i]])
+ }
+ all_coef <- do.call("rbind", all_coef_2)
+ 
 
 write.csv(all_results, "Alatas Analysis/all_results.csv")
 
-all_results %>%melt(id.var = c("Method", "CBT_prop")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
-  group_by(Method, CBT_prop, variable) %>%
+write.csv(all_coef, "Alatas Analysis/all_coef.csv")
+
+all_results %>%melt(id.var = c("Method", "CBT_ncomm")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)", "CBT Logit", "PMT OLS"),
+                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score","CBT Score (corrected)", "CBT Probit", "PMT OLS"))) %>%
+  group_by(Method, CBT_ncomm, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
+  subset(variable %in% c("TD", "Sensitivity", "Specificity") )%>%
   #subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
   ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method))) + 
-  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),
+  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method))) + 
+  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method)),
                fun=mean, geom="point", color="black")+
   #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
-  facet_grid(variable~CBT_prop, scales = "free")+ theme_bw() +
+  facet_grid(variable~CBT_ncomm, scales = "free")+ theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
   scale_colour_brewer(type = "qual", palette = "Dark2")# +
   #scale_y_log10()

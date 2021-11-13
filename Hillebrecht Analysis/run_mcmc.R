@@ -238,24 +238,22 @@ for( i in seq(1,4*2-1, by = 2)){
 all_results_2[[i]] <- do.call("rbind", all_results_1[[i]])
 }
 
+all_results_1 <- unlist(results, recursive = FALSE)
+#collect accuracies
+all_results_2 <- list()
+for( i in seq(1,4*2-1, by = 2)){
+  all_results_2[[i]] <- do.call("rbind", all_results_1[[i]])
+}
 all_results <- do.call("rbind", all_results_2)
+
+#collect coefficients 
+all_coef_2 <- list()
+for( i in seq(2,4*2, by = 2)){
+  all_coef_2[[i]] <- do.call("rbind", all_results_1[[i]])
+}
+all_coef <- do.call("rbind", all_coef_2)
+
 
 write.csv(all_results, "Hillebrecht Analysis/all_results.csv")
 
-all_results %>%melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"),
-                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
-  group_by(Method, CBT_ncomm, variable) %>%
-  mutate(mean = median(value ))%>%ungroup%>%
-  subset(variable %in% c("TD", "Sensitivity", "Specificity"))%>%
-  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method))) + 
-  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method)),
-               fun=mean, geom="point", color="black")+
-  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
-  facet_grid(variable~CBT_ncomm, scales = "free")+ theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
-  scale_colour_brewer(type = "qual", palette = "Dark2")# +
-#scale_y_log10()
-ggsave("Hillebrecht Analysis/results.pdf")
-
+write.csv(all_coef, "Hillebrecht Analysis/all_coef.csv")
