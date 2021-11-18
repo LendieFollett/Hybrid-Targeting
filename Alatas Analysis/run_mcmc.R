@@ -30,9 +30,8 @@ source("Bayes Consensus Ranking/CBTarget.R")
 #parameters for simulation
 
 
-poverty_rate <- .3
-iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =2000   ## Gibbs sampler burn-in iterations 
+iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =20   ## Gibbs sampler burn-in iterations 
 print_opt = 1000  ## print a message every print.opt steps
 
 
@@ -40,7 +39,8 @@ full_data <- read.csv("Alatas Analysis/alatas.csv") %>%
   dplyr::select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
-  mutate(prop_rank = rank) %>%
+  mutate(prop_rank = rank,
+         poverty_rate = mean(treated)) %>%
   mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup
 
 #x variables to include in model
@@ -244,7 +244,7 @@ c[[i]] <- data.frame(parameter = m3,
 
 #Fit probit regression for Community Based Targeting
 lr <- glm(prop_rank<=poverty_rate ~ ., 
-          data = CBT_data[,c("prop_rank", m3[-which(m3 == "connected")])], 
+          data = CBT_data[,c("prop_rank","poverty_rate", m3[-which(m3 == "connected")])], 
           family =binomial(link = "probit"))
 
 #HYBRID-BASED PREDICTION - WITH CORRECTION

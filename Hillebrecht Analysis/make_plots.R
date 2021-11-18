@@ -8,7 +8,7 @@ all_coef <- read.csv("Hillebrecht Analysis/all_coef.csv")
 all_results %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"),
+  mutate(Method = factor(Method, levels = c("Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"),
                          labels = c("Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
   mutate(mean = median(value ))%>%ungroup%>%
