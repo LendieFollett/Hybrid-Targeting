@@ -246,6 +246,7 @@ for( i in seq(1,4*2-1, by = 2)){
 }
 all_results <- do.call("rbind", all_results_2)
 
+
 #collect coefficients 
 all_coef_2 <- list()
 for( i in seq(2,4*2, by = 2)){
