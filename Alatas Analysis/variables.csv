@@ -1,0 +1,70 @@
+Variable Name,Variable Definition
+hhid,Household identifier
+province,Province code
+district,District code
+subdistrict,Subdistrict code
+village,Village code
+ea,Enumeration area
+pmt,PMT treatment
+community,Community treatment
+hybrid,Hybrid treatment
+elite,Elite subtreatment
+poorest10,10 poorest subtreatment
+daymeeting,Day meeting subtreatment
+treated,Household received cash
+rank,Percentile rank in subvillage
+consumption,Per capita consumption (in thousand Rp)
+consumption_ae,Adult equivalent consumption (in thousand Rp)
+food,Per capita food expenditure (in thousand Rp)
+nonfood,Proportion of expenditure on non-food items
+nonstaple,Proportion of food consumption from non-staples
+diversity,Dietary diversity
+pcfloor,Household floor area per capita
+tfloor,Not earth floor
+twall,Brick or cement wall
+toilet,Private toilet
+water,Clean drinking water
+lighting,PLN electricity
+troof,Concrete or corrugated roof
+fcook,Cooks with firewood
+house,Owns house privately
+credit,Has received credit
+hhsize,Household size
+hhsize2,Household size squared
+hhsize_ae,Adult equivalent household size
+hhage,Age of head of household
+hhage2,Age of head of household squared
+hhmale,Head of household is male
+hhmarried,Head of household is married
+hhmalemarr,Head of household is male and married
+hhsector1,Head of household works in agriculture sector
+hhsector2,Head of household works in industry sector
+hhsector3,Head of household works in service sector
+formal,Head of household works in formal sector
+informal,Head of household works in informal sector
+hheduc2,Education attainment of HH head is elementary school
+hheduc3,Education attainment of HH head is junior school
+hheduc4,Education attainment of HH head is senior high school or higher
+age04,Number of children 0-4
+eschild,Number of children in elementary school
+jschild,Number of children in junior high school
+sschild,Number of children in senior high school
+higheduc2,Highest education attainment within HH is elementary school
+higheduc3,Highest education attainment within HH is junior school
+higheduc4,Highest education attainment within HH is senior high or higher
+depratio,Total dependency ratio
+ac,AC
+computer,Computer
+radio,Radio/cassette player
+tv,TV
+dvd,DVD player
+satellite,Satellite dish
+gas,Gas burner
+refrigerator,Refrigerator
+bicycle,Bicycle
+motorcycle,Motorcycle
+auto,Car/minibus/truck
+hp,HP
+jewelry,Jewelry
+chicken,Chicken
+cow,Caribou/cow
