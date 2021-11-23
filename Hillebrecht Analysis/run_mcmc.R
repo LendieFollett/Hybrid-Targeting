@@ -28,7 +28,6 @@ source("Bayes Consensus Ranking/functions.R")
 source("Bayes Consensus Ranking/HybridTarget.R")
 source("Bayes Consensus Ranking/CBTarget.R")
 
-poverty_rate <- .2
 iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn = 2000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps

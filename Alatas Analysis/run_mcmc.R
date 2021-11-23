@@ -263,7 +263,7 @@ Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(L
 #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
 Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
 
-Program_data <- Program_data%>%group_by(village, province, district, subdistrict) %>%
+Program_data <- Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
   mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          hybrid_rank =rank(hybrid_prediction)/length(village),
          pmt_rank =rank(PMT_prediction)/length(village),
@@ -294,10 +294,7 @@ confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclus
   mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
          CBT_ncomm = CBT_ncomm,
          TD = Sensitivity - (1-Specificity),
-         rep = rep) #%>%
-  #dplyr::select(c(Method,CBT_prop,Sensitivity, Specificity, TD))
-
-
+         rep = rep) 
   }
 
    return(list(r=r, c=c))

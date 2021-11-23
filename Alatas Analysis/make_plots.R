@@ -13,22 +13,62 @@ all_coef <- read.csv("Alatas Analysis/all_coef.csv")
 #IE = E1/B = B/(A+B) = 1-precision
 #TD = C1/P - E1/NP = A/(A+C)-B/(B+D)
 
-all_results %>%  mutate(IER = 1-Precision,
+#### --- ERROR RATE PLOTS ----------------------------------
+
+plot_data <- all_results %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)", "CBT Logit", "PMT OLS"),
                          labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score","CBT Score (corrected)", "CBT Probit", "PMT OLS"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
-  mutate(mean = median(value ))%>%ungroup%>%
-  subset(variable %in% c("TD", "IER", "EER")  )%>%#& !Method %in% c("CBT Probit", "PMT OLS")
-  #subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
-  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method))) + 
-  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method)),
-               fun=mean, geom="point", color="black")+
-  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
-  facet_grid(variable~CBT_ncomm, scales = "free")+ theme_bw() +
+  mutate(mean = median(value ),
+         min = min(value),
+         max = max(value))%>%ungroup
+
+plot_data%>%
+  subset(variable %in% c( "IER") & Method %in% c("CBT Score", "PMT OLS", "CBT Probit")  )%>%#& !Method %in% c("CBT Probit", "PMT OLS")
+  ggplot() +
+  geom_boxplot(aes(x = as.factor(CBT_ncomm), y = value, group = interaction(CBT_ncomm, Method), colour = Method)) + 
   theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
-  scale_colour_brewer(type = "qual", palette = "Dark2")# +
-#scale_y_log10()
-ggsave("Alatas Analysis/all_results.pdf")
+  scale_colour_grey()+theme_bw()+
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.9, 0.8))
+
+ggsave("Alatas Analysis/ER_score_v1.pdf")
+
+plot_data %>%
+  subset(variable %in% c( "IER") & Method %in% c("CBT Score", "PMT OLS", "CBT Probit")  )%>%
+  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
+  geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.9, 0.8))
+
+ggsave("Alatas Analysis/ER_score_v2.pdf")
+
+
+#### --- COEFFICIENT PLOTS ----------------------------------
+
+score_order <- all_coef %>% subset(CBT_ncomm == 200) %>%
+  dplyr::select(parameter, CB_beta_rank_mean) %>%
+  melt(id.vars = c("parameter")) %>%
+  group_by(parameter, variable) %>%
+  summarise(mean = mean(value)) %>%
+  arrange(mean) 
+
+all_coef %>% subset(CBT_ncomm == 200) %>%
+  dplyr::select(parameter, CB_beta_rank_mean, PMT_beta) %>%
+  melt(id.vars = c("parameter")) %>%
+  group_by(parameter, variable) %>%
+  summarise(mean = mean(value)) %>% ungroup() %>%
+  mutate(parameter = factor(parameter, levels = score_order$parameter),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
+                           labels = c("CBT Score Model", "PMT")))%>%
+  ggplot() + 
+  geom_line(aes(x = parameter, y = mean, linetype = variable, group = variable )) +
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Average Coefficient Estimate") +
+  scale_linetype("Method")
+
