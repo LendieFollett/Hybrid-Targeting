@@ -83,7 +83,7 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
   group_by(Definition, variable) %>%
   summarise(mean = mean(value)) %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/mean[Definition == "Household floor area per capita"]) %>%
+  mutate(std_mean = -mean/mean[Definition == "Household floor area per capita"]) %>%
   arrange(mean) 
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 200) %>%
@@ -92,7 +92,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
   group_by(Definition, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/mean[Definition == "Household floor area per capita"]) %>%
+  mutate(std_mean = -mean/mean[Definition == "Household floor area per capita"]) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
