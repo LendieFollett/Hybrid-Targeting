@@ -64,9 +64,9 @@ PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(uni
 #Note: the hh index for program is everything else, e.g. , full_data[-PMT_idx,]
 #a subset of the program data is CBT
 
-full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) %>%
-  mutate(hhage2 = hhage^2,
-         hhsize2 = hhsize^2)
+full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) #%>%
+  #mutate(hhage2 = hhage^2,
+  #       hhsize2 = hhsize^2)
 
 
 #parallelized across CBT proportions via mcapply
@@ -126,13 +126,13 @@ M = 1  ## just consumption
 which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
 temp_data <- data.frame(Y_micro = Y_micro,
-                        X_PMT)
-form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT), collapse = "+")))
+                        X_PMT[,-1])
+form <- formula(paste0("Y_micro~", paste0(colnames(temp_data[,-1]), collapse = "+")))
 
 PMT_beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
 PMT_beta_start[is.na(PMT_beta_start)] <- 0
 temp_data <- data.frame(rank = CBT_data$rank,
-                        X_CBT) %>%
+                        X_CBT[,-1]) %>%
   mutate(rank = (rank - mean(rank))/sd(rank))
 form <- formula(paste0("rank~", paste0(colnames(X_CBT), collapse = "+")))
 

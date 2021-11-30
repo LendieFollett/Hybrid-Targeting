@@ -64,6 +64,17 @@ plot_data %>%
 
 ggsave("Alatas Analysis/ER_hybrid_AI.pdf", width = 8, height = 4)
 
+plot_data %>%
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-EC", "Probit")  )%>%
+  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
+  geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.9, 0.8))
+
+ggsave("Alatas Analysis/ER_hybrid_AI.pdf", width = 8, height = 4)
+
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
@@ -102,7 +113,7 @@ ggsave("Alatas Analysis/coef_score.pdf", width = 8, height = 8)
 
 
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Variable.Name") %>% subset(CBT_ncomm == 200 & rep == 1) %>%
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Variable.Name") %>% subset(CBT_ncomm == 50) %>%
   dplyr::select(Variable.Definition, Hybrid_beta_rank_mean, Hybrid_beta_rank_mean_noelite) %>%
   melt(id.vars = c("Variable.Definition")) %>%
   group_by(Variable.Definition, variable) %>%
