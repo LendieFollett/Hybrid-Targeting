@@ -1,0 +1,71 @@
+Name,Definition
+hhid,Household identifier
+province,Province code
+district,District code
+subdistrict,Subdistrict code
+village,Village code
+ea,Enumeration area
+pmt,PMT treatment
+community,Community treatment
+hybrid,Hybrid treatment
+elite,Elite subtreatment
+poorest10,10 poorest subtreatment
+daymeeting,Day meeting subtreatment
+treated,Household received cash
+rank,Percentile rank in subvillage
+consumption,Per capita consumption (in thousand Rp)
+consumption_ae,Adult equivalent consumption (in thousand Rp)
+food,Per capita food expenditure (in thousand Rp)
+nonfood,Proportion of expenditure on non-food items
+nonstaple,Proportion of food consumption from non-staples
+diversity,Dietary diversity
+pcfloor,Household floor area per capita
+tfloor,Non-earth floor
+twall,Brick or cement walls
+toilet,Private toilet
+water,Clean drinking water
+lighting,PLN electricity
+troof,Concrete or corrugated roof
+fcook,Cooks with firewood
+house,Owns house privately
+credit,Has received credit
+hhsize,Household size
+hhsize2,Household size squared
+hhsize_ae,Adult equivalent household size
+hhage,Age of head
+hhage2,Age of head squared
+hhmale,Head is male
+hhmarried,Head is married
+hhmalemarr,Head is male and married
+hhsector1,Head works in agriculture sector
+hhsector2,Head works in industry sector
+hhsector3,Head works in service sector
+connected,Connected to elite households
+formal,Head works in formal sector
+informal,Head works in informal sector
+hheduc2,Education of head is elementary school
+hheduc3,Education of head is junior high school
+hheduc4,Education of head is senior high or higher
+age04,Number of children 0-4
+eschild,Number of children in elementary school
+jschild,Number of children in junior high school
+sschild,Number of children in senior high school
+higheduc2,Highest education in HH is elementary
+higheduc3,Highest education in HH is junior high school
+higheduc4,Highest education in HH is senior high or higher
+depratio,Dependency ratio
+ac,Owns AC unit
+computer,Owns computer
+radio,Owns radio/cassette player
+tv,Owns TV
+dvd,Owns DVD player
+satellite,Owns satellite dish
+gas,Owns gas burner
+refrigerator,Owns refrigerator
+bicycle,Owns bicycle
+motorcycle,Owns motorcycle
+auto,Owns car/minibus/truck
+hp,Owns cell phone
+jewelry,Owns jewelry
+chicken,Owns chicken
+cow,Owns caribou/cow
