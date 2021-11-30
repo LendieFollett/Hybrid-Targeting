@@ -7,14 +7,17 @@
 CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                     X_elite = NULL,
                     weight_prior_value = c(0.5, 1, 2), 
-                    prior_prob_rank = list(rep(1/length(weight_prior_value), length(weight_prior_value))), #override if heterogeneous
                     groups = rep(1, ncol(Tau)), #Defaults to homogeneous weights
                     N1 = dim(X_CBT)[1], #how many people in test set
                     R = ncol(Tau), #how many rankers. often will be equal to K
                     iter_keep = 5000,
                     iter_burn = 5000,
                     print_opt = 100,
-                    initial.list = NULL){
+                    initial.list = NULL,
+                    delta_prior_mean = rep(0, length(beta_rank)-1), #FOR DYNAMIC UPDATING
+                    delta_prior_var = 2.5^2, #FOR DYNAMIC UPDATING
+                    prior_prob_rank = list(rep(1/length(weight_prior_value), length(weight_prior_value)))#FOR DYNAMIC UPDATING
+                    ){
   # DIMENSIONS ######################
   
   #pair.com.ten A list of length R with elements: \eqn{N_CBT[k]} by \eqn{N_CBT[k]}  pairwise comparison array where N_CBT[k] is the number of people in community k (ranked by ranker r)
@@ -122,8 +125,8 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     beta_rank = GibbsUpMuGivenLatentGroup(Y = Z - alpha_mat,
                                           X = X_CBT,
                                           omega = omega_rank,
-                                          mu_beta = rep(0, length(beta_rank)-1),
-                                          con = con,
+                                          mu_beta = delta_prior_mean, #possibly using dynamic updating
+                                          con = delta_prior_var, #possibly using dynamic updating
                                           rank=TRUE,
                                           multiple_rankers = multiple_rankers)
     
@@ -133,12 +136,13 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
                                         mu=X_CBT %*% beta_rank + alpha, 
                                         beta = beta_rank,  
                                         weight_prior_value = weight_prior_value, 
-                                        prior_prob = prior_prob_rank,
+                                        prior_prob = prior_prob_rank,#possibly using dynamic updating
                                         rank=TRUE)
 
 
     # ----> update con    
-    con <- GibbsUpsigma_alpha(beta_rank[-1], nu=1, tau2=1)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
+    #LRF: the prior variance on delta (rank coefs) can be fixed, potentially uisng dynamic updating
+   # con <- GibbsUpsigma_alpha(beta_rank[-1], nu=1, tau2=1)#GibbsUpConstant(beta_rank, beta_micro, mu_beta, omega_rank, omega_micro,con)
     
   
     
@@ -175,7 +179,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
       draw$mu[j,] = mu
       draw$mu_noelite[j,] = mu_noelite
       draw$omega_rank[j,] = omega_rank
-      draw$con[j] = con
+      #draw$con[j] = con
     }
     # print iteration number
     if(iter %% print_opt == 0){

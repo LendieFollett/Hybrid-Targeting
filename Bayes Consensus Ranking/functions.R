@@ -80,7 +80,9 @@ GibbsUpMuGivenLatentGroup <- function(X ,
                                       mu_beta,
                                       rank = FALSE,
                                       con,
-                                      multiple_rankers){
+                                      multiple_rankers,
+                                      prior_mean = ,
+                                      prior_var = ){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices
@@ -128,7 +130,7 @@ if(!rank){
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
 
-  pt1 <- u^T%*%Sigma_inv_y%*%X + t(c(0,mu_beta))%*%Sigma_inv_beta
+  pt1 <- u^T%*%Sigma_inv_y%*%X + t(c(0,mu_beta))%*%Sigma_inv_beta 
   
   pt2 <- t(X)%*%Sigma_inv_y%*%X + Sigma_inv_beta
   

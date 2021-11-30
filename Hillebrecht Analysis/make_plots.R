@@ -46,7 +46,7 @@ ggsave("Hillebrecht Analysis/ER_hybrid_AI.pdf", width = 8, height = 4)
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
-variable_labels <- read.csv("Hillebrecht Analysis/Data/Burkina Faso/Cleaning/variables.csv")
+variable_labels <- read.csv("Data/Burkina Faso/Cleaning/variables.csv")
 
 #variable_labels_add <- data.frame(Variable.Name = "connected", Variable.Definition = "Elite connection")
 #variable_labels <- rbind(variable_labels, variable_labels_add)

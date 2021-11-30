@@ -56,7 +56,7 @@ m_bin <- c("connected","hhmale","hhmarried",
            "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
            "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
            "formal", "informal")# lrf removed informal for now
-m3 <- c(m_num, m_bin, "hhage2", "hhsize2")
+m3 <- c(m_num, m_bin)
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption
 #set.seed(572319852)
@@ -320,40 +320,3 @@ confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclus
 write.csv(all_results, "Alatas Analysis/all_results.csv")
 
 write.csv(all_coef, "Alatas Analysis/all_coef.csv")
-
-all_results %>%melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score","CBT Score (corrected)", "CBT Probit", "PMT OLS"))) %>%
-  group_by(Method, CBT_ncomm, variable) %>%
-  mutate(mean = median(value ))%>%ungroup%>%
-  subset(variable %in% c("TD", "Sensitivity", "Specificity") )%>%
-  #subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
-  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method))) + 
-  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method)),
-               fun=mean, geom="point", color="black")+
-  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
-  facet_grid(variable~CBT_ncomm, scales = "free")+ theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
-  scale_colour_brewer(type = "qual", palette = "Dark2")# +
-  #scale_y_log10()
-ggsave("Alatas Analysis/all_results.pdf")
-
-all_results %>%
-  mutate(rep = rep(rep(1:10, times = rep(5, 10)),4))%>%
-  melt(id.var = c("Method", "CBT_prop", "rep")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
-  group_by(Method, CBT_prop, variable) %>%
-  mutate(mean = median(value ))%>%ungroup%>%
-  subset(Method != "CBT Probit" & Method != "PMT OLS")%>%
-  ggplot() +#geom_boxplot(aes(x = Method, y = value,linetype = Method, group = interaction(Method, CBT_prop))) + 
-  geom_line(aes(x = Method, y = value,  group = interaction(CBT_prop, rep))) + 
-  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_prop, Method)),
-               fun=mean, geom="point", color="black")+
-  #geom_line(aes(x = CBT_prop, y = mean, group = interaction(Method), linetype = Method, colour = Method)) + 
-  facet_grid(variable~CBT_prop, scales = "free")+ theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
-  scale_colour_brewer(type = "qual", palette = "Dark2")
-
-
