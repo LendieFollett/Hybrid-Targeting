@@ -1,0 +1,43 @@
+﻿Name,Definition
+hhid,Household identifier
+year,Year
+community,Community identifier
+rural,HH lives in rural area
+treated,HH eligible for discount
+informant1,Rank given by informant 1
+informant2,Rank given by informant 2
+informant3,Rank given by informant 3
+consumption,Monthly per capita consumption (CFA)
+rooms,Number of rooms
+floor,Floor is made of cement
+walls,Walls are not mud or straw
+roof,"Roof is concrete, metal sheets, or tile"
+toilet,Toilet not in open field
+well,HH uses running water or good wells
+water,Drinking water is changed at least every other day
+waste,Wastewater by cesspool gutters or septic tank
+male,HH head is male
+married,HH head is married
+widow,HH head is widowed
+age1660,Share of HH members between 16 and 60 years
+age60,Share of HH members above 60 years
+minority,HH is ethnic minority
+primary,Any HH member with primary education
+secondary,Any HH member with secondary education
+tertiary,Any HH member with tertiary education
+literacy,Household head literate
+agriculture,HH head occupation is agricultural
+cart,HH owns at least one cart
+plow,HH owns at least one plow
+bike,HH ownse at least one bike
+motorbike,HH owns at least one motorbike
+car,HH owns at least one car
+radio,HH owns at least one radio
+tv,HH owns at least one TV
+fridge,HH owns at least one fridge
+kitchen,HH has kitchen
+horse,HH owns at least one horse or donkey
+goat,HH owns at least one goat or sheep
+chicken,HH owns at least one chicken
+bullock,HH owns at least one bullock
+pig,HH owns at least one pig
