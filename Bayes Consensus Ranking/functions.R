@@ -80,9 +80,7 @@ GibbsUpMuGivenLatentGroup <- function(X ,
                                       mu_beta,
                                       rank = FALSE,
                                       con,
-                                      multiple_rankers,
-                                      prior_mean = ,
-                                      prior_var = ){
+                                      multiple_rankers){
   
   #LRF TO ADDRESS: Y_comm might be missing, Y_micro might be missing, ...assuming ranking will be there...
   #                same logic for corresponding x matrices

@@ -113,15 +113,11 @@ Program_data <- full_data[Program_idx,]
 X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
 X_CBT <-     cbind(1,CBT_data[,m3]) %>%as.matrix()
 X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
-X_program_noelite <- X_program
-X_program_noelite[,"connected"] <- 0
 Y_micro <- as.matrix(log(PMT_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
 R = CBT_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
 M = 1  ## just consumption
-
-#starting values for random effects
 
 which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 

@@ -104,6 +104,9 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     R = 3*(CBT_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
 
+    which_noelite <- which(colnames(X_CBT) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+    
+    
     #starting values 
     temp_data <- data.frame(Y_micro = Y_micro,
                             X_PMT)
@@ -111,6 +114,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     PMT_beta_start <-coef(lm(form, data = temp_data))%>%as.vector()
     PMT_beta_start[is.na(PMT_beta_start)] <- 0
+    
     temp_data <- data.frame(rank = apply(CBT_data[,c("informant1", "informant2", "informant3")], 1, mean) ,
                             X_CBT) %>%
       mutate(rank = (rank - mean(rank))/sd(rank))
@@ -123,11 +127,15 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     mu_beta_start <- apply(cbind(PMT_beta_start, CBT_beta_start), 1, mean) %>%c()
     
     
-    initial_list<- list(
-      beta_rank = c(0,CBT_beta_start[-c(1)]),
+    initial_list_noelite <- list(
+      beta_rank = c(0,CBT_beta_start[-1]),
       beta_micro = PMT_beta_start,
-      mu_beta = mu_beta_start[-c(1)])
+      mu_beta = mu_beta_start[-1])
     
+    initial_list<- list(
+      beta_rank = c(0,CBT_beta_start[-c(1, which_noelite)]),
+      beta_micro = PMT_beta_start[-which_noelite],
+      mu_beta = mu_beta_start[-c(1, which_noelite)])
     
     #create rank matrix: one column per 'ranker' (community)
     Tau <- array(NA, dim = c(nrow(CBT_data), R))
@@ -141,88 +149,139 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     #Run MCMC for Bayesian Consensus Targeting
     
-    Hybridtemp <- HybridTarget(Tau=Tau, 
-                         X_PMT = X_PMT, 
-                         X_CBT = X_CBT,
-                         X_program = X_program,
-                         X_elite = NULL,
-                         Y_micro = Y_micro, #needs to be a matrix, not vector
-                         prior_prob_rank = c(1,1,1)/3,
-                         iter_keep = iter_keep,
-                         iter_burn = iter_burn,
-                         print_opt = print_opt,
-                         initial.list = initial_list)
+    #Run MCMC for Bayesian Consensus Targeting - WITH CORRECTION
+    Hybridtemp_noelite <- HybridTarget(Tau=Tau, 
+                                       X_PMT = X_PMT, 
+                                       X_CBT = X_CBT,
+                                       X_program = X_program,
+                                       X_elite = "minority",
+                                       Y_micro = Y_micro, #needs to be a matrix, not vector
+                                       iter_keep = iter_keep,
+                                       iter_burn = iter_burn,
+                                       print_opt = print_opt,
+                                       initial.list = initial_list_noelite)
     
+    #Run MCMC for Bayesian Consensus Targeting - WITHOUT CORRECTION
+    Hybridtemp <- HybridTarget(Tau=Tau, 
+                               X_PMT = X_PMT[,-which(colnames(X_PMT) == "minority")], 
+                               X_CBT = X_CBT[,-which(colnames(X_CBT) == "minority")],
+                               X_program = X_program[,-which(colnames(X_program) == "minority")],
+                               X_elite = NULL,
+                               Y_micro = Y_micro, #needs to be a matrix, not vector
+                               iter_keep = iter_keep,
+                               iter_burn = iter_burn,
+                               print_opt = print_opt,
+                               initial.list = initial_list)
+    
+    #Run MCMC for Bayesian Community Based Targeting -  WITH CORRECTION
+    CBtemp_noelite <- CBTarget(Tau=Tau, 
+                               X_CBT = X_CBT,
+                               X_program = X_program,
+                               X_elite = "minority",
+                               iter_keep =iter_keep,
+                               iter_burn = iter_burn,
+                               print_opt = print_opt,
+                               initial.list = initial_list_noelite)
+    
+    #Run MCMC for Bayesian Community Based Targeting -  WITHOUT CORRECTION
     CBtemp <- CBTarget(Tau=Tau, 
-                       X_CBT = X_CBT,
-                       X_program = X_program,
-                       X_elite = NULL,
-                       prior_prob_rank = c(1,1,1)/3,
+                       X_CBT = X_CBT[,-which(colnames(X_CBT) == "minority")],
+                       X_program = X_program[,-which(colnames(X_program) == "minority")],
+                       X_elite =NULL,
                        iter_keep =iter_keep,
                        iter_burn = iter_burn,
                        print_opt = print_opt,
                        initial.list = initial_list)
     
-    #---Save coefficients from models with/without elite connection accounted for
     
-    Hybrid_mu_beta_mean<-  apply(Hybridtemp$mu_beta, 2, mean)
-    Hybrid_beta_rank_mean <- apply(Hybridtemp$beta_rank, 2, mean)
-    Hybrid_beta_micro_mean <- apply(Hybridtemp$beta_micro, 2, mean)
-
-    CB_beta_rank_mean <- apply(CBtemp$beta_rank, 2, mean)
+    #PMT - no elite bias correction
+    temp_data <- data.frame(Y_micro = Y_micro,
+                            X_PMT)
+    form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT)[-which_noelite], collapse = "+")))
+    
+    PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
+    
+    #---Save coefficients from models with/without elite connection accounted for
+    Hybrid_mu_beta_mean_noelite <- apply(Hybridtemp_noelite$mu_beta, 2, mean)
+    Hybrid_beta_rank_mean_noelite <- apply(Hybridtemp_noelite$beta_rank, 2, mean)
+    Hybrid_beta_micro_mean_noelite <- apply(Hybridtemp_noelite$beta_micro, 2, mean)
+    
+    Hybrid_mu_beta_mean<- append( apply(Hybridtemp$mu_beta, 2, mean), 0, after = which_noelite-2)
+    Hybrid_beta_rank_mean <- append(apply(Hybridtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
+    Hybrid_beta_micro_mean <- append(apply(Hybridtemp$beta_micro, 2, mean), 0, after = which_noelite-1)
+    
+    CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
+    CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
     
     c[[i]] <- data.frame(parameter = m3,
                          rep = rep,
-                         CBT_ncomm = CBT_ncomm,
+                         CBT_ncomm=CBT_ncomm,
+                         Hybrid_mu_beta_mean_noelite = Hybrid_mu_beta_mean_noelite,
+                         Hybrid_beta_rank_mean_noelite = Hybrid_beta_rank_mean_noelite[-1],
+                         Hybrid_beta_micro_mean_noelite=Hybrid_beta_micro_mean_noelite[-1],
+                         
                          Hybrid_mu_beta_mean = Hybrid_mu_beta_mean,
                          Hybrid_beta_rank_mean = Hybrid_beta_rank_mean[-1],
                          Hybrid_beta_micro_mean=Hybrid_beta_micro_mean[-1],
-
+                         
+                         CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
                          CB_beta_rank_mean = CB_beta_rank_mean[-1],
                          
-                         PMT_beta = PMT_beta_start[-1])
+                         PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2))
     
-    lr <- glm(treated~ ., data = CBT_data[,c("treated", m3)], family =binomial(link = "probit"))
+    #Fit probit regression for Community Based Targeting
+    lr <- glm(prop_rank<=poverty_rate ~ ., 
+              data = CBT_data[,c("prop_rank","poverty_rate", m3[-which(m3 == "connected")])], 
+              family =binomial(link = "probit"))
     
-    #HYBRID-BASED PREDICTION
-    Program_data$hybrid_prediction <-        apply(Hybridtemp$mu, 2, mean)
-    #CBT SCORE-BASED PREDICTION
+    #HYBRID-BASED PREDICTION - WITH CORRECTION
+    Program_data$hybrid_prediction_noelite <-apply(Hybridtemp_noelite$mu_noelite, 2, mean)
+    #HYBRID-BASED PREDICTION - WITHOUT CORRECTION
+    Program_data$hybrid_prediction <-apply(Hybridtemp$mu, 2, mean)
+    
+    #CBT SCORE-BASED PREDICTION -  WITH CORRECTION
+    Program_data$cbt_model_prediction_noelite <- apply(CBtemp_noelite$mu_noelite, 2, mean)
+    #CBT SCORE-BASED PREDICTION -  WITHOUT CORRECTION
     Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)
     
-    #PROBIT REGRESSION CBT-BASED PREDICTION
-    Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1]))
-    #OLS-BASED PMT PREDICTION
-    Program_data$PMT_prediction <- (X_program[,-1]%*%PMT_beta_start[-1])#PMT_beta_start is the OLS estimate of beta
+    #PROBIT CBT-BASED PREDICTION -  WITHOUT CORRECTION
+    Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
     
-    Program_data <- Program_data%>%group_by(community) %>%
-      mutate(
-        hybrid_rank =rank(hybrid_prediction)/length(community),
-        pmt_rank =rank(PMT_prediction)/length(community),
-        cbt_model_rank = rank(cbt_model_prediction)/length(community),
-        #consumption_rank = rank(consumption)/length(community),
-        CBT_LR_rank = rank(CBT_LR_prediction)/length(community)
-      ) %>%
-      mutate(#hybrid_inclusion = hybrid_rank <= poverty_rate,
-        hybrid_inclusion = hybrid_rank <= treat_rate,
-        pmt_inclusion = pmt_rank <= treat_rate,
-        #consumption_inclusion = consumption_rank<=treat_rate,
-        cbt_model_inclusion = cbt_model_rank<=treat_rate,
-        CBT_LR_inclusion = CBT_LR_rank<=treat_rate,
-        cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
+    #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
+    Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
+    
+    Program_data <- Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
+      mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
+             hybrid_rank =rank(hybrid_prediction)/length(village),
+             pmt_rank =rank(PMT_prediction)/length(village),
+             cbt_model_rank = rank(cbt_model_prediction)/length(village),
+             cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(village),
+             consumption_rank = rank(consumption)/length(village),
+             cbt_rank = rank/length(village),
+             CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) %>%
+      mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
+             hybrid_inclusion = hybrid_rank <= poverty_rate,
+             pmt_inclusion = pmt_rank <= poverty_rate,
+             consumption_inclusion = consumption_rank<=poverty_rate,
+             cbt_model_inclusion = cbt_model_rank<=poverty_rate,
+             cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate,
+             CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
+             cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
       mutate_at(vars(matches("inclusion")), as.factor)
     
     
     
     r[[i]] <- rbind(
-      confusionMatrix(Program_data$hybrid_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$cbt_model_inclusion,      Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$pmt_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$CBT_LR_inclusion,            Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-      mutate(Method = c( "Hybrid Score","CBT Score", "PMT OLS", "CBT Probit"),
+      confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+      mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
              CBT_ncomm = CBT_ncomm,
              TD = Sensitivity - (1-Specificity),
-             rep = rep) #%>%
-      #dplyr::select(c(Method,CBT_ncomm,Sensitivity, Specificity, TD))
+             rep = rep)
     
     
   }
