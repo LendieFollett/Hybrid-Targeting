@@ -30,9 +30,9 @@ source("Bayes Consensus Ranking/CBTarget.R")
 #parameters for simulation
 
 
-iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =20   ## Gibbs sampler burn-in iterations 
-print_opt = 1000  ## print a message every print.opt steps
+iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =1000   ## Gibbs sampler burn-in iterations 
+print_opt = 500  ## print a message every print.opt steps
 
 
 full_data <- read.csv("Alatas Analysis/alatas.csv") %>%
@@ -75,39 +75,34 @@ CBT_ncomm_list <- c(10, 25, 50, 200)
    i <- 0
    r <- list()
    c <- list()
-  for(rep in c(1:10)){
+  for(rep in c(1:3)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_ncomm, "**************"))
     i = i + 1
 
-#SAMPLE PROGRAM DATA - FOR OUT OF SAMPLE TESTING
-whats_left <- unique(full_data$community_id[- PMT_idx])
-Program_idx <- which(full_data$community_id %in% sample(whats_left, 
-                                                    replace=FALSE, 
-                                                    length(whats_left)*0.5))
-#SAMPLE CBT DATA - FOR TRAINING
-whats_left <- unique(full_data$community_id[-c(PMT_idx, Program_idx)])
-CBT_idx <- which(full_data$community_id %in% sample(whats_left, 
-                                                   replace=FALSE, 
-                                                   CBT_ncomm))
-
-
-CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
+    
+#RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
+whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
+samps <- data.frame(community_id = whats_left,
+                    samp = sample(c("CBT", "Program", "NA"), 
+                                  prob = c(CBT_ncomm, .5*length(whats_left), length(whats_left) -CBT_ncomm- .5*length(whats_left) )/length(whats_left), 
+                                  size = length(whats_left),replace=TRUE))
+    
+CBT_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT"])
+Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
 PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
 
 while(any(apply(CBT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
-  Program_idx <- which(full_data$community_id %in% sample(unique(full_data$community_id[- PMT_idx]), 
-                                                          replace=FALSE, 
-                                                          length(unique(full_data$community_id[-PMT_idx]))*0.5))
-  CBT_idx <-which(full_data$community_id %in% sample(unique(full_data$community_id[-c(PMT_idx, Program_idx)]), 
-                                                     replace=FALSE, 
-                                                     CBT_ncomm))
+  whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
+  samps <- data.frame(community_id = whats_left,
+                      samp = sample(c("CBT", "Program", "NA"), 
+                                    prob = c(CBT_ncomm, .5*length(whats_left), length(whats_left) -CBT_ncomm- .5*length(whats_left) )/length(whats_left), 
+                                    size = length(whats_left),replace=TRUE))
   
-  
-  CBT_data <- full_data[CBT_idx,] #this is a subset of the program data!
+  CBT_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT"])
+  Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
   PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
 }
 
-Program_data <- full_data[Program_idx,]
 
 
 X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 

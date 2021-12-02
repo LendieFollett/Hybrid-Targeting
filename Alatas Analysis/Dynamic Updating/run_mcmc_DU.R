@@ -55,7 +55,7 @@ m_bin <- c("connected","hhmale","hhmarried",
            "fcook","house", "computer","radio","tv", "dvd","satellite", "ac",
            "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
            "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
-           "formal", "informal")# lrf removed informal for now
+           "formal", "informal")
 m3 <- c(m_num, m_bin)
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption
@@ -227,9 +227,9 @@ Program_data$p1_prediction <- apply(CB1_results$mu_noelite, 2, mean)
     
     
     r[[i]] <- rbind(
-      confusionMatrix(Program_data$DU_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$p1_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+      confusionMatrix(Program_data$DU_inclusion,  Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$inclusion,     Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$p1_inclusion,  Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c("DU", "Non-DU", "P1"),
              TD = Sensitivity - (1-Specificity),
              rep = rep) 
