@@ -227,3 +227,16 @@ all_coef <-  do.call(rbind, c)
 write.csv(all_results, "Alatas Analysis/Dynamic Updating/all_results.csv")
 
 write.csv(all_coef, "Alatas Analysis/Dynamic Updating/all_coef.csv")
+
+
+
+
+
+all_results_DU <- read.csv("Alatas Analysis/Dynamic Updating/all_results.csv")
+all_results_DU %>%  mutate(IER = 1-Precision,
+                        EER = 1-Sensitivity) %>%
+  dplyr::select(Method, IER, rep) %>%
+  ggplot() + geom_boxplot(aes(x = Method, y = IER))
+ggsave("Alatas Analysis/Dynamic Updating/ER_DU.pdf")
+
+

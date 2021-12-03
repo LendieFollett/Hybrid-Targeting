@@ -77,22 +77,24 @@ variable_labels_add <- data.frame(Name = "connected", Definition = "Elite connec
 variable_labels <- rbind(variable_labels, variable_labels_add)
 
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  subset(CBT_ncomm == 200) %>%
+  subset(CBT_ncomm == 200 & rep == 1) %>%
   dplyr::select(Definition, CB_beta_rank_mean) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition")) %>%
   group_by(Definition, variable) %>%
   summarise(mean = mean(value)) %>%
   group_by(variable) %>%
-  mutate(std_mean = -mean/mean[Definition == "Household floor area per capita"]) %>%
+  mutate(std_mean =mean/(length(mean)/sum(1/mean))) %>%
   arrange(mean) 
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 200) %>%
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 200 & rep == 1) %>%
   dplyr::select(Definition, CB_beta_rank_mean, PMT_beta) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition")) %>%
   group_by(Definition, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = -mean/mean[Definition == "Household floor area per capita"]) %>%
+  mutate(std_mean = mean/(length(mean)/sum(1/mean))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
@@ -100,10 +102,10 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
   geom_line(aes(x = Definition, y = std_mean, linetype = variable, group = variable )) +
   coord_flip() + 
   theme_bw() +
-  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to household floor area per capita)") +
+  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
   scale_linetype("Method")
 
-ggsave("Hillebrecht Analysis/coef_score.pdf", width = 8, height = 8)
+ggsave("Alatas Analysis/coef_score.pdf", width = 8, height = 8)
 
 
 
