@@ -30,8 +30,8 @@ source("Bayes Consensus Ranking/CBTarget.R")
 #parameters for simulation
 
 
-iter_keep = 1000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =1000   ## Gibbs sampler burn-in iterations 
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =2000   ## Gibbs sampler burn-in iterations 
 print_opt = 500  ## print a message every print.opt steps
 
 
@@ -75,7 +75,7 @@ CBT_ncomm_list <- c(10, 25, 50, 200)
    i <- 0
    r <- list()
    c <- list()
-  for(rep in c(1:3)){
+  for(rep in c(1:10)){
     print(paste("***********Rep ", rep," of CBT proportion ", CBT_ncomm, "**************"))
     i = i + 1
 

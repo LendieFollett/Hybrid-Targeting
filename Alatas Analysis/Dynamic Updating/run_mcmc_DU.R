@@ -73,40 +73,19 @@ full_data <- full_data[-PMT_idx,] %>%mutate_at(m_num, function(x){(x - mean(x))/
   i <- 0
   r <- list()
   c <- list()
-  for(rep in c(1:3)){
+  for(rep in c(1:10)){
     print(paste("***********Rep ", rep, "**************"))
     i = i + 1
     
     #SAMPLE PROGRAM DATA - FOR OUT OF SAMPLE TESTING
     whats_left <- unique(full_data$community_id)
     samps <- data.frame(community_id = whats_left,
-                        samp = sample(c(1:3), prob = c(7,1.5,1.5)/10, size = length(whats_left),replace=TRUE))
+                        samp = sample(c(1:3), prob = c(.76,.12, .12), size = length(whats_left),replace=TRUE))
     
     CBT1_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == 2])
     CBT2_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == 3])
     Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == 1])
     
-    
-    #Program_idx <- which(full_data$community_id %in% sample(whats_left, 
-                                                            #replace=FALSE, 
-                                                            #length(whats_left)*0.5))
-    #SAMPLE CBT DATA - PERIOD 1 FOR TRAINING
-    #whats_left <- unique(full_data$community_id[-c(Program_idx)])
-    #CBT1_idx <- which(full_data$community_id %in% sample(whats_left, 
-    #                                                    replace=FALSE, 
-    #                                                    length(whats_left)*0.5))
-    
-    
-    
-    #SAMPLE CBT DATA - PERIOD 2 FOR TRAINING
-    #whats_left <- unique(full_data$community_id[-c(Program_idx,CBT1_idx)])
-    
-    #CBT2_idx <- which(full_data$community_id %in% whats_left)
-    #CBT2_data <- full_data[CBT2_idx,] 
-  
-    #Program_data <- full_data[Program_idx,]
-    
-      
     X_CBT1 <-     cbind(1,CBT1_data[,m3]) %>%as.matrix()
     X_CBT2 <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
     X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
@@ -187,7 +166,7 @@ full_data <- full_data[-PMT_idx,] %>%mutate_at(m_num, function(x){(x - mean(x))/
                             print_opt = print_opt,
                             initial.list = initial_list_noelite,
                             delta_prior_mean = CB_beta_rank_mean[-1],
-                            delta_prior_var = mean(diag(CB_beta_rank_vcov)),
+                            delta_prior_var = 2*mean(diag(CB_beta_rank_vcov)),
                             prior_prob_rank = CB_omega_rank_probs)
     
 
@@ -238,7 +217,11 @@ Program_data$p1_prediction <- apply(CB1_results$mu_noelite, 2, mean)
 
 all_results <-  do.call(rbind, r)
 all_results %>%  mutate(IER = 1-Precision,
-                        EER = 1-Sensitivity)
+                                     EER = 1-Sensitivity) %>%
+  dplyr::select(Method, IER, rep) %>%
+  ggplot() + geom_boxplot(aes(x = Method, y = IER))
+
+
 all_coef <-  do.call(rbind, c)
 
 write.csv(all_results, "Alatas Analysis/Dynamic Updating/all_results.csv")
