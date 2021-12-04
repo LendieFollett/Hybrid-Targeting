@@ -25,8 +25,8 @@ all_coef <- read.csv("Alatas Analysis/all_coef.csv")
 plot_data <- all_results %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC", "Probit", "PMT"))) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
+                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
   mutate(mean = median(value ),
          min = min(value),
@@ -66,6 +66,17 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))
 
 ggsave("Alatas Analysis/ER_hybrid_EC.pdf", width = 8, height = 4)
+
+plot_data %>%
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
+  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
+  geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.9, 0.8))
+
+ggsave("Alatas Analysis/ER_hybrid_DU.pdf", width = 8, height = 4)
 
 
 #### --- COEFFICIENT PLOTS ----------------------------------
