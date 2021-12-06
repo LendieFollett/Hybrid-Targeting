@@ -11,8 +11,8 @@ all_coef <- read.csv("Hillebrecht Analysis/all_coef.csv")
 plot_data <- all_results %>%  mutate(IER = 1-Precision,
                                      EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)", "CBT Probit", "PMT OLS"),
-                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC", "Probit", "PMT"))) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Probit", "PMT OLS"),
+                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
   mutate(mean = median(value ),
          min = min(value),
@@ -42,59 +42,72 @@ plot_data %>%
 
 ggsave("Hillebrecht Analysis/ER_hybrid_AI.pdf", width = 8, height = 4)
 
+plot_data %>%
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
+  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
+  geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.9, 0.8))
 
+ggsave("Hillebrecht Analysis/ER_hybrid_DU.pdf", width = 8, height = 4)
+
+
+
+all_results %>%  mutate(IER = 1-Precision,
+                        EER = 1-Sensitivity) %>%
+  melt(id.var = c("Method", "CBT_ncomm")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Probit", "PMT OLS"),
+                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit")  )%>%
+  ggplot() + geom_point(aes(x = as.factor(CBT_ncomm), y = value, linetype = Method,colour = Method)) +
+  #geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.9, 0.9))
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
 variable_labels <- read.csv("Data/Burkina Faso/Cleaning/variables.csv")
+#variable_labels_add <- data.frame(Name = "connected", Definition = "Elite connection")
 
-#variable_labels_add <- data.frame(Variable.Name = "connected", Variable.Definition = "Elite connection")
 #variable_labels <- rbind(variable_labels, variable_labels_add)
 
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  subset(CBT_ncomm == 25) %>%
-  dplyr::select(Definition, CB_beta_rank_mean) %>%
-  melt(id.vars = c("Definition")) %>%
-  group_by(Definition, variable) %>%
+  subset(CBT_ncomm == 20 & rep == 1) %>%
+  dplyr::select(Definition,Category, CB_beta_rank_mean) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Category")) %>%
+  group_by(Definition, Category,variable) %>%
   summarise(mean = mean(value)) %>%
-  arrange(mean) 
+  group_by(Category,variable) %>%
+  mutate(std_mean =mean/(length(mean)/sum(1/mean))) %>%
+  arrange(Category,mean) 
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 25) %>%
-  dplyr::select(Definition, CB_beta_rank_mean, PMT_beta) %>%
-  melt(id.vars = c("Definition")) %>%
-  group_by(Definition, variable) %>%
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 20 & rep == 1) %>%
+  dplyr::select(Definition, Category, CB_beta_rank_mean, PMT_beta) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Category")) %>%
+  group_by(Definition, Category, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
+  group_by(variable) %>%
+  mutate(std_mean = mean/(length(mean)/sum(1/mean))) %>%
+  ungroup() %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
   ggplot() + 
-  geom_line(aes(x = Definition, y = mean, linetype = variable, group = variable )) +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
-  labs(x = "", y = "Average Coefficient Estimate") +
-  scale_linetype("Method")
-
-ggsave("Hillebrecht Analysis/coef_score.pdf", width = 8, height = 8)
+  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
+  scale_fill_grey("Method")
 
 
-
-
-
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Variable.Name") %>% subset(CBT_ncomm == 50) %>%
-  dplyr::select(Definition, Hybrid_beta_rank_mean, Hybrid_beta_rank_mean_noelite) %>%
-  melt(id.vars = c("Definition")) %>%
-  group_by(Definition, variable) %>%
-  summarise(mean = mean(value)) %>% ungroup() %>%
-  mutate(Definition = factor(Definition, levels = score_order$Definition),
-         variable = factor(variable, levels = c("Hybrid_beta_rank_mean", "Hybrid_beta_rank_mean_noelite"),
-                           labels = c("Hybrid", "Hybrid_EC")))%>%
-  ggplot() + 
-  geom_line(aes(x = Definition, y = mean, linetype = variable, group = variable )) +
-  coord_flip() + 
-  theme_bw() +
-  labs(x = "", y = "Average Coefficient Estimate") +
-  scale_linetype("Method")
-
+ggsave("Hillebrecht Analysis/coef_score.pdf", width = 12, height = 12)
 
 
 

@@ -84,7 +84,8 @@ CBT_ncomm_list <- c(10, 25, 50, 100)
 whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
 samps <- data.frame(community_id = whats_left,
                     samp = sample(c("CBT1","CBT2", "Program", "NA"), 
-                                  prob = c(100,CBT_ncomm, 
+                                  prob = c(100,
+                                           CBT_ncomm, 
                                            .5*length(whats_left), 
                                            length(whats_left) -CBT_ncomm-100- .5*length(whats_left) )/length(whats_left), 
                                   size = length(whats_left),replace=TRUE))
