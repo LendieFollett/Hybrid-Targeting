@@ -11,7 +11,7 @@ all_coef <- read.csv("Hillebrecht Analysis/all_coef.csv")
 plot_data <- all_results %>%  mutate(IER = 1-Precision,
                                      EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Probit", "PMT OLS"),
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
   mutate(mean = mean(value ),
@@ -93,7 +93,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
   group_by(Definition, Category, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/(length(mean)/sum(1/mean, na.rm=TRUE)),
+  mutate(std_mean = -mean/(length(mean)/sum(1/mean, na.rm=TRUE)),
          sumoom = length(mean)/sum(1/mean, na.rm=TRUE)) %>%
   ungroup() %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
