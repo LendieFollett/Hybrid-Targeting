@@ -76,7 +76,7 @@ variable_labels <- read.csv("Data/Burkina Faso/Cleaning/variables.csv")
 #variable_labels <- rbind(variable_labels, variable_labels_add)
 
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  subset(CBT_ncomm == 20 & rep == 1) %>%
+  subset(CBT_ncomm == 20 ) %>%
   dplyr::select(Definition,Category, CB_beta_rank_mean) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Category")) %>%
@@ -86,14 +86,15 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
   mutate(std_mean =mean/(length(mean)/sum(1/mean))) %>%
   arrange(Category,mean) 
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 20 & rep == 1) %>%
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 20) %>%
   dplyr::select(Definition, Category, CB_beta_rank_mean, PMT_beta) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Category")) %>%
   group_by(Definition, Category, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/(length(mean)/sum(1/mean))) %>%
+  mutate(std_mean = mean/(length(mean)/sum(1/mean, na.rm=TRUE)),
+         sumoom = length(mean)/sum(1/mean, na.rm=TRUE)) %>%
   ungroup() %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
