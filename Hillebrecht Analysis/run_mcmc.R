@@ -67,11 +67,13 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     whats_left <- unique(full_data_left$community) #communities not in PMT
     samps <- data.frame(community = whats_left,
                         samp =     rep(c("CBT1","CBT2", "Program", "NA"), c(10, CBT_ncomm, 25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
-    
+
     CBT1_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT1"])
     CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
     Program_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "Program"])    
     PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+    #print(c(dim(CBT1_data)[1],dim(CBT2_data)[1],dim(Program_data)))
+    #print(table(samps$samp))
     
     while(any(apply(CBT1_data[,m3], 2, var) == 0)|any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
       whats_left <- unique(full_data_left$community) #communities not in PMT

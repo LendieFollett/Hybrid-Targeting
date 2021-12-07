@@ -14,7 +14,7 @@ plot_data <- all_results %>%  mutate(IER = 1-Precision,
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Probit", "PMT OLS"),
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
-  mutate(mean = median(value ),
+  mutate(mean = mean(value ),
          min = min(value),
          max = max(value))%>%ungroup
 
@@ -58,10 +58,10 @@ ggsave("Hillebrecht Analysis/ER_hybrid_DU.pdf", width = 8, height = 4)
 all_results %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Probit", "PMT OLS"),
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit")  )%>%
-  ggplot() + geom_point(aes(x = as.factor(CBT_ncomm), y = value, linetype = Method,colour = Method)) +
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit", "Hybrid-DU")  )%>%
+  ggplot() + geom_boxplot(aes(x = as.factor(CBT_ncomm), y = value, linetype = Method,colour = Method)) +
   #geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
