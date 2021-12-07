@@ -53,7 +53,7 @@ PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
 full_data_left <- full_data[-PMT_idx,]
 
 CBT_ncomm_list <- c(5,10,15,20)
-nrep <- 10
+nrep <- 20
 results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
   i <- 0
   r <- list()
