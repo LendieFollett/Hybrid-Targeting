@@ -26,9 +26,9 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.9))
+  theme(legend.position = c(0.9, 0.85))
 
-ggsave("Hillebrecht Analysis/ER_hybrid.pdf", width = 8, height = 4)
+ggsave("Hillebrecht Analysis/ER_hybrid.pdf", width = 8, height = 5)
 
 
 plot_data %>%
@@ -83,7 +83,7 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
   group_by(Definition, Category,variable) %>%
   summarise(mean = mean(value)) %>%
   group_by(Category,variable) %>%
-  mutate(std_mean =mean/(length(mean)/sum(1/mean))) %>%
+  mutate(std_mean =mean/(length(mean)/sum(1/abs(mean)))) %>%
   arrange(Category,mean) 
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 20) %>%
@@ -93,7 +93,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
   group_by(Definition, Category, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = -mean/(length(mean)/sum(1/mean, na.rm=TRUE)),
+  mutate(std_mean = mean/(length(mean)/sum(1/abs(mean), na.rm=TRUE)),
          sumoom = length(mean)/sum(1/mean, na.rm=TRUE)) %>%
   ungroup() %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
@@ -110,23 +110,25 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
 
 ggsave("Hillebrecht Analysis/coef_score.pdf", width = 12, height = 12)
 
-
-
-
-#------OLD-----------------------
-all_results %>%  mutate(IER = 1-Precision,
-                        EER = 1-Sensitivity) %>%
-  melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"),
-                         labels = c("Hybrid Score","CBT Score", "CBT Probit", "PMT OLS"))) %>%
-  group_by(Method, CBT_ncomm, variable) %>%
-  mutate(mean = median(value ))%>%ungroup%>%
-  subset(variable %in% c("TD", "IER", "EER")  )%>%#& !Method %in% c("CBT Probit", "PMT OLS")
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 20 ) %>%
+  dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Category")) %>%
+  group_by(Definition, Category, variable) %>%
+  summarise(mean = mean(value)) %>% ungroup() %>%
+  group_by(variable) %>%
+  mutate(std_mean = mean/(length(mean)/sum(1/abs(mean)))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
+                           labels = c("Hybrid", "Hybrid-EC")))%>%
   ggplot() + 
-  geom_boxplot(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method))) + 
-  stat_summary(aes(x = Method, y = value, colour = Method, group = interaction(CBT_ncomm, Method)),
-               fun=mean, geom="point", color="black")+
-  facet_grid(variable~CBT_ncomm, scales = "free")+ theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = .9))  +
-  scale_colour_brewer(type = "qual", palette = "Dark2")
-ggsave("Hillebrecht Analysis/all_results.pdf")
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
+  scale_fill_grey("Method")
+
+ggsave("Hillebrecht Analysis/coef_score_EC.pdf", width = 12, height = 12)
+
+

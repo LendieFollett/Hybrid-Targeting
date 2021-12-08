@@ -95,7 +95,7 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
   group_by(Definition, Category,variable) %>%
   summarise(mean = mean(value)) %>%
   group_by(Category,variable) %>%
-  mutate(std_mean =mean/(length(mean)/sum(1/mean))) %>%
+  mutate(std_mean =mean/(length(mean)/sum(1/abs(mean)))) %>%
   arrange(Category,mean) 
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 100 & rep == 1) %>%
@@ -105,12 +105,12 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
   group_by(Definition, Category, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/(length(mean)/sum(1/mean))) %>%
+  mutate(std_mean = mean/(length(mean)/sum(1/abs(mean)))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
   ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable )) +
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
@@ -119,25 +119,26 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
 
 ggsave("Alatas Analysis/coef_score.pdf", width = 12, height = 12)
 
-
-
-
-
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 200) %>%
-  dplyr::select(Definition, Hybrid_beta_rank_mean, Hybrid_beta_rank_mean_noelite) %>%
-  melt(id.vars = c("Definition")) %>%
-  group_by(Definition, variable) %>%
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 100 & rep == 1) %>%
+  dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Category")) %>%
+  group_by(Definition, Category, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
+  group_by(variable) %>%
+  mutate(std_mean = mean/(length(mean)/sum(1/abs(mean)))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
-         variable = factor(variable, levels = c("Hybrid_beta_rank_mean", "Hybrid_beta_rank_mean_noelite"),
-                           labels = c("Hybrid", "Hybrid_EC")))%>%
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
+                           labels = c("Hybrid", "Hybrid-EC")))%>%
   ggplot() + 
-  geom_line(aes(x = Definition, y = mean, linetype = variable, group = variable )) +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
-  labs(x = "", y = "Average Coefficient Estimate") +
-  scale_linetype("Method")
+  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
+  scale_fill_grey("Method")
 
+ggsave("Alatas Analysis/coef_score_EC.pdf", width = 12, height = 12)
 
 
 
