@@ -2,9 +2,10 @@ rm(list = ls())
 library(dplyr)
 library(ggplot2)
 library(reshape2)
+library(lmomco)
 all_results <- read.csv("Alatas Analysis/all_results.csv")
 
-all_coef <- read.csv("Alatas Analysis/all_coef.csv")
+all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")
 
 #Sensitivity= P(beneficiary | true poor)
 #Specificity= P(non-beneficiary | true non-poor)
@@ -88,29 +89,29 @@ variable_labels <- read.csv("Data/Indonesia/Cleaning/variables.csv")
 #variable_labels <- rbind(variable_labels, variable_labels_add)
 
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  subset(CBT_ncomm == 100 & rep == 1) %>%
   dplyr::select(Definition,Category, CB_beta_rank_mean) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Category")) %>%
-  group_by(Definition, Category,variable) %>%
-  summarise(mean = mean(value)) %>%
+  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
   group_by(Category,variable) %>%
-  mutate(std_mean =mean/(length(mean)/sum(1/abs(mean)))) %>%
-  arrange(Category,mean) 
+  mutate(std_mean =par_est/harmonic.mean(par_est)$harmean) %>%
+  arrange(Category,std_mean) 
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 100 & rep == 1) %>%
+
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
   dplyr::select(Definition, Category, CB_beta_rank_mean, PMT_beta) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Category")) %>%
-  group_by(Definition, Category, variable) %>%
-  summarise(mean = mean(value)) %>% ungroup() %>%
+  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
+  #group_by(Definition, Category, variable) %>%
+  #summarise(par_est = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/(length(mean)/sum(1/abs(mean)))) %>%
+  mutate(std_mean = par_est/harmonic.mean(abs(par_est))$harmean) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
   ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable )) +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
@@ -119,19 +120,19 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset
 
 ggsave("Alatas Analysis/coef_score.pdf", width = 12, height = 12)
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% subset(CBT_ncomm == 100 & rep == 1) %>%
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Category")) %>%
-  group_by(Definition, Category, variable) %>%
-  summarise(mean = mean(value)) %>% ungroup() %>%
+  mutate(par_est = ifelse(abs(value) < 0.001, 0, value)) %>%
+  #group_by(Definition, Category, variable) %>%
   group_by(variable) %>%
-  mutate(std_mean = mean/(length(mean)/sum(1/abs(mean)))) %>%
+  mutate(std_mean = par_est/harmonic.mean(abs(par_est))$harmean) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
                            labels = c("Hybrid", "Hybrid-EC")))%>%
   ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +

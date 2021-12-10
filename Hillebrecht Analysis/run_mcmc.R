@@ -357,3 +357,7 @@ all_coef <- do.call("rbind", all_coef_2)
 write.csv(all_results, "Hillebrecht Analysis/all_results.csv")
 
 write.csv(all_coef, "Hillebrecht Analysis/all_coef.csv")
+
+
+
+
