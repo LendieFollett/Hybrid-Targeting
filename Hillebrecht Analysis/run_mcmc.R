@@ -384,10 +384,13 @@ for ( idx in unique(CBT_data$community)){ #loop over columns
   }
 }
 
+which_noelite <- which(colnames(X_CBT) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+
+
 #Run MCMC for Bayesian Community Based Targeting -  WITHOUT CORRECTION
 CBtemp <- CBTarget(Tau=Tau, 
-                   X_CBT = X_CBT[,-which(colnames(X_CBT) == "connected")],
-                   X_program = X_program[,-which(colnames(X_program) == "connected")],
+                   X_CBT = X_CBT[,-which(colnames(X_CBT) == "minority")],
+                   X_program = X_program[,-which(colnames(X_program) == "minority")],
                    X_elite =NULL,
                    iter_keep =iter_keep,
                    iter_burn = iter_burn,
@@ -396,14 +399,14 @@ CBtemp <- CBTarget(Tau=Tau,
 CBtemp_noelite <- CBTarget(Tau=Tau, 
                            X_CBT = X_CBT,
                            X_program = X_program,
-                           X_elite = "connected",
+                           X_elite = "minority",
                            iter_keep =iter_keep,
                            iter_burn = iter_burn,
                            print_opt = print_opt)
 
 which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
-Y_micro <- as.matrix(log(PMT_data$consumption))
+Y_micro <- as.matrix(log(PMT_data$consumption+.1))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 X_PMT_sub <-     cbind(1,PMT_data[,m3]) %>%as.matrix()
 temp_data <- data.frame(Y_micro = Y_micro,
@@ -420,7 +423,7 @@ coefs <- data.frame(parameter = m3,
                     CB_beta_rank_mean = CB_beta_rank_mean[-1],
                     PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
 )
-write.csv(coefs, "Alatas Analysis/coef_total_sample.csv")
+write.csv(coefs, "Hillebrecht Analysis/coef_total_sample.csv")
 
 
 
