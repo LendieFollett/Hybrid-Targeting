@@ -102,7 +102,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
-  labs(x = "", y = "Standardized coefficient") +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
   scale_fill_grey("Method") +
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
@@ -126,7 +126,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
-  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
   scale_fill_grey("Method")+
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
