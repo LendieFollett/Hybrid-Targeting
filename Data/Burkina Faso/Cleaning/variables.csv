@@ -1,44 +1,44 @@
-Name,Definition
-"hhid","Household identifier"
-"year","Year"
-"community","Community identifier"
-"rural","HH lives in rural area"
-"treated","HH eligible for discount"
-"informant1","Rank given by informant 1"
-"informant2","Rank given by informant 2"
-"informant3","Rank given by informant 3"
-"consumption","Monthly per capita consumption (CFA)"
-"rooms","Number of rooms"
-"floor","Floor is cement"
-"walls","Non-mud walls"
-"roof","Roof is concrete, metal, or tile"
-"toilet","Toilet not in open field"
-"well","Running water or good wells"
-"water","Water is changed at least every other day"
-"waste","Wastewater by gutters or septic tank"
-"hhsize","HH size"
-"male","Head is male"
-"married","Head is married"
-"widow","Head is widowed"
-"age1660","Share of members 16-60 years"
-"age60","Share of members above 60 years"
-"minority","HH is ethnic minority"
-"primary","Any member with primary education"
-"secondary","Any member with secondary education"
-"tertiary","Any member with tertiary education"
-"literacy","Head is literate"
-"agriculture","Head works in agriculture sector"
-"cart","Owns cart"
-"plow","Owns plow"
-"bike","Owns bike"
-"motorbike","Owns motorbike"
-"car","Owns car"
-"radio","Owns radio"
-"tv","Owns TV"
-"fridge","Owns refrigerator"
-"kitchen","Has kitchen"
-"horse","Owns horse/donkey"
-"goat","Owns goat/sheep"
-"chicken","Owns chicken"
-"bullock","Owns bullock"
-"pig","Owns pig"
+Name,Definition,Category
+hhid,Household identifier,
+year,Year,
+community,Community identifier,
+rural,HH lives in rural area,
+treated,HH eligible for discount,
+informant1,Rank given by informant 1,
+informant2,Rank given by informant 2,
+informant3,Rank given by informant 3,
+consumption,Monthly per capita consumption (CFA),
+rooms,Number of rooms,Housing
+floor,Floor is cement,Housing
+walls,Non-mud walls,Housing
+roof,"Roof is concrete, metal, or tile",Housing
+toilet,Toilet not in open field,Housing
+well,Running water or good wells,Housing
+water,Water is changed at least every other day,Housing
+waste,Wastewater by gutters or septic tank,Housing
+hhsize,HH size,Demographic
+male,Head is male,Demographic
+married,Head is married,Demographic
+widow,Head is widowed,Demographic
+age1660,Share of members 16-60 years,Demographic
+age60,Share of members above 60 years,Demographic
+minority,HH is ethnic minority,Demographic
+primary,Any member with primary education,Education
+secondary,Any member with secondary education,Education
+tertiary,Any member with tertiary education,Education
+literacy,Head is literate,Education
+agriculture,Head works in agriculture sector,Occupation
+cart,Owns cart,Assets
+plow,Owns plow,Assets
+bike,Owns bike,Assets
+motorbike,Owns motorbike,Assets
+car,Owns car,Assets
+radio,Owns radio,Assets
+tv,Owns TV,Assets
+fridge,Owns refrigerator,Assets
+kitchen,Has kitchen,Housing
+horse,Owns horse/donkey,Assets
+goat,Owns goat/sheep,Assets
+chicken,Owns chicken,Assets
+bullock,Owns bullock,Assets
+pig,Owns pig,Assets
