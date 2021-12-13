@@ -106,7 +106,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   #group_by(Definition, Category, variable) %>%
   #summarise(par_est = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = par_est/harmonic.mean(abs(par_est))$harmean) %>%
+  mutate(std_mean = value/mean(abs(value))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
@@ -116,7 +116,9 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   coord_flip() + 
   theme_bw() +
   labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
-  scale_fill_grey("Method")
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
 
 ggsave("Alatas Analysis/coef_score.pdf", width = 12, height = 12)
 
@@ -124,10 +126,9 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Category")) %>%
-  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
   #group_by(Definition, Category, variable) %>%
   group_by(variable) %>%
-  mutate(std_mean = par_est/harmonic.mean(abs(par_est))$harmean) %>%
+  mutate(std_mean = value/mean(abs(value))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
                            labels = c("Hybrid", "Hybrid-EC")))%>%
@@ -137,57 +138,11 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   coord_flip() + 
   theme_bw() +
   labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
-  scale_fill_grey("Method")
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
 
 ggsave("Alatas Analysis/coef_score_EC.pdf", width = 12, height = 12)
-
-
-
-
-
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  dplyr::select(Definition, Category, CB_beta_rank_mean, PMT_beta) %>%
-  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
-  #group_by(Definition, Category, variable) %>%
-  #summarise(par_est = mean(value)) %>% ungroup() %>%
-  group_by(variable) %>%
-  mutate(std_mean = par_est/mean(abs(par_est))) %>%
-  mutate(Definition = factor(Definition, levels = score_order$Definition),
-         variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
-                           labels = c("Hybrid", "PMT")))%>%
-  ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
-  #facet_grid(Category~., scales = "free_y")+
-  coord_flip() + 
-  theme_bw() +
-  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to arithmetic mean)") +
-  scale_fill_grey("Method")
-
-ggsave("Alatas Analysis/coef_score_arithmetic.pdf", width = 12, height = 12)
-
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
-  dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
-  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
-  #group_by(Definition, Category, variable) %>%
-  group_by(variable) %>%
-  mutate(std_mean = par_est/mean(abs(par_est))) %>%
-  mutate(Definition = factor(Definition, levels = score_order$Definition),
-         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
-                           labels = c("Hybrid", "Hybrid-EC")))%>%
-  ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
-  #facet_grid(Category~., scales = "free_y")+
-  coord_flip() + 
-  theme_bw() +
-  labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to arithmetic mean)") +
-  scale_fill_grey("Method")
-
-ggsave("Alatas Analysis/coef_score_EC_arithmetic.pdf", width = 12, height = 12)
-
 
 
 

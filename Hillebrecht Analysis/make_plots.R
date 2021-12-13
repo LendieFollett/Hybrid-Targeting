@@ -4,7 +4,7 @@ library(reshape2)
 
 all_results <- read.csv("Hillebrecht Analysis/all_results.csv")
 
-all_coef <- read.csv("Hillebrecht Analysis/coef_total_sample.csv")
+all_coef <- read.csv("Hillebrecht Analysis/coef_total_sample.csv")[,-1]
 
 #### --- ERROR RATE PLOTS ----------------------------------
 
@@ -98,12 +98,14 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
   ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ),position =  position_dodge(width = 0.5)) +
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
   labs(x = "", y = "Standardized coefficient") +
-  scale_fill_grey("Method")
+  scale_fill_grey("Method") +
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
 
 
 ggsave("Hillebrecht Analysis/coef_score.pdf", width = 12, height = 12)
@@ -120,12 +122,14 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
          variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
                            labels = c("Hybrid", "Hybrid-EC")))%>%
   ggplot() + 
-  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = "dodge") +
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
   #facet_grid(Category~., scales = "free_y")+
   coord_flip() + 
   theme_bw() +
   labs(x = "", y = "Standardized Coefficient Estimate \n (Relative to harmonic mean)") +
-  scale_fill_grey("Method")
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
 
 ggsave("Hillebrecht Analysis/coef_score_EC.pdf", width = 12, height = 12)
 
