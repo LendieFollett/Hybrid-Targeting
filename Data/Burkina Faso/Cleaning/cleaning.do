@@ -29,7 +29,7 @@ global xvars hhm_level2	hhm_level3 hhm_level4 hhh_literate hhh_no_primagr ///
 ethn_min wat_gd wat_cha san_alt roof_gd wall_gd floor_gd toil_gd nmb_rooms ///	
 hhm_d_cart hhm_d_plow hhm_d_bike hhm_d_mbike hhm_d_car hhm_d_radio hhm_d_tv ///
 hhm_d_fridge hhm_d_kitchen hhm_d_horse_donkey hhm_d_goat_sheep hhm_d_chicken ///
-hhm_d_bullock hhm_d_pig hha_age1660	hha_age60 hhh_married hhh_nwidow	hhh_male
+hhm_d_bullock hhm_d_pig hha_age1660	hha_age60 hhh_married hhh_nwidow hhh_male
 reg elig_expend $xvars trg1-trg58 if year==2008 & rural==1, vce(cluster hh_id) 
 reg elig_expend $xvars trg1-trg58 if year==2008 & rural==0, vce(cluster hh_id) 
 drop trg1-trg62
@@ -37,7 +37,8 @@ drop trg1-trg62
 *** Data cleaning
 
 * Keep select variables
-order hh_id year trg_unit rural elig_fin infA infB infC expd $xvars
+gen hhsize = hhs_age15 + hhs_age1660 + hhs_age60
+order hh_id year trg_unit rural elig_fin infA infB infC expd hhsize $xvars
 keep hh_id-hhh_male
 
 * Renaming
@@ -95,43 +96,44 @@ label var informant1 "Rank given by informant 1"
 label var informant2 "Rank given by informant 2"
 label var informant3 "Rank given by informant 3"
 label var consumption "Monthly per capita consumption (CFA)"
-label var primary "Any HH member with primary education"
-label var secondary "Any HH member with secondary education"
-label var tertiary "Any HH member with tertiary education"
-label var literacy "Household head literate"
-label var agriculture "HH head occupation is agricultural"
+label var primary "Any member with primary education"
+label var secondary "Any member with secondary education"
+label var tertiary "Any member with tertiary education"
+label var literacy "Head is literate"
+label var agriculture "Head works in agriculture sector"
 label var minority "HH is ethnic minority"
-label var well "HH uses running water or good wells"
-label var water "Drinking water is changed at least every other day"
-label var waste "Wastewater by cesspool gutters or septic tank"
-label var roof "Roof is concrete, metal sheets, or tile"
-label var walls "Walls are not mud or straw"
-label var floor "Floor is made of cement"
+label var well "Running water or good wells"
+label var water "Water is changed at least every other day"
+label var waste "Wastewater by gutters or septic tank"
+label var roof "Roof is concrete, metal, or tile"
+label var walls "Non-mud walls"
+label var floor "Floor is cement"
 label var toilet "Toilet not in open field"
 label var rooms "Number of rooms"
-label var cart "HH owns at least one cart"
-label var plow "HH owns at least one plow"
-label var bike "HH ownse at least one bike"
-label var motorbike "HH owns at least one motorbike"
-label var car "HH owns at least one car"
-label var radio "HH owns at least one radio"
-label var tv "HH owns at least one TV"
-label var fridge "HH owns at least one fridge"
-label var kitchen "HH has kitchen"
-label var horse "HH owns at least one horse or donkey"
-label var goat "HH owns at least one goat or sheep"
-label var chicken "HH owns at least one chicken"
-label var bullock "HH owns at least one bullock"
-label var pig "HH owns at least one pig"
-label var age1660 "Share of HH members between 16 and 60 years"
-label var age60 "Share of HH members above 60 years"
-label var married "HH head is married"
-label var widow "HH head is widowed"
-label var male "HH head is male"
+label var cart "Owns cart"
+label var plow "Owns plow"
+label var bike "Owns bike"
+label var motorbike "Owns motorbike"
+label var car "Owns car"
+label var radio "Owns radio"
+label var tv "Owns TV"
+label var fridge "Owns refrigerator"
+label var kitchen "Has kitchen"
+label var horse "Owns horse/donkey"
+label var goat "Owns goat/sheep"
+label var chicken "Owns chicken"
+label var bullock "Owns bullock"
+label var pig "Owns pig"
+label var hhsize "HH size"
+label var age1660 "Share of members 16-60 years"
+label var age60 "Share of members above 60 years"
+label var married "Head is married"
+label var widow "Head is widowed"
+label var male "Head is male"
 
 * Re-order variables
-order hhid-consumption rooms floor walls roof toilet well water waste male ///
-married widow age1660 age60 minority primary secondary tertiary literacy ///
+order hhid-consumption rooms floor walls roof toilet well water waste hhsize ///
+male married widow age1660 age60 minority primary secondary tertiary literacy ///
 agriculture cart-pig
 
 *** Save datasets
@@ -145,7 +147,6 @@ drop if walls == .a | roof == .a | toilet == .a
 drop if informant1 == . | informant2 == . | informant3 == . 
 save "hillebrecht.dta", replace
 outsheet using "hillebrecht.csv", comma nolabel replace
-clear all
 
 * Save variable names and labels
 describe, replace clear
