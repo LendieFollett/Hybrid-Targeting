@@ -364,7 +364,7 @@ whats_left <- unique(full_data$community[-PMT_idx]) #communities not in PMT
 
 CBT_data <- full_data %>%subset(community %in% whats_left)
 
-PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
 
 Program_data <- full_data[1:10,]  
 
@@ -404,14 +404,14 @@ CBtemp_noelite <- CBTarget(Tau=Tau,
                            iter_burn = iter_burn,
                            print_opt = print_opt)
 
-which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+which_noelite <- which(colnames(X_CBT) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
 Y_micro <- as.matrix(log(PMT_data$consumption+.1))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 X_PMT_sub <-     cbind(1,PMT_data[,m3]) %>%as.matrix()
 temp_data <- data.frame(Y_micro = Y_micro,
-                        X_PMT)
-form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT)[-which_noelite], collapse = "+")))
+                        X_PMT_sub)
+form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
 
 PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
 
@@ -423,7 +423,7 @@ coefs <- data.frame(parameter = m3,
                     CB_beta_rank_mean = CB_beta_rank_mean[-1],
                     PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
 )
-write.csv(coefs, "Hillebrecht Analysis/coef_total_sample.csv")
+write.csv(coefs, "Hillebrecht Analysis/coef_total_sample.csv", row.names=FALSE)
 
 
 

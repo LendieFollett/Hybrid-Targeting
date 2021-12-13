@@ -382,7 +382,7 @@ whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
 
 CBT_data <- full_data %>%subset(community_id %in% whats_left)
   
-PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
 
 Program_data <- full_data[1:10,]  
 

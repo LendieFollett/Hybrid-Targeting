@@ -108,7 +108,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
         legend.box.background = element_rect(colour = "black"))
 
 
-ggsave("Hillebrecht Analysis/coef_score.pdf", width = 12, height = 12)
+ggsave("Hillebrecht Analysis/coef_score_hillebrecht.pdf", width = 12, height = 12)
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
@@ -131,6 +131,6 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/coef_score_EC.pdf", width = 12, height = 12)
+ggsave("Hillebrecht Analysis/coef_score_EC_hillebrecht.pdf", width = 12, height = 12)
 
 
