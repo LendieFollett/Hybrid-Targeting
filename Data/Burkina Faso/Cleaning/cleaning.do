@@ -153,6 +153,19 @@ describe, replace clear
 keep name varlab
 rename name Name
 rename varlab Definition
+gen Category=""
+foreach x in "rooms" "floor" "walls" "roof" "toilet" "well" "water" ///
+    "waste" "kitchen" {
+    replace Category="Housing" if Name=="`x'"	
+}
+foreach x in "hhsize" "male" "married" "widow" "age1660" "age60" "minority" ///
+    "primary" "secondary" "tertiary" "literacy" "agriculture" {
+    replace Category="Demographic" if Name=="`x'"	
+}
+foreach x in "cart" "plow" "bike" "motorbike" "car" "radio" "tv" "fridge" ///
+    "horse" "goat" "chicken" "bullock" "pig" {
+    replace Category="Assets" if Name=="`x'"	
+}
 outsheet using "variables.csv", comma nolabel replace
 clear all
 
