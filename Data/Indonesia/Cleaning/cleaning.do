@@ -191,8 +191,8 @@ label var nonfood "Proportion of expenditure on non-food items"
 label var nonstaple "Proportion of food consumption from non-staples"
 label var diversity "Dietary diversity"
 label var pcfloor "Household floor area per capita"
-label var tfloor "Not earth floor"
-label var twall "Brick or cement wall"
+label var tfloor "Non-earth floor"
+label var twall "Brick or cement walls"
 label var toilet "Private toilet"
 label var water "Clean drinking water"
 label var lighting "PLN electricity"
@@ -203,43 +203,43 @@ label var credit "Has received credit"
 label var hhsize "Household size"
 label var hhsize2 "Household size squared"
 label var hhsize_ae "Adult equivalent household size"
-label var hhage "Age of head of household"
-label var hhage2 "Age of head of household squared"
-label var hhmale "Head of household is male"
-label var hhmarried "Head of household is married"
-label var hhmalemarr "Head of household is male and married"
-label var hhsector1 "Head of household works in agriculture sector"
-label var hhsector2 "Head of household works in industry sector"
-label var hhsector3 "Head of household works in service sector"
+label var hhage "Age of head"
+label var hhage2 "Age of head squared"
+label var hhmale "Head is male"
+label var hhmarried "Head is married"
+label var hhmalemarr "Head is male and married"
+label var hhsector1 "Head works in agriculture sector"
+label var hhsector2 "Head works in industry sector"
+label var hhsector3 "Head works in service sector"
 label var connected "Connected to elite households"
-label var formal "Head of household works in formal sector"
-label var informal "Head of household works in informal sector"
-label var hheduc2 "Education attainment of HH head is elementary school"
-label var hheduc3 "Education attainment of HH head is junior school"
-label var hheduc4 "Education attainment of HH head is senior high school or higher"
+label var formal "Head works in formal sector"
+label var informal "Head works in informal sector"
+label var hheduc2 "Education of head is elementary school"
+label var hheduc3 "Education of head is junior high"
+label var hheduc4 "Education of head is senior high school or higher"
 label var age04 "Number of children 0-4"
 label var eschild "Number of children in elementary school"
 label var jschild "Number of children in junior high school"
 label var sschild "Number of children in senior high school"
-label var higheduc2 "Highest education attainment within HH is elementary school"
-label var higheduc3 "Highest education attainment within HH is junior school"
-label var higheduc4 "Highest education attainment within HH is senior high or higher"
-label var depratio "Total dependency ratio"
-label var ac "AC"
-label var computer "Computer"
-label var radio "Radio/cassette player"
-label var tv "TV"
-label var dvd "DVD player"
-label var satellite "Satellite dish"
-label var gas "Gas burner"
-label var refrigerator "Refrigerator"
-label var bicycle "Bicycle"
-label var motorcycle "Motorcycle"
-label var auto "Car/minibus/truck"
-label var hp "HP"
-label var jewelry "Jewelry"
-label var chicken "Chicken"
-label var cow "Caribou/cow"
+label var higheduc2 "Highest education in HH is elementary school"
+label var higheduc3 "Highest education in HH is junior high"
+label var higheduc4 "Highest education in HH is senior high or higher"
+label var depratio "Dependency ratio"
+label var ac "Owns AC unit"
+label var computer "Owns computer"
+label var radio "Owns radio/cassette player"
+label var tv "Owns TV"
+label var dvd "Owns DVD player"
+label var satellite "Owns satellite dish"
+label var gas "Owns gas burner"
+label var refrigerator "Owns refrigerator"
+label var bicycle "Owns bicycle"
+label var motorcycle "Owns motorcycle"
+label var auto "Owns car/minibus/truck"
+label var hp "Owns cell phone"
+label var jewelry "Owns jewelry"
+label var chicken "Owns chicken"
+label var cow "Owns caribou/cow"
 
 *** Save datasets
 
@@ -268,6 +268,22 @@ describe, replace clear
 keep name varlab
 rename name Name
 rename varlab Definition
+gen Category=""
+foreach x in "pcfloor" "tfloor" "twall" "toilet" "water" "lighting" "troof" ///
+    "fcook" "house" {
+    replace Category="Housing" if Name=="`x'"	
+}
+foreach x in "credit" "hhsize" "hhage" "hhmale" "hhmarried" "hhsector1" ///
+    "hhsector2" "hhsector3" "formal" "informal" "hheduc2" "hheduc3" ///
+	"hheduc4" "age04" "eschild" "jschild" "sschild" "higheduc2" ///
+	"higheduc3" "higheduc4" "depratio" {
+    replace Category="Demographic" if Name=="`x'"	
+}
+foreach x in "ac" "computer" "radio" "tv" "dvd" "satellite" "gas" ///
+    "refrigerator" "bicycle" "motorcycle" "auto" "hp" "jewelry" "chicken" ///
+	"cow" {
+    replace Category="Assets" if Name=="`x'"	
+}
 outsheet using "variables.csv", comma nolabel replace
 clear all
 

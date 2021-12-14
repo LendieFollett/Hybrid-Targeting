@@ -16,7 +16,7 @@ Name,Definition,Category
 "well","Running water or good wells","Housing"
 "water","Water is changed at least every other day","Housing"
 "waste","Wastewater by gutters or septic tank","Housing"
-"hhsize","HH size","Demographic"
+"hhsize","Household size","Demographic"
 "male","Head is male","Demographic"
 "married","Head is married","Demographic"
 "widow","Head is widowed","Demographic"
