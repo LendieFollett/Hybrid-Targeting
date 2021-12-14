@@ -4,7 +4,7 @@ library(reshape2)
 
 all_results <- read.csv("Hillebrecht Analysis/all_results.csv")
 
-all_coef <- read.csv("Hillebrecht Analysis/coef_total_sample.csv")[,-1]
+all_coef <- read.csv("Hillebrecht Analysis/coef_total_sample.csv")
 
 #### --- ERROR RATE PLOTS ----------------------------------
 

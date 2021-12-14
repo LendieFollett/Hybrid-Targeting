@@ -33,16 +33,17 @@ iter_burn = 2000   ## Gibbs sampler burn-in iterations
 print_opt = 100  ## print a message every print.opt steps
 
 
-full_data <- read.csv("Hillebrecht Analysis/hillebrecht.csv") %>%
+full_data <- read.csv("Data/Burkina Faso/Cleaning/hillebrecht.csv") %>%
   group_by(community, year)%>%
   mutate(informant1 = ifelse(is.na(informant1), NA, floor(rank(-informant1))),
          informant2 = ifelse(is.na(informant2), NA, floor(rank(-informant2))),
          informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))),
          treat_rate = sum(treated)/length(treated)) %>% ungroup%>%  arrange(community)
 #x variables to include in model
-m_num <- c("rooms")
+m_num <- c("rooms", "hhsize","age1660","age60")
 
 m_bin <- colnames(full_data)[which(colnames(full_data)=="floor"):which(colnames(full_data)=="pig")]
+m_bin <- m_bin[!m_bin %in% m_num]
 m3 <- c(m_num, m_bin)
 
 #50% of the full data is surveyed for PMT. get both X and y=consumption

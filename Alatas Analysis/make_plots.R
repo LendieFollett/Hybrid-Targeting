@@ -5,7 +5,7 @@ library(reshape2)
 library(lmomco)
 all_results <- read.csv("Alatas Analysis/all_results.csv")
 
-all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")
+all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")[,-c(1:2)]
 
 #Sensitivity= P(beneficiary | true poor)
 #Specificity= P(non-beneficiary | true non-poor)
