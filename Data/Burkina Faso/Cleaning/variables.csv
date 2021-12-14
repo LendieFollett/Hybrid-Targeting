@@ -1,9 +1,9 @@
-﻿Name,Definition,Category
+Name,Definition,Category
 hhid,Household identifier,
 year,Year,
 community,Community identifier,
-rural,Lives in rural area,
-treated,Eligible for discount,
+rural,HH lives in rural area,
+treated,HH eligible for discount,
 informant1,Rank given by informant 1,
 informant2,Rank given by informant 2,
 informant3,Rank given by informant 3,
@@ -16,12 +16,13 @@ toilet,Toilet not in open field,Housing
 well,Running water or good wells,Housing
 water,Water is changed at least every other day,Housing
 waste,Wastewater by gutters or septic tank,Housing
+hhsize,HH size,Demographic
 male,Head is male,Demographic
 married,Head is married,Demographic
 widow,Head is widowed,Demographic
 age1660,Share of members 16-60 years,Demographic
 age60,Share of members above 60 years,Demographic
-minority,Ethnic minority,Demographic
+minority,HH is ethnic minority,Demographic
 primary,Any member with primary education,Education
 secondary,Any member with secondary education,Education
 tertiary,Any member with tertiary education,Education
@@ -30,7 +31,7 @@ agriculture,Head works in agriculture sector,Occupation
 cart,Owns cart,Assets
 plow,Owns plow,Assets
 bike,Owns bike,Assets
-motorbike,Owns motorcycle,Assets
+motorbike,Owns motorbike,Assets
 car,Owns car,Assets
 radio,Owns radio,Assets
 tv,Owns TV,Assets
