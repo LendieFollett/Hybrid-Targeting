@@ -126,16 +126,22 @@ ggplot(data = weight_summary) +
   theme_bw()
 
 
-c = unique(CBT2_data$community)[1]
+#demonstrate that this difference in ranker weights translates into 
+#a smaller effect on / correlation with the estimated ranks
 
+ranker <- rep(paste0("r",(1:3)), R2/3)
+cors <- rep(NA, R2)
+for (r in 1:R2){
 which <- which(!is.na(Tau2[,r]))
-Tau2[,r], CBtemp_noelite$Z[which,r]
-CBT2_data$informant2[CBT2_data$community == c]
-CBT2_data$informant3[CBT2_data$community == c]
+cors[r] <- cor(Tau2[,r], CBtemp_noelite$Z[which,r])
+}
 
-cor(score_means, CBT2_data$informant1)
-cor(score_means, CBT2_data$informant2)
-cor(score_means, CBT2_data$informant3)
+cor_summary <- data.frame(ranker, 
+           cors)
 
+cor_summary %>%
+  spread(ranker, cor) %>%
+ggplot() +
+  geom_point(aes())
     
         
