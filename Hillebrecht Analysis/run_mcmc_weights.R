@@ -129,23 +129,39 @@ ggplot(data = weight_summary) +
 
 #demonstrate that this difference in ranker weights translates into 
 #a smaller effect on / correlation with the estimated ranks
-
+preds <- apply(CBtemp_noelite$mu, 2, mean)
 comm <- rep(1:(R2/3), each = 3)
 ranker <- rep(paste0("r",c(1:3)), R2/3)
 cors <- rep(NA, R2)
 for (r in 1:R2){
 which <- which(!is.na(Tau2[,r]))
-cors[r] <- cor(Tau2[which,r], rank(CBtemp_noelite$Z[which,r]))
+cors[r] <- cor(Tau2[which,r], rank(preds[which]))
 }
 
 cor_summary <- data.frame(comm,
                           ranker, 
            cors)
 
-cor_summary %>%
+p1 <- cor_summary %>%
   spread(ranker, cors) %>%
 ggplot() +
-  geom_point(aes(x = r2, y = r3)) +
-  geom_abline(aes(intercept = 0, slope = 1))
+  geom_point(aes(x = r1, y = r3)) +
+  geom_abline(aes(intercept = 0, slope = 1)) +
+  theme_bw() +
+ scale_x_continuous(limits = c(-1,1))+
+  scale_y_continuous(limits = c(-1,1)) +
+  labs(x = "Informed Ranker Correlation", y = "Low-Quality Ranker Correlation")
+
+p2 <- cor_summary %>%
+  spread(ranker, cors) %>%
+  ggplot() +
+  geom_point(aes(x = r1, y = r3)) +
+  geom_abline(aes(intercept = 0, slope = 1)) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-1,1))+
+  scale_y_continuous(limits = c(-1,1)) +
+  labs(x = "Informed Ranker Correlation", y = "Low-Quality Ranker Correlation")
+
+
     
         
