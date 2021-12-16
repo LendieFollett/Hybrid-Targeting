@@ -26,7 +26,8 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.85))
+  theme(legend.position = c(0.9, 0.85))+
+  theme(legend.box.background = element_rect(colour = "black"))
 
 ggsave("Hillebrecht Analysis/ER_hybrid.pdf", width = 8, height = 5)
 
@@ -38,9 +39,10 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))
+  theme(legend.position = c(0.9, 0.8))+
+  theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/ER_hybrid_AI.pdf", width = 8, height = 4)
+ggsave("Hillebrecht Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
 
 plot_data %>%
   subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
@@ -49,9 +51,10 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))
+  theme(legend.position = c(0.9, 0.8))+
+  theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/ER_hybrid_DU.pdf", width = 8, height = 4)
+ggsave("Hillebrecht Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
 
 
 

@@ -5,7 +5,7 @@ library(reshape2)
 library(lmomco)
 all_results <- read.csv("Alatas Analysis/all_results.csv")
 
-all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")[,-c(1:2)]
+all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")
 
 #Sensitivity= P(beneficiary | true poor)
 #Specificity= P(non-beneficiary | true non-poor)
@@ -41,9 +41,10 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))
+  theme(legend.position = c(0.9, 0.8)) +
+  theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid.pdf", width = 8, height = 4)
+ggsave("Alatas Analysis/ER_hybrid.pdf", width = 8, height = 5)
 
 
 plot_data %>%
@@ -53,9 +54,10 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))
+  theme(legend.position = c(0.9, 0.8))+
+  theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid_AI.pdf", width = 8, height = 4)
+ggsave("Alatas Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
 
 plot_data %>%
   subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-EC")  )%>%
@@ -64,9 +66,10 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))
+  theme(legend.position = c(0.9, 0.8))+
+  theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid_EC.pdf", width = 8, height = 4)
+ggsave("Alatas Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
 
 plot_data %>%
   subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
@@ -75,9 +78,10 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))
+  theme(legend.position = c(0.9, 0.8))+
+  theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid_DU.pdf", width = 8, height = 4)
+ggsave("Alatas Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
 
 
 #### --- COEFFICIENT PLOTS ----------------------------------

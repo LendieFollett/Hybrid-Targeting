@@ -27,9 +27,10 @@ sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
 source("Bayes Consensus Ranking/HybridTarget.R")
 source("Bayes Consensus Ranking/CBTarget.R")
+ihs_trans <- function(x){log(x + sqrt(x^2 + 1))}
 
-iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn = 2000   ## Gibbs sampler burn-in iterations 
+iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn = 20   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -54,7 +55,7 @@ PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
 full_data_left <- full_data[-PMT_idx,]
 
 CBT_ncomm_list <- c(5,10,15,20)
-nrep <- 20
+nrep <- 1
 results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
   i <- 0
   r <- list()
@@ -67,7 +68,10 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     #RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
     whats_left <- unique(full_data_left$community) #communities not in PMT
     samps <- data.frame(community = whats_left,
-                        samp =     rep(c("CBT1","CBT2", "Program", "NA"), c(10, CBT_ncomm, 25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
+                        samp =     rep(c("CBT1","CBT2", "Program", "NA"), 
+                                       c(10, 
+                                         CBT_ncomm, 
+                                         25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
 
     CBT1_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT1"])
     CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
@@ -79,7 +83,10 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     while(any(apply(CBT1_data[,m3], 2, var) == 0)|any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
       whats_left <- unique(full_data_left$community) #communities not in PMT
       samps <- data.frame(community = whats_left,
-                          samp =     rep(c("CBT1","CBT2", "Program", "NA"), c(10, CBT_ncomm, 25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
+                          samp =     rep(c("CBT1","CBT2", "Program", "NA"),
+                                         c(10, 
+                                           CBT_ncomm, 
+                                           25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
       
       CBT1_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT1"])
       CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
@@ -92,7 +99,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     X_CBT1 <-     cbind(1,CBT1_data[,m3]) %>%as.matrix()
     X_CBT2 <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
     X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
-    Y_micro <- as.matrix(log(PMT_data$consumption + .1))
+    Y_micro <- as.matrix(ihs_trans(PMT_data$consumption))
     Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
     
     R1 = 3*(CBT1_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
@@ -225,15 +232,13 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     
     #PMT - no elite bias correction
-    whats_left <- unique(full_data$community[PMT_idx])
-    samps <- sample(whats_left, size = CBT_ncomm, replace=FALSE)
-    PMT_data_sub <- subset(PMT_data, community %in% samps)
-    Y_micro_sub <- as.matrix(log(PMT_data_sub$consumption+.1))
+
+    Y_micro_sub <- as.matrix(ihs_trans(CBT2_data$consumption))
     Y_micro_sub <- apply(Y_micro_sub, 2, function(x){(x - mean(x))/sd(x)})
-    X_PMT_sub <-     cbind(1,PMT_data_sub[,m3]) %>%as.matrix()
+    X_PMT_sub <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
     temp_data <- data.frame(Y_micro = Y_micro_sub,
                             X_PMT_sub)
-    form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT)[-which_noelite], collapse = "+")))
+    form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
     
     PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
     
@@ -407,9 +412,9 @@ CBtemp_noelite <- CBTarget(Tau=Tau,
 
 which_noelite <- which(colnames(X_CBT) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
-Y_micro <- as.matrix(log(PMT_data$consumption+.1))
+Y_micro <- as.matrix(ihs_trans(CBT_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
-X_PMT_sub <-     cbind(1,PMT_data[,m3]) %>%as.matrix()
+X_PMT_sub <-     cbind(1,X_CBT[,m3]) %>%as.matrix()
 temp_data <- data.frame(Y_micro = Y_micro,
                         X_PMT_sub)
 form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
