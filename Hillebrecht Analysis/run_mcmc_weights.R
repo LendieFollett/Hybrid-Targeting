@@ -13,6 +13,7 @@ library(gridExtra)
 library(LaplacesDemon)
 library(caret)
 library(parallel)
+library(tidyr)
 detectCores(logical=FALSE)
 
 doESS <- function(x){
@@ -129,19 +130,22 @@ ggplot(data = weight_summary) +
 #demonstrate that this difference in ranker weights translates into 
 #a smaller effect on / correlation with the estimated ranks
 
-ranker <- rep(paste0("r",(1:3)), R2/3)
+comm <- rep(1:(R2/3), each = 3)
+ranker <- rep(paste0("r",c(1:3)), R2/3)
 cors <- rep(NA, R2)
 for (r in 1:R2){
 which <- which(!is.na(Tau2[,r]))
-cors[r] <- cor(Tau2[,r], CBtemp_noelite$Z[which,r])
+cors[r] <- cor(Tau2[which,r], rank(CBtemp_noelite$Z[which,r]))
 }
 
-cor_summary <- data.frame(ranker, 
+cor_summary <- data.frame(comm,
+                          ranker, 
            cors)
 
 cor_summary %>%
-  spread(ranker, cor) %>%
+  spread(ranker, cors) %>%
 ggplot() +
-  geom_point(aes())
+  geom_point(aes(x = r2, y = r3)) +
+  geom_abline(aes(intercept = 0, slope = 1))
     
         
