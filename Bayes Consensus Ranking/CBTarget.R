@@ -103,7 +103,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
   
   ## store MCMC draws
   draw = list(
-    Z = array(NA, dim = c( iter_keep,N_CBT)),
+    Z = array(0, dim = c( N_CBT,R)),
     beta_rank = array(NA, dim = c(iter_keep,P+1)),
     mu = array(NA, dim = c(iter_keep,nrow(X_program))),
     mu_noelite = array(NA, dim = c(iter_keep,nrow(X_program))), 
@@ -174,7 +174,7 @@ CBTarget<- function(Tau, X_CBT=NULL, X_program=NULL,
     if(iter > iter_burn){
       j = iter - iter_burn
       # store value at this iteration
-      draw$Z[j,] = apply(Z, 1, function(x){sum(x,na.rm=TRUE)})
+      draw$Z = draw$Z+Z/iter_keep#apply(Z, 1, function(x){sum(x,na.rm=TRUE)})
       draw$beta_rank[j,] = beta_rank
       draw$mu[j,] = mu
       draw$mu_noelite[j,] = mu_noelite

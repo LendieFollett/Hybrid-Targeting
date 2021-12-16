@@ -29,8 +29,8 @@ source("Bayes Consensus Ranking/HybridTarget.R")
 source("Bayes Consensus Ranking/CBTarget.R")
 ihs_trans <- function(x){log(x + sqrt(x^2 + 1))}
 
-iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn = 20   ## Gibbs sampler burn-in iterations 
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn = 2000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -55,7 +55,7 @@ PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
 full_data_left <- full_data[-PMT_idx,]
 
 CBT_ncomm_list <- c(5,10,15,20)
-nrep <- 1
+nrep <- 20
 results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
   i <- 0
   r <- list()

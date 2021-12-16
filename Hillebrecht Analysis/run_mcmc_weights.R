@@ -106,9 +106,36 @@ full_data_left <- full_data[-PMT_idx,]
                                iter_keep =iter_keep,
                                iter_burn = iter_burn,
                                print_opt = print_opt,
-                               initial.list = initial_list_noelite)
+                               initial.list = initial_list_noelite,
+                               groups = groups, #NEED THIS FOR HETERO WEIGHTS TO BE ESTIMATED
+                               prior_prob_rank = prior_prob_rank) #NEED THIS FOR HETERO WEIGHTS TO BE ESTIMATED
+
 
     
-apply(CBtemp_noelite$omega_rank, 2, mean)  
+
+        
+weight_summary <- data.frame(parameter = c("omega1", "omega2", "omega3"),
+           posterior_mean = apply(CBtemp_noelite$omega_rank[,1:3], 2, mean)  )
+
+
+ggplot(data = weight_summary) +
+  geom_col(aes(x = parameter, y = posterior_mean), position = "identity") +
+  scale_x_discrete(breaks = c("omega1", "omega2", "omega3"),
+                   labels = c(expression(omega[1]),expression(omega[2]), expression(omega[3]))) +
+  labs(x = " ", y = "Posterior Mean") +
+  theme_bw()
+
+
+c = unique(CBT2_data$community)[1]
+
+which <- which(!is.na(Tau2[,r]))
+Tau2[,r], CBtemp_noelite$Z[which,r]
+CBT2_data$informant2[CBT2_data$community == c]
+CBT2_data$informant3[CBT2_data$community == c]
+
+cor(score_means, CBT2_data$informant1)
+cor(score_means, CBT2_data$informant2)
+cor(score_means, CBT2_data$informant3)
+
     
         
