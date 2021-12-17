@@ -26,7 +26,7 @@ plot_data %>%
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.85))+
+  theme(legend.position = c(0.9, 0.65))+
   theme(legend.box.background = element_rect(colour = "black"))
 
 ggsave("Hillebrecht Analysis/ER_hybrid.pdf", width = 8, height = 5)
