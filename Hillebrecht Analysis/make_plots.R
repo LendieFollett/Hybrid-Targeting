@@ -63,8 +63,8 @@ all_results %>%  mutate(IER = 1-Precision,
   melt(id.var = c("Method", "CBT_ncomm")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit", "Hybrid-DU")  )%>%
-  ggplot() + geom_boxplot(aes(x = as.factor(CBT_ncomm), y = value, linetype = Method,colour = Method)) +
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit", "Hybrid-DU", "Hybrid-AI")  )%>%
+  ggplot() + geom_boxplot(aes(x = as.factor(CBT_ncomm), y = value,colour = Method)) +
   #geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
   theme_bw() +
