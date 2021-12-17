@@ -155,13 +155,16 @@ ggplot() +
 p2 <- cor_summary %>%
   spread(ranker, cors) %>%
   ggplot() +
-  geom_point(aes(x = r1, y = r3)) +
+  geom_point(aes(x = r2, y = r3)) +
   geom_abline(aes(intercept = 0, slope = 1)) +
   theme_bw() +
   scale_x_continuous(limits = c(-1,1))+
   scale_y_continuous(limits = c(-1,1)) +
   labs(x = "Informed Ranker Correlation", y = "Low-Quality Ranker Correlation")
 
+grid.arrange(p1, p2, ncol = 2)
 
     
+ggsave("Hillebrecht Analysis/heter_weights_corr.pdf", width = 8, height = 8)
+
         
