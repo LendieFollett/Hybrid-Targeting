@@ -73,6 +73,8 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
                                          CBT_ncomm, 
                                          25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
 
+    table(samps$samp) %>%print
+    
     CBT1_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT1"])
     CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
     Program_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "Program"])    
@@ -420,6 +422,8 @@ temp_data <- data.frame(Y_micro = Y_micro,
 form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
 
 PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
+
+
 
 CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)

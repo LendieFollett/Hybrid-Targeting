@@ -126,6 +126,8 @@ ggplot(data = weight_summary) +
   labs(x = " ", y = "Posterior Mean") +
   theme_bw()
 
+ggsave("Hillebrecht Analysis/heter_weights_omega.pdf", width = 8, height = 8)
+
 
 #demonstrate that this difference in ranker weights translates into 
 #a smaller effect on / correlation with the estimated ranks

@@ -439,3 +439,14 @@ coefs <- data.frame(parameter = m3,
                                 PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
                                 )
 write.csv(coefs, "Alatas Analysis/coef_total_sample.csv")
+
+
+
+data.frame(parameter = m3,
+           apply(CBtemp_noelite$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t()) %>%
+  write.csv( "Alatas Analysis/CB_beta_rank_CI_noelite.csv")
+
+data.frame(parameter = m3[-which_noelite],
+           apply(CBtemp$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t()) %>%
+  write.csv("Alatas Analysis/CB_beta_rank_CI.csv")
+
