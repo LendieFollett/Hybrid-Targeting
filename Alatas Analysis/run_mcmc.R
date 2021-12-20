@@ -70,8 +70,9 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 
 #parallelized across CBT proportions via mcapply
-CBT_ncomm_list <- c(10, 25, 50, 100) 
-nrep <- 20
+CBT_ncomm_list <- c(10, 50, 100, 200) 
+nrep <- 30
+
  results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
    i <- 0
    r <- list()
@@ -84,45 +85,40 @@ nrep <- 20
 #RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
 whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
 samps <- data.frame(community_id = whats_left,
-                    samp = sample(c("CBT1","CBT2", "Program", "NA"), 
-                                  prob = c(100,
-                                           CBT_ncomm, 
-                                           200, 
-                                           length(whats_left) -CBT_ncomm-100- 200 )/length(whats_left), 
-                                  size = length(whats_left),replace=TRUE))
+                    samp =     rep(c("CBT2", "Program", "NA"), 
+                                   c(CBT_ncomm, 
+                                     200, 
+                                     length(whats_left) -CBT_ncomm- 200))[sample.int(length(whats_left))])
 
-CBT1_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT1"])
+
+
 CBT2_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT2"])
 Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
 PMT_data <- full_data[PMT_idx,] 
 
-while(any(apply(CBT1_data[,m3], 2, var) == 0)|any(apply(CBT2_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
+while(any(apply(CBT2_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
+  whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
   samps <- data.frame(community_id = whats_left,
-                      samp = sample(c("CBT1","CBT2", "Program", "NA"), 
-                                    prob = c(100,
-                                             CBT_ncomm, 
-                                             200, 
-                                             length(whats_left) -CBT_ncomm-100- 200)/length(whats_left), 
-                                    size = length(whats_left),replace=TRUE))
-  
-  CBT1_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT1"])
+                      samp =     rep(c("CBT2", "Program", "NA"), 
+                                     c(CBT_ncomm, 
+                                       200, 
+                                       length(whats_left) -CBT_ncomm- 200))[sample.int(length(whats_left))])
+
   CBT2_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT2"])
   Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
   PMT_data <- full_data[PMT_idx,] 
 }
 
 X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
-X_CBT1 <-     cbind(1,CBT1_data[,m3]) %>%as.matrix()
 X_CBT2 <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
 X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
 Y_micro <- as.matrix(log(PMT_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
-R1 = CBT1_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
 R2 = CBT2_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
 M = 1  ## just consumption
 
-which_noelite <- which(colnames(X_CBT1) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+which_noelite <- which(colnames(X_CBT2) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
 temp_data <- data.frame(Y_micro = Y_micro,
                         X_PMT[,-1])
@@ -151,12 +147,6 @@ initial_list<- list(
   mu_beta = mu_beta_start[-c(1, which_noelite)])
 
 #create rank matrix: one column per 'ranker' (community)
-Tau1 <- array(NA, dim = c(nrow(CBT1_data), R1))
-j = 0
-for ( idx in unique(CBT1_data$community_id)){ #loop over columns
-  j = j + 1
-  Tau1[CBT1_data$community_id == idx,j] <- CBT1_data$rank[CBT1_data$community_id == idx]
-}
 
 Tau2 <- array(NA, dim = c(nrow(CBT2_data), R2))
 j = 0
@@ -211,35 +201,6 @@ CBtemp <- CBTarget(Tau=Tau2,
                    print_opt = print_opt,
                    initial.list = initial_list)
 
-
-
-#DYNAMIC UPDATING------------------------------------------
-
-CBtemp_P1 <- CBTarget(Tau=Tau1, 
-                   X_CBT = X_CBT1[,-which(colnames(X_CBT1) == "connected")],
-                   X_program = X_program[,-which(colnames(X_program) == "connected")],
-                   X_elite =NULL,
-                   iter_keep =iter_keep,
-                   iter_burn = iter_burn,
-                   print_opt = print_opt,
-                   initial.list = initial_list)
-CB_beta_rank_mean <- apply(CBtemp_P1$beta_rank, 2, mean)
-CB_beta_rank_vcov <- cov(CBtemp_P1$beta_rank)
-CB_omega_rank_probs <- c(mean(CBtemp_P1$omega_rank[,1]==0.5),mean(CBtemp_P1$omega_rank[,1]==1),mean(CBtemp_P1$omega_rank[,1]==2))
-CB_omega_rank_probs <- apply(cbind(c(1/3,1/3,1/3), CB_omega_rank_probs), 1, mean)
-
-CBtemp_DU <- CBTarget(Tau=Tau2, 
-                      X_CBT = X_CBT2[,-which(colnames(X_CBT2) == "connected")],
-                      X_program = X_program[,-which(colnames(X_program) == "connected")],
-                           X_elite = NULL,
-                           iter_keep =iter_keep,
-                           iter_burn = iter_burn,
-                           print_opt = print_opt,
-                           initial.list = initial_list,
-                           delta_prior_mean = CB_beta_rank_mean[-1],
-                           delta_prior_var = mean(diag(CB_beta_rank_vcov)),
-                           prior_prob_rank = CB_omega_rank_probs)
-
 # ------------------------------------------
 
 #PMT - no elite bias correction - NOTE: SAMPLE SIZE VARIES
@@ -267,7 +228,6 @@ Hybrid_beta_micro_mean <- append(apply(Hybridtemp$beta_micro, 2, mean), 0, after
 
 CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
-CB_DU_beta_rank_mean <- append(apply(CBtemp_DU$beta_rank, 2, mean), 0, after = which_noelite-1)
 
 c[[i]] <- data.frame(parameter = m3,
                     rep = rep,
@@ -282,7 +242,6 @@ c[[i]] <- data.frame(parameter = m3,
            
            CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
            CB_beta_rank_mean = CB_beta_rank_mean[-1],
-           CB_DU_beta_rank_mean = CB_DU_beta_rank_mean[-1],
            
            PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2))
 
@@ -303,9 +262,6 @@ Program_data$cbt_model_prediction_noelite <- apply(CBtemp_noelite$mu_noelite, 2,
 #CBT SCORE-BASED PREDICTION -  WITHOUT CORRECTION
 Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)
 
-#CBT SCORE-BASED PREDICTION -  WITHOUT CORRECTION - WITH DYNAMIC UPDATING
-Program_data$cbt_DU_model_prediction <- apply(CBtemp_DU$mu, 2, mean)
-
 #PROBIT CBT-BASED PREDICTION -  WITHOUT CORRECTION
 Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
 
@@ -317,7 +273,6 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          hybrid_rank =rank(hybrid_prediction)/length(village),
          pmt_rank =rank(PMT_prediction)/length(village),
          cbt_model_rank = rank(cbt_model_prediction)/length(village),
-         cbt_DU_model_rank = rank(cbt_DU_model_prediction)/length(village),
          cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village),
@@ -327,7 +282,6 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          pmt_inclusion = pmt_rank <= poverty_rate,
          consumption_inclusion = consumption_rank<=poverty_rate,
          cbt_model_inclusion = cbt_model_rank<=poverty_rate,
-         cbt_DU_model_inclusion = cbt_DU_model_rank<=poverty_rate,
          cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate,
          CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
          cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
@@ -340,10 +294,9 @@ confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclus
 confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$cbt_DU_model_inclusion,     Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
 confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
+  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
          CBT_ncomm = CBT_ncomm,
          TD = Sensitivity - (1-Specificity),
          rep = rep) 
@@ -376,7 +329,7 @@ write.csv(all_coef, "Alatas Analysis/all_coef.csv")
 
 
 
-#--------------------------
+#-------COEFFICIENT ESTIMATES USING FULL DATA-------------------
 
 #RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
 whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
@@ -441,12 +394,18 @@ coefs <- data.frame(parameter = m3,
 write.csv(coefs, "Alatas Analysis/coef_total_sample.csv")
 
 
+CB_beta_rank_pprob_noelite <- apply(CBtemp_noelite$beta_rank[,-1], 2, function(x){mean(x > 0)})
+CB_beta_rank_pprob <- apply(CBtemp$beta_rank[,-1], 2, function(x){mean(x > 0)})
 
 data.frame(parameter = m3,
-           apply(CBtemp_noelite$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t()) %>%
+           apply(CBtemp_noelite$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
+           mean = CB_beta_rank_mean_noelite[-1],
+           pprob0 = CB_beta_rank_pprob_noelite) %>%
   write.csv( "Alatas Analysis/CB_beta_rank_CI_noelite.csv")
 
-data.frame(parameter = m3[-which_noelite],
-           apply(CBtemp$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t()) %>%
+data.frame(parameter = m3[-(which_noelite-1)],
+           apply(CBtemp$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
+           mean = CB_beta_rank_mean[-c(1, which_noelite)],
+           pprob0 = CB_beta_rank_pprob) %>%
   write.csv("Alatas Analysis/CB_beta_rank_CI.csv")
 

@@ -137,7 +137,11 @@ if(!rank){
   alpha_beta <- mvrnorm(1, mu = t(pt1%*%pt2_inv), Sigma = pt2_inv)
   
 }else{
-  Sigma_inv_beta <- diag((1/con)*rep(1, P)) #prior covariance matrix (removed omega)
+  if(length(con)>1){
+    Sigma_inv_beta <- diag((1/con)) #for DU - let variances differ by paramete
+  }else{
+    Sigma_inv_beta <- diag((1/con)*rep(1, P)) #prior covariance matrix (removed omega)
+  }
   
   #A<-1x(A*K + M*N0 +R*N1)%*%square(A*K + M*N0 +R*N1)%*%(A*K + M*N0 +R*N1)xP --> 1xP
   

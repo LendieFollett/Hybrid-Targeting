@@ -12,7 +12,7 @@ plot_data <- all_results %>%  mutate(IER = 1-Precision,
                                      EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
+                         labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
   mutate(mean = mean(value ),
          min = min(value),
@@ -62,8 +62,8 @@ all_results %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit", "Hybrid-DU", "Hybrid-AI")  )%>%
+                         labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) %>%
+  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
   ggplot() + geom_boxplot(aes(x = as.factor(CBT_ncomm), y = value,colour = Method)) +
   #geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
@@ -85,7 +85,8 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
   group_by(Definition, Category,variable) %>%
   summarise(mean = mean(value)) %>%
   group_by(Category,variable) %>%
-  mutate(std_mean =mean/mean(abs(mean))) %>%
+  mutate(std_mean =mean/mean(abs(mean)),
+         mean_abs = mean(abs(mean))) %>%
   arrange(Category,mean) 
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 

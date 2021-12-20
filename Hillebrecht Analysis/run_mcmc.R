@@ -53,9 +53,39 @@ full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
 full_data_left <- full_data[-PMT_idx,]
+PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
 
-CBT_ncomm_list <- c(5,10,15,20)
-nrep <- 20
+#-----PRELIMINARY: RUN PHASE 1 FOR DYNAMIC UPDATING
+CBT1_data <- PMT_data
+R1 = 3*(CBT1_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
+X_CBT1 <-     cbind(1,CBT1_data[,m3]) %>%as.matrix()
+
+Tau1 <- array(NA, dim = c(nrow(CBT1_data), R1))
+j = 0
+for ( idx in unique(CBT1_data$community)){ #loop over columns
+  for (infmt in c("informant1", "informant2", "informant3")){
+    j = j + 1
+    Tau1[CBT1_data$community == idx,j] <- pull(CBT1_data[CBT1_data$community == idx,], infmt)
+  }
+}
+CBtemp_P1 <- CBTarget(Tau=Tau1, 
+                      X_CBT = X_CBT1[,-which(colnames(X_CBT1) == "minority")],
+                      X_program = X_CBT1[,-which(colnames(X_CBT1) == "minority")],
+                      X_elite =NULL,
+                      iter_keep =iter_keep,
+                      iter_burn = iter_burn,
+                      print_opt = print_opt)
+
+DU_beta_rank_mean <- apply(CBtemp_P1$beta_rank[,-1], 2, mean)
+DU_beta_rank_vcov <- cov(CBtemp_P1$beta_rank[,-1])
+DU_omega_rank_probs <- c(mean(CBtemp_P1$omega_rank[,1]==0.5),mean(CBtemp_P1$omega_rank[,1]==1),mean(CBtemp_P1$omega_rank[,1]==2))
+DU_omega_rank_probs <- apply(cbind(c(1/3,1/3,1/3), DU_omega_rank_probs), 1, mean)
+
+
+
+
+CBT_ncomm_list <- c(5,10,15,25)
+nrep <- 30
 results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
   i <- 0
   r <- list()
@@ -68,43 +98,36 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     #RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
     whats_left <- unique(full_data_left$community) #communities not in PMT
     samps <- data.frame(community = whats_left,
-                        samp =     rep(c("CBT1","CBT2", "Program", "NA"), 
-                                       c(10, 
-                                         CBT_ncomm, 
-                                         25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
+                        samp =     rep(c("CBT2", "Program", "NA"), 
+                                       c(CBT_ncomm, 
+                                         25, max(51-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
 
-    table(samps$samp) %>%print
     
-    CBT1_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT1"])
     CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
     Program_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "Program"])    
-    PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+
     #print(c(dim(CBT1_data)[1],dim(CBT2_data)[1],dim(Program_data)))
     #print(table(samps$samp))
     
     while(any(apply(CBT1_data[,m3], 2, var) == 0)|any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
       whats_left <- unique(full_data_left$community) #communities not in PMT
       samps <- data.frame(community = whats_left,
-                          samp =     rep(c("CBT1","CBT2", "Program", "NA"),
-                                         c(10, 
-                                           CBT_ncomm, 
-                                           25, max(51-10-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
-      
-      CBT1_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT1"])
+                          samp =     rep(c("CBT2", "Program", "NA"), 
+                                         c(CBT_ncomm, 
+                                           25, max(51-CBT_ncomm - 25, 0)))[sample.int(length(whats_left))])
       CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
       Program_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "Program"])    
-      PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
       
     }
     
     X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
-    X_CBT1 <-     cbind(1,CBT1_data[,m3]) %>%as.matrix()
+
     X_CBT2 <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
     X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
     Y_micro <- as.matrix(ihs_trans(PMT_data$consumption))
     Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
     
-    R1 = 3*(CBT1_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
+
     R2 = 3*(CBT2_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
     
     which_noelite <- which(colnames(X_CBT1) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
@@ -140,14 +163,6 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
       mu_beta = mu_beta_start[-c(1, which_noelite)])
     
     #create rank matrix: one column per 'ranker' (community)
-    Tau1 <- array(NA, dim = c(nrow(CBT1_data), R1))
-    j = 0
-    for ( idx in unique(CBT1_data$community)){ #loop over columns
-      for (infmt in c("informant1", "informant2", "informant3")){
-        j = j + 1
-        Tau1[CBT1_data$community == idx,j] <- pull(CBT1_data[CBT1_data$community == idx,], infmt)
-      }
-    }
     
     Tau2 <- array(NA, dim = c(nrow(CBT2_data), R2))
     j = 0
@@ -206,19 +221,6 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     #DYNAMIC UPDATING------------------------------------------
     
-    CBtemp_P1 <- CBTarget(Tau=Tau1, 
-                          X_CBT = X_CBT1[,-which(colnames(X_CBT1) == "minority")],
-                          X_program = X_program[,-which(colnames(X_program) == "minority")],
-                          X_elite =NULL,
-                          iter_keep =iter_keep,
-                          iter_burn = iter_burn,
-                          print_opt = print_opt,
-                          initial.list = initial_list)
-    CB_beta_rank_mean <- apply(CBtemp_P1$beta_rank, 2, mean)
-    CB_beta_rank_vcov <- cov(CBtemp_P1$beta_rank)
-    CB_omega_rank_probs <- c(mean(CBtemp_P1$omega_rank[,1]==0.5),mean(CBtemp_P1$omega_rank[,1]==1),mean(CBtemp_P1$omega_rank[,1]==2))
-    CB_omega_rank_probs <- apply(cbind(c(1/3,1/3,1/3), CB_omega_rank_probs), 1, mean)
-    
     CBtemp_DU <- CBTarget(Tau=Tau2, 
                           X_CBT = X_CBT2[,-which(colnames(X_CBT2) == "minority")],
                           X_program = X_program[,-which(colnames(X_program) == "minority")],
@@ -227,11 +229,9 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
                           iter_burn = iter_burn,
                           print_opt = print_opt,
                           initial.list = initial_list,
-                          delta_prior_mean = CB_beta_rank_mean[-1],
-                          delta_prior_var = mean(diag(CB_beta_rank_vcov)),
-                          prior_prob_rank = CB_omega_rank_probs)
-    
-    
+                          delta_prior_mean = DU_beta_rank_mean,
+                          delta_prior_var = diag(DU_beta_rank_vcov), #feed it the whole vector
+                          prior_prob_rank = DU_omega_rank_probs)
     
     #PMT - no elite bias correction
 
@@ -427,6 +427,7 @@ PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
 
 CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
+
 
 coefs <- data.frame(parameter = m3,
                     CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],

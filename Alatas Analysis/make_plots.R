@@ -110,7 +110,8 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   #group_by(Definition, Category, variable) %>%
   #summarise(par_est = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
-  mutate(std_mean = value/mean(abs(value))) %>%
+  mutate(std_mean = value/mean(abs(value)),
+         mean_abs = mean(abs(value))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
          variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
                            labels = c("Hybrid", "PMT")))%>%
