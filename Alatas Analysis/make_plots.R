@@ -71,18 +71,7 @@ plot_data %>%
 
 ggsave("Alatas Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
 
-plot_data %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
-  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
-  geom_point(aes(x = CBT_ncomm, y = mean)) +
-  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
-  theme_bw() +
-  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.8))+
-  theme(legend.box.background = element_rect(colour = "black"))
-
-ggsave("Alatas Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
-
+#(no DU for alatas)
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 

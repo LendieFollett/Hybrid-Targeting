@@ -90,7 +90,7 @@ samps <- data.frame(community_id = whats_left,
                                      200, 
                                      length(whats_left) -CBT_ncomm- 200))[sample.int(length(whats_left))])
 
-
+print(table(samps$samp))
 
 CBT2_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT2"])
 Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
