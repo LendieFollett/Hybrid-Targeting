@@ -362,7 +362,7 @@ CBtemp <- CBTarget(Tau=Tau,
                    X_elite =NULL,
                    iter_keep =iter_keep,
                    iter_burn = iter_burn,
-                   print_opt = print_opt)
+                   print_opt = 100)
 #Run MCMC for Bayesian Community Based Targeting -  WITH CORRECTION
 CBtemp_noelite <- CBTarget(Tau=Tau, 
                            X_CBT = X_CBT,
@@ -387,7 +387,7 @@ CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
 
 coefs <- data.frame(parameter = m3,
-                    CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
+                    #CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
                                 CB_beta_rank_mean = CB_beta_rank_mean[-1],
                                 PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
                                 )
@@ -408,4 +408,8 @@ data.frame(parameter = m3[-(which_noelite-1)],
            mean = CB_beta_rank_mean[-c(1, which_noelite)],
            pprob0 = CB_beta_rank_pprob) %>%
   write.csv("Alatas Analysis/CB_beta_rank_CI.csv")
+
+apply(CBtemp_noelite$beta_rank, 2, doESS)
+apply(CBtemp$beta_rank, 2, doESS)
+
 

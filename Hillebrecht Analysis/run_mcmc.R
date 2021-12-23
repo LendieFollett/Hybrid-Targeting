@@ -446,3 +446,7 @@ data.frame(parameter = m3[-(which_noelite-1)],
            apply(CBtemp$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
            mean = CB_beta_rank_mean[-c(1, which_noelite)]) %>%
   write.csv("Hillebrecht Analysis/CB_beta_rank_CI.csv")
+
+apply(CBtemp_noelite$beta_rank, 2, doESS)
+apply(CBtemp$beta_rank, 2, doESS)
+
