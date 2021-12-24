@@ -391,7 +391,7 @@ coefs <- data.frame(parameter = m3,
                                 CB_beta_rank_mean = CB_beta_rank_mean[-1],
                                 PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
                                 )
-write.csv(coefs, "Alatas Analysis/coef_total_sample.csv")
+write.csv(coefs, "Alatas Analysis/coef_total_sample.csv", row.names = FALSE)
 
 
 CB_beta_rank_pprob_noelite <- apply(CBtemp_noelite$beta_rank[,-1], 2, function(x){mean(x > 0)})
