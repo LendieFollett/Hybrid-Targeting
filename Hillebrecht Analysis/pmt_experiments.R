@@ -42,12 +42,12 @@ PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
 
 
 CBT_ncomm_list <- c(5,10,15,25)
-nrep <- 30
+nrep <- 1000
 r <- list()
 i = 0
 for(CBT_ncomm in CBT_ncomm_list){
+  print(paste("***********Number of communities =  ", CBT_ncomm, "**************"))
   for(rep in c(1:nrep)){
-    print(paste("***********Rep ", rep," of CBT proportion ", CBT_ncomm, "**************"))
     i = i + 1
     
     
@@ -62,8 +62,7 @@ for(CBT_ncomm in CBT_ncomm_list){
     CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
     Program_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "Program"])    
     
-    print(c(dim(CBT2_data)[1],dim(Program_data)[1]))
-    #print(table(samps$samp))
+
     
     while(any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
       whats_left <- unique(full_data_left$community) #communities not in PMT
@@ -95,7 +94,6 @@ for(CBT_ncomm in CBT_ncomm_list){
     temp_data <- data.frame(Y_micro = Y_micro_sub,
                             X_PMT_sub)
     form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
-    
     PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
     
     #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
@@ -109,9 +107,7 @@ for(CBT_ncomm in CBT_ncomm_list){
       mutate_at(vars(matches("inclusion")), as.factor)
     
     
-    print(dim(Program_data))
-    #r[[i]] <-
-      rbind(
+    r[[i]] <-rbind(
       confusionMatrix(Program_data$pmt_inclusion, Program_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "PMT OLS"),
              CBT_ncomm = CBT_ncomm,
@@ -124,3 +120,11 @@ for(CBT_ncomm in CBT_ncomm_list){
 pmt_results<- do.call(rbind, r) %>%
   mutate(EER = 1-Sensitivity)
 write.csv(pmt_results, "Hillebrecht Analysis/pmt_experimental_results.csv", row.names=FALSE)
+
+
+pmt_results %>% 
+  group_by(CBT_ncomm) %>%
+  summarise(mean_EER = mean(EER[EER != 0]))
+pmt_results %>% 
+  group_by(CBT_ncomm) %>%
+  summarise(prop_nonconverge = sum(EER==0)/length(EER))
