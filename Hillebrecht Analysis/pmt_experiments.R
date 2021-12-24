@@ -62,7 +62,7 @@ for(CBT_ncomm in CBT_ncomm_list){
     CBT2_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "CBT2"])
     Program_data <- full_data_left %>%subset(community %in% samps$community[samps$samp == "Program"])    
     
-    #print(c(dim(CBT1_data)[1],dim(CBT2_data)[1],dim(Program_data)))
+    print(c(dim(CBT2_data)[1],dim(Program_data)[1]))
     #print(table(samps$samp))
     
     while(any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
@@ -87,6 +87,7 @@ for(CBT_ncomm in CBT_ncomm_list){
     which_noelite <- which(colnames(X_CBT2) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
     
+    
     #PMT - no elite bias correction
     Y_micro_sub <- as.matrix(ihs_trans(CBT2_data$consumption))
     Y_micro_sub <- apply(Y_micro_sub, 2, function(x){(x - mean(x))/sd(x)})
@@ -108,8 +109,9 @@ for(CBT_ncomm in CBT_ncomm_list){
       mutate_at(vars(matches("inclusion")), as.factor)
     
     
-    
-    r[[i]] <- rbind(
+    print(dim(Program_data))
+    #r[[i]] <-
+      rbind(
       confusionMatrix(Program_data$pmt_inclusion, Program_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "PMT OLS"),
              CBT_ncomm = CBT_ncomm,
@@ -121,4 +123,4 @@ for(CBT_ncomm in CBT_ncomm_list){
 
 pmt_results<- do.call(rbind, r) %>%
   mutate(EER = 1-Sensitivity)
-
+write.csv(pmt_results, "Hillebrecht Analysis/pmt_experimental_results.csv", row.names=FALSE)
