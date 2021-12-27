@@ -109,7 +109,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     #print(c(dim(CBT1_data)[1],dim(CBT2_data)[1],dim(Program_data)))
     #print(table(samps$samp))
     
-    while(any(apply(CBT1_data[,m3], 2, var) == 0)|any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
+    while(any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
       whats_left <- unique(full_data_left$community) #communities not in PMT
       samps <- data.frame(community = whats_left,
                           samp =     rep(c("CBT2", "Program", "NA"), 
@@ -130,7 +130,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
 
     R2 = 3*(CBT2_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
     
-    which_noelite <- which(colnames(X_CBT1) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+    which_noelite <- which(colnames(X_CBT2) == "minority") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
     
     #starting values 
     temp_data <- data.frame(Y_micro = Y_micro,
