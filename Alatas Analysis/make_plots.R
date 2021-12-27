@@ -5,6 +5,11 @@ library(reshape2)
 library(lmomco)
 all_results <- read.csv("Alatas Analysis/all_results.csv")
 
+pmt_corrected <- read.csv("Alatas Analysis/PMT_nonconverge_corrected.csv") %>%
+  mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
+  rename(mean=mean_EER ) %>%
+  relocate(Method, CBT_ncomm, variable, mean)
+
 all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")
 
 #Sensitivity= P(beneficiary | true poor)
@@ -29,13 +34,14 @@ plot_data <- all_results %>%  mutate(IER = 1-Precision,
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
-  mutate(mean = median(value ),
-         min = min(value),
-         max = max(value))%>%ungroup
+  summarise(mean = mean(value ))%>%ungroup %>%
+  subset(variable %in% c( "EER"))
+
+plot_data[plot_data$Method == "PMT",] <- pmt_corrected
 
 
 plot_data %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "PMT", "Probit")  )%>%
+  subset( Method %in% c("Hybrid", "PMT", "Probit")  )%>%
   ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
   geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
@@ -48,7 +54,7 @@ ggsave("Alatas Analysis/ER_hybrid.pdf", width = 8, height = 5)
 
 
 plot_data %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-AI")  )%>%
+  subset( Method %in% c("Hybrid", "Hybrid-AI")  )%>%
   ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
   geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
@@ -60,7 +66,7 @@ plot_data %>%
 ggsave("Alatas Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
 
 plot_data %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-EC")  )%>%
+  subset( Method %in% c("Hybrid", "Hybrid-EC")  )%>%
   ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
   geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+

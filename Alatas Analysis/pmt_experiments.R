@@ -122,14 +122,17 @@ for (CBT_ncomm in CBT_ncomm_list){
     
     Program_data <- Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
       mutate(pmt_rank =rank(PMT_prediction)/length(village),
-             consumption_rank = rank(consumption)/length(village)) %>%
+             consumption_rank = rank(consumption)/length(village),
+             cbt_rank = rank/length(village)) %>%
       mutate(pmt_inclusion = pmt_rank <= poverty_rate,
-             consumption_inclusion = consumption_rank<=poverty_rate) %>%ungroup() %>%
+             consumption_inclusion = consumption_rank<=poverty_rate,
+             cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
       mutate_at(vars(matches("inclusion")), as.factor)
     
     r[[i]] <-rbind(
-      confusionMatrix(Program_data$pmt_inclusion, Program_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-      mutate(Method = c( "PMT OLS"),
+      confusionMatrix(Program_data$pmt_inclusion, Program_data$consumption_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$pmt_inclusion, Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+      mutate(Method = c( "PMT OLS", "PMT OLS (cbt target)"),
              CBT_ncomm = CBT_ncomm,
              nonconverge =  any(is.na(PMT_beta)),
              TD = Sensitivity - (1-Specificity),
@@ -142,11 +145,22 @@ pmt_results<- do.call(rbind, r) %>%
 write.csv(pmt_results, "Alatas Analysis/pmt_experimental_results.csv", row.names=FALSE)
 
 #error rates
-pmt_results %>% 
+pmt_results %>% subset(Method == "PMT OLS") %>%
   group_by(CBT_ncomm) %>%
   summarise(mean_EER = mean(EER[!nonconverge]))
 #proportion of experiments discarded
-pmt_results %>% 
+pmt_results %>% subset(Method == "PMT OLS") %>%
+  group_by(CBT_ncomm) %>%
+  summarise(prop_nonconverge = sum(nonconverge)/length(EER))
+
+#error rates
+pmt_results %>% subset(Method == "PMT OLS (cbt target)") %>%
+  group_by(CBT_ncomm) %>%
+  summarise(mean_EER = mean(EER[!nonconverge])) %>%
+  mutate(Method = "PMT OLS (corrected)")%>%
+  write.csv("Alatas Analysis/PMT_nonconverge_corrected.csv", row.names=FALSE)
+#proportion of experiments discarded
+pmt_results %>% subset(Method == "PMT OLS (cbt target)") %>%
   group_by(CBT_ncomm) %>%
   summarise(prop_nonconverge = sum(nonconverge)/length(EER))
 
