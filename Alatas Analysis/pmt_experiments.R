@@ -112,13 +112,13 @@ for (CBT_ncomm in CBT_ncomm_list){
     temp_data <- data.frame(Y_micro = Y_micro_sub,
                             X_PMT_sub)
     form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT)[-which_noelite], collapse = "+")))
-    
-    PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
+    PMT_model <- lm(form, data = temp_data)
+    PMT_beta <-coef(PMT_model)%>%as.vector()
    
 
     #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
-    Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
-  
+    Program_data$PMT_prediction <- predict(PMT_model, Program_data)#(X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
+    
     
     Program_data <- Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
       mutate(pmt_rank =rank(PMT_prediction)/length(village),
@@ -144,21 +144,26 @@ pmt_results<- do.call(rbind, r) %>%
   mutate(EER = 1-Sensitivity)
 write.csv(pmt_results, "Alatas Analysis/pmt_experimental_results.csv", row.names=FALSE)
 
+#---CONSUMPTION TRUTH STANDARD-----------
+
 #error rates
 pmt_results %>% subset(Method == "PMT OLS") %>%
   group_by(CBT_ncomm) %>%
-  summarise(mean_EER = mean(EER[!nonconverge]))
+  summarise(mean_EER = mean(EER))%>%
+  write.csv("Alatas Analysis/PMT_nonconverge_corrected_consumption.csv", row.names=FALSE)
 #proportion of experiments discarded
 pmt_results %>% subset(Method == "PMT OLS") %>%
   group_by(CBT_ncomm) %>%
   summarise(prop_nonconverge = sum(nonconverge)/length(EER))
 
+
+#---COMMUNITY RANKING TRUTH STANDARD-----------
 #error rates
 pmt_results %>% subset(Method == "PMT OLS (cbt target)") %>%
   group_by(CBT_ncomm) %>%
-  summarise(mean_EER = mean(EER[!nonconverge])) %>%
+  summarise(mean_EER = mean(EER)) %>%
   mutate(Method = "PMT OLS (corrected)")%>%
-  write.csv("Alatas Analysis/PMT_nonconverge_corrected.csv", row.names=FALSE)
+  write.csv("Alatas Analysis/PMT_nonconverge_corrected_cbt.csv", row.names=FALSE)
 #proportion of experiments discarded
 pmt_results %>% subset(Method == "PMT OLS (cbt target)") %>%
   group_by(CBT_ncomm) %>%

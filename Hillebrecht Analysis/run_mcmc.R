@@ -296,7 +296,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
     Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
-    
+    predict()
     Program_data <- Program_data%>%group_by(community) %>%
       mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(consumption),
              hybrid_rank =rank(hybrid_prediction)/length(consumption),

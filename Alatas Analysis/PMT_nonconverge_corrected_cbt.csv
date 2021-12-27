@@ -1,0 +1,5 @@
+"CBT_ncomm","mean_EER","Method"
+10,0.434587697376608,"PMT OLS (corrected)"
+50,0.380827074309221,"PMT OLS (corrected)"
+100,0.371571621157754,"PMT OLS (corrected)"
+200,0.366315093520545,"PMT OLS (corrected)"

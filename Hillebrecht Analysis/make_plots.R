@@ -4,7 +4,7 @@ library(reshape2)
 
 all_results <- read.csv("Hillebrecht Analysis/all_results.csv")
 
-pmt_corrected <- read.csv("Hillebrecht Analysis/PMT_nonconverge_corrected.csv") %>%
+pmt_corrected <- read.csv("Hillebrecht Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
   mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
   rename(mean=mean_EER ) %>%
   relocate(Method, CBT_ncomm, variable, mean)

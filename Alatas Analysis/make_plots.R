@@ -5,7 +5,7 @@ library(reshape2)
 library(lmomco)
 all_results <- read.csv("Alatas Analysis/all_results.csv")
 
-pmt_corrected <- read.csv("Alatas Analysis/PMT_nonconverge_corrected.csv") %>%
+pmt_corrected <- read.csv("Alatas Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
   mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
   rename(mean=mean_EER ) %>%
   relocate(Method, CBT_ncomm, variable, mean)
