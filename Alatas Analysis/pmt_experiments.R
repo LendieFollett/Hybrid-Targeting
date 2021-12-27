@@ -83,18 +83,19 @@ for (CBT_ncomm in CBT_ncomm_list){
     Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
     PMT_data <- full_data[PMT_idx,] 
     
-    #while(any(apply(CBT2_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
-    #  whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
-    #  samps <- data.frame(community_id = whats_left,
-    #                      samp =     rep(c("CBT2", "Program", "NA"), 
-    #                                     c(CBT_ncomm, 
-    #                                       200, 
-    #                                       length(whats_left) -CBT_ncomm- 200))[sample.int(length(whats_left))])
-    #  
-    #  CBT2_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT2"])
-    #  Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
-    #  PMT_data <- full_data[PMT_idx,] 
-    #}
+    
+    while(any(apply(CBT2_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
+      whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
+      samps <- data.frame(community_id = whats_left,
+                          samp =     rep(c("CBT2", "Program", "NA"), 
+                                         c(CBT_ncomm, 
+                                           200, 
+                                           length(whats_left) -CBT_ncomm- 200))[sample.int(length(whats_left))])
+      
+      CBT2_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "CBT2"])
+      Program_data <- full_data %>%subset(community_id %in% samps$community_id[samps$samp == "Program"])    
+      PMT_data <- full_data[PMT_idx,] 
+    }
     
     X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
     X_CBT2 <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
@@ -113,7 +114,7 @@ for (CBT_ncomm in CBT_ncomm_list){
     form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT)[-which_noelite], collapse = "+")))
     
     PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
-    
+   
 
     #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
     Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
@@ -130,6 +131,7 @@ for (CBT_ncomm in CBT_ncomm_list){
       confusionMatrix(Program_data$pmt_inclusion, Program_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "PMT OLS"),
              CBT_ncomm = CBT_ncomm,
+             nonconverge =  any(is.na(PMT_beta)),
              TD = Sensitivity - (1-Specificity),
              rep = rep)
   }
@@ -139,12 +141,13 @@ pmt_results<- do.call(rbind, r) %>%
   mutate(EER = 1-Sensitivity)
 write.csv(pmt_results, "Alatas Analysis/pmt_experimental_results.csv", row.names=FALSE)
 
-
+#error rates
 pmt_results %>% 
   group_by(CBT_ncomm) %>%
-  summarise(mean_EER = mean(EER[EER != 0]))
+  summarise(mean_EER = mean(EER[!nonconverge]))
+#proportion of experiments discarded
 pmt_results %>% 
   group_by(CBT_ncomm) %>%
-  summarise(prop_nonconverge = sum(EER==0)/length(EER))
+  summarise(prop_nonconverge = sum(nonconverge)/length(EER))
 
 

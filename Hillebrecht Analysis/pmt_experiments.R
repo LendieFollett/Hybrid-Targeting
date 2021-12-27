@@ -64,7 +64,7 @@ for(CBT_ncomm in CBT_ncomm_list){
     
 
     
-    while(any(apply(CBT2_data[,m3], 2, var) == 0)|any(apply(PMT_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
+    while(any(apply(CBT2_data[,m3], 2, var) == 0)){ #have to do to deal with complete separation and ML estimation of logistic regression (#shouldadonebayes)
       whats_left <- unique(full_data_left$community) #communities not in PMT
       samps <- data.frame(community = whats_left,
                           samp =     rep(c("CBT2", "Program", "NA"), 
@@ -111,6 +111,7 @@ for(CBT_ncomm in CBT_ncomm_list){
       confusionMatrix(Program_data$pmt_inclusion, Program_data$consumption_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "PMT OLS"),
              CBT_ncomm = CBT_ncomm,
+             nonconverge =  any(is.na(PMT_beta)),
              TD = Sensitivity - (1-Specificity),
              rep = rep)
   }
@@ -121,10 +122,13 @@ pmt_results<- do.call(rbind, r) %>%
   mutate(EER = 1-Sensitivity)
 write.csv(pmt_results, "Hillebrecht Analysis/pmt_experimental_results.csv", row.names=FALSE)
 
+#error rates
+pmt_results %>% 
+  group_by(CBT_ncomm) %>%
+  summarise(mean_EER = mean(EER[!nonconverge]))
+#proportion of experiments discarded
+pmt_results %>% 
+  group_by(CBT_ncomm) %>%
+  summarise(prop_nonconverge = sum(nonconverge)/length(EER))
 
-pmt_results %>% 
-  group_by(CBT_ncomm) %>%
-  summarise(mean_EER = mean(EER[EER != 0]))
-pmt_results %>% 
-  group_by(CBT_ncomm) %>%
-  summarise(prop_nonconverge = sum(EER==0)/length(EER))
+
