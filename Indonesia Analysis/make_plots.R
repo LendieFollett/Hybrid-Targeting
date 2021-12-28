@@ -3,14 +3,14 @@ library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(lmomco)
-all_results <- read.csv("Alatas Analysis/all_results.csv")
+all_results <- read.csv("Indonesia Analysis/all_results.csv")
 
-pmt_corrected <- read.csv("Alatas Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
-  mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
-  rename(mean=mean_EER ) %>%
-  relocate(Method, CBT_ncomm, variable, mean)
+#pmt_corrected <- read.csv("Indonesia Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
+#  mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
+#  rename(mean=mean_EER ) %>%
+#  relocate(Method, CBT_ncomm, variable, mean)
 
-all_coef <- read.csv("Alatas Analysis/coef_total_sample.csv")
+all_coef <- read.csv("Indonesia Analysis/coef_total_sample.csv")
 
 #Sensitivity= P(beneficiary | true poor)
 #Specificity= P(non-beneficiary | true non-poor)
@@ -37,7 +37,7 @@ plot_data <- all_results %>%  mutate(IER = 1-Precision,
   summarise(mean = mean(value ))%>%ungroup %>%
   subset(variable %in% c( "EER"))
 
-plot_data[plot_data$Method == "PMT",] <- pmt_corrected
+#plot_data[plot_data$Method == "PMT",] <- pmt_corrected
 
 
 plot_data %>%
@@ -50,7 +50,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8)) +
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid.pdf", width = 8, height = 5)
+ggsave("Indonesia Analysis/ER_hybrid.pdf", width = 8, height = 5)
 
 
 plot_data %>%
@@ -63,7 +63,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
+ggsave("Indonesia Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
 
 plot_data %>%
   subset( Method %in% c("Hybrid", "Hybrid-EC")  )%>%
@@ -75,7 +75,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
+ggsave("Indonesia Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
 
 #(no DU for alatas)
 
@@ -120,7 +120,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/coef_score_alatas.pdf", width = 12, height = 12)
+ggsave("Indonesia Analysis/coef_score_alatas.pdf", width = 12, height = 12)
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
@@ -142,7 +142,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
 
-ggsave("Alatas Analysis/coef_score_EC_alatas.pdf", width = 12, height = 12)
+ggsave("Indonesia Analysis/coef_score_EC_alatas.pdf", width = 12, height = 12)
 
 
 

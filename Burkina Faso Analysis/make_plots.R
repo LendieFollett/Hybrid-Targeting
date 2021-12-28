@@ -2,14 +2,14 @@ library(dplyr)
 library(ggplot2)
 library(reshape2)
 
-all_results <- read.csv("Hillebrecht Analysis/all_results.csv")
+all_results <- read.csv("Burkina Faso Analysis/all_results.csv")
 
-pmt_corrected <- read.csv("Hillebrecht Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
-  mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
-  rename(mean=mean_EER ) %>%
-  relocate(Method, CBT_ncomm, variable, mean)
+#pmt_corrected <- read.csv("Burkina Faso Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
+#  mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
+#  rename(mean=mean_EER ) %>%
+#  relocate(Method, CBT_ncomm, variable, mean)
 
-all_coef <- read.csv("Hillebrecht Analysis/coef_total_sample.csv")
+all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 #### --- ERROR RATE PLOTS ----------------------------------
 
@@ -22,7 +22,7 @@ plot_data <- all_results %>%  mutate(IER = 1-Precision,
   summarise(mean = mean(value ))%>%ungroup %>%
   subset(variable %in% c( "EER"))
 
-plot_data[plot_data$Method == "PMT",] <- pmt_corrected
+#plot_data[plot_data$Method == "PMT",] <- pmt_corrected
 
 
 plot_data %>%
@@ -35,7 +35,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.65))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/ER_hybrid.pdf", width = 8, height = 5)
+ggsave("Burkina Faso Analysis/ER_hybrid.pdf", width = 8, height = 5)
 
 
 plot_data %>%
@@ -48,7 +48,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
+ggsave("Burkina Faso Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
 
 plot_data %>%
   subset( Method %in% c("Hybrid", "Hybrid-DU")  )%>%
@@ -60,7 +60,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
+ggsave("Burkina Faso Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
 
 
 
@@ -118,7 +118,7 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
         legend.box.background = element_rect(colour = "black"))
 
 
-ggsave("Hillebrecht Analysis/coef_score_hillebrecht.pdf", width = 12, height = 12)
+ggsave("Burkina Faso Analysis/coef_score_hillebrecht.pdf", width = 12, height = 12)
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
@@ -141,6 +141,6 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
 
-ggsave("Hillebrecht Analysis/coef_score_EC_hillebrecht.pdf", width = 12, height = 12)
+ggsave("Burkina Faso Analysis/coef_score_EC_hillebrecht.pdf", width = 12, height = 12)
 
 

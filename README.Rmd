@@ -32,7 +32,9 @@ list.files("Data/Indonesia/Cleaning/")
 The data files that will be called are "hillebrecht.csv" and "alatas.csv".
 
 ## Reproduce
-
+- Run `Burkina Faso Analysis/run_mcmc_weights.R` to reproduce heterogeneous ranker results. 
+  *  Burkina Faso Analysis/heter_weights_corr.pdf
+  *  Burkina Faso Analysis/heter_weights_omega.pdf
 - Run `run_simulations.R` to reproduce error rate results and coefficient estimate results. 
   *  Indonesia Analysis/all_results.csv
   *  Indonesia Analysis/all_coef.csv
@@ -60,7 +62,7 @@ The above files can be used to generate plots found in the manuscript:
   *  Indonesia Analysis/ER_hybrid_DU.pdf
   *  Indonesia Analysis/ER_hybrid.pdf
 
-## Citations
+## References
 
 Alatas,   V.,   Banerjee,   A.,   Hanna,   R.,   Olken,   B.,   and  Tobias,   J.  (2013).Targeting  the  poor:   Evidence  from  a  field  experiment  in  Indonesia.Harvard  Dataverse,https://doi.org/10.7910/DVN/M7SKQZ, V5.
 

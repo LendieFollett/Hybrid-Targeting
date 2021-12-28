@@ -16,19 +16,9 @@ library(parallel)
 library(tidyr)
 detectCores(logical=FALSE)
 
-doESS <- function(x){
-  
-  if(!is.null(dim(x))){ #if it's a data frame
-    return(apply(x, 2, ESS))
-  }else{
-    return(ESS(x))
-  }
-}
 sourceCpp("functions.cpp")
 source("Bayes Consensus Ranking/functions.R")
-source("Bayes Consensus Ranking/HybridTarget.R")
 source("Bayes Consensus Ranking/CBTarget.R")
-ihs_trans <- function(x){log(x + sqrt(x^2 + 1))}
 
 iter_keep = 4000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn = 1   ## Gibbs sampler burn-in iterations 
@@ -93,13 +83,14 @@ full_data_left <- full_data[-PMT_idx,]
       }
     }
     
+    #ranker 'type' in the order of the columns of Tau2 ranker matrix above
     groups = rep(c(1:3), R2/3)
+    #each ranker given same prior weight probabilities
     prior_prob_rank = list(c(1,1,1)/3,
                            c(1,1,1)/3,
                            c(1,1,1)/3)
-    #Run MCMC for Bayesian Consensus Targeting
     
-    #Run MCMC for Bayesian Community Based Targeting -  WITH CORRECTION
+    #Run MCMC for Bayesian Community Based Targeting 
     CBtemp_noelite <- CBTarget(Tau=Tau2, 
                                X_CBT = X_CBT2,
                                X_program = X_program,
@@ -126,7 +117,7 @@ ggplot(data = weight_summary) +
   labs(x = " ", y = "Posterior Mean") +
   theme_bw()
 
-ggsave("Hillebrecht Analysis/heter_weights_omega.pdf", width = 8, height = 8)
+ggsave("Burkina Faso Analysis/heter_weights_omega.pdf", width = 8, height = 8)
 
 
 #demonstrate that this difference in ranker weights translates into 
@@ -167,6 +158,6 @@ p2 <- cor_summary %>%
 grid.arrange(p1, p2, ncol = 2)
 
     
-ggsave("Hillebrecht Analysis/heter_weights_corr.pdf", width = 8, height = 8)
+ggsave("Burkina Faso Analysis/heter_weights_corr.pdf", width = 8, height = 8)
 
         
