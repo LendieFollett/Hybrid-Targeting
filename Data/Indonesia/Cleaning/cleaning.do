@@ -1,6 +1,6 @@
-* PROJECT: Community revealed preferences and the proxy means test
+* PROJECT: A hybrid approach to targeting social assistance
 * BY: Lendie Follett and Heath Henderson
-* DATE: 8/17/21
+* DATE: 12/28/21
 * LOCATION: /Users/hendersonhl/Documents/Articles/Hybrid-Targeting/Data/Indonesia/Cleaning
 * PURPOSE: To clean Alatas et al. data
 
@@ -264,26 +264,21 @@ save "alatas.dta", replace
 outsheet using "alatas.csv", comma nolabel replace
 
 * Save variable names and labels
+order hhid-diversity connected pcfloor tfloor twall troof toilet water lighting ///
+fcook house hhsize hhsize2 hhsize_ae hhage hhage2 hhmale hhmarried hhmalemarr ///
+age04 depratio eschild jschild sschild hheduc2 hheduc3 hheduc4 higheduc2 ///
+higheduc3 higheduc4 formal informal hhsector1 hhsector2 hhsector3 ///
+ac-cow
 describe, replace clear
 keep name varlab
 rename name Name
 rename varlab Definition
-gen Category=""
-foreach x in "pcfloor" "tfloor" "twall" "toilet" "water" "lighting" "troof" ///
-    "fcook" "house" {
-    replace Category="Housing" if Name=="`x'"	
-}
-foreach x in "credit" "hhsize" "hhage" "hhmale" "hhmarried" "hhsector1" ///
-    "hhsector2" "hhsector3" "formal" "informal" "hheduc2" "hheduc3" ///
-	"hheduc4" "age04" "eschild" "jschild" "sschild" "higheduc2" ///
-	"higheduc3" "higheduc4" "depratio" {
-    replace Category="Demographic" if Name=="`x'"	
-}
-foreach x in "ac" "computer" "radio" "tv" "dvd" "satellite" "gas" ///
-    "refrigerator" "bicycle" "motorcycle" "auto" "hp" "jewelry" "chicken" ///
-	"cow" {
-    replace Category="Assets" if Name=="`x'"	
-}
+gen Order = .
+replace Order = _n - 21 if _n > 21 & _n < 32
+replace Order = 11 if _n == 34
+replace Order = 12 if _n == 36
+replace Order = 13 if _n == 37
+replace Order = _n - 25 if _n > 38
 outsheet using "variables.csv", comma nolabel replace
 clear all
 

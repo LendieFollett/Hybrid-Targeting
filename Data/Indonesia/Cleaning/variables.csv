@@ -1,71 +1,71 @@
-Name,Definition,Category
-"hhid","Household identifier",""
-"province","Province code",""
-"district","District code",""
-"subdistrict","Subdistrict code",""
-"village","Village code",""
-"ea","Enumeration area",""
-"pmt","PMT treatment",""
-"community","Community treatment",""
-"hybrid","Hybrid treatment",""
-"elite","Elite subtreatment",""
-"poorest10","10 poorest subtreatment",""
-"daymeeting","Day meeting subtreatment",""
-"treated","Household received cash",""
-"rank","Percentile rank in subvillage",""
-"consumption","Per capita consumption (in thousand Rp)",""
-"consumption_ae","Adult equivalent consumption (in thousand Rp)",""
-"food","Per capita food expenditure (in thousand Rp)",""
-"nonfood","Proportion of expenditure on non-food items",""
-"nonstaple","Proportion of food consumption from non-staples",""
-"diversity","Dietary diversity",""
-"pcfloor","Household floor area per capita","Housing"
-"tfloor","Non-earth floor","Housing"
-"twall","Brick or cement walls","Housing"
-"toilet","Private toilet","Housing"
-"water","Clean drinking water","Housing"
-"lighting","PLN electricity","Housing"
-"troof","Concrete or corrugated roof","Housing"
-"fcook","Cooks with firewood","Housing"
-"house","Owns house privately","Housing"
-"credit","Has received credit","Demographic"
-"hhsize","Household size","Demographic"
-"hhsize2","Household size squared",""
-"hhsize_ae","Adult equivalent household size",""
-"hhage","Age of head","Demographic"
-"hhage2","Age of head squared",""
-"hhmale","Head is male","Demographic"
-"hhmarried","Head is married","Demographic"
-"hhmalemarr","Head is male and married",""
-"hhsector1","Head works in agriculture sector","Demographic"
-"hhsector2","Head works in industry sector","Demographic"
-"hhsector3","Head works in service sector","Demographic"
-"connected","Connected to elite households",""
-"formal","Head works in formal sector","Demographic"
-"informal","Head works in informal sector","Demographic"
-"hheduc2","Education of head is elementary school","Demographic"
-"hheduc3","Education of head is junior high","Demographic"
-"hheduc4","Education of head is senior high school or higher","Demographic"
-"age04","Number of children 0-4","Demographic"
-"eschild","Number of children in elementary school","Demographic"
-"jschild","Number of children in junior high school","Demographic"
-"sschild","Number of children in senior high school","Demographic"
-"higheduc2","Highest education in HH is elementary school","Demographic"
-"higheduc3","Highest education in HH is junior high","Demographic"
-"higheduc4","Highest education in HH is senior high or higher","Demographic"
-"depratio","Dependency ratio","Demographic"
-"ac","Owns AC unit","Assets"
-"computer","Owns computer","Assets"
-"radio","Owns radio/cassette player","Assets"
-"tv","Owns TV","Assets"
-"dvd","Owns DVD player","Assets"
-"satellite","Owns satellite dish","Assets"
-"gas","Owns gas burner","Assets"
-"refrigerator","Owns refrigerator","Assets"
-"bicycle","Owns bicycle","Assets"
-"motorcycle","Owns motorcycle","Assets"
-"auto","Owns car/minibus/truck","Assets"
-"hp","Owns cell phone","Assets"
-"jewelry","Owns jewelry","Assets"
-"chicken","Owns chicken","Assets"
-"cow","Owns caribou/cow","Assets"
+Name,Definition,Order
+"hhid","Household identifier",
+"province","Province code",
+"district","District code",
+"subdistrict","Subdistrict code",
+"village","Village code",
+"ea","Enumeration area",
+"pmt","PMT treatment",
+"community","Community treatment",
+"hybrid","Hybrid treatment",
+"elite","Elite subtreatment",
+"poorest10","10 poorest subtreatment",
+"daymeeting","Day meeting subtreatment",
+"treated","Household received cash",
+"rank","Percentile rank in subvillage",
+"consumption","Per capita consumption (in thousand Rp)",
+"consumption_ae","Adult equivalent consumption (in thousand Rp)",
+"food","Per capita food expenditure (in thousand Rp)",
+"nonfood","Proportion of expenditure on non-food items",
+"nonstaple","Proportion of food consumption from non-staples",
+"diversity","Dietary diversity",
+"connected","Connected to elite households",
+"pcfloor","Household floor area per capita",1
+"tfloor","Non-earth floor",2
+"twall","Brick or cement walls",3
+"troof","Concrete or corrugated roof",4
+"toilet","Private toilet",5
+"water","Clean drinking water",6
+"lighting","PLN electricity",7
+"fcook","Cooks with firewood",8
+"house","Owns house privately",9
+"hhsize","Household size",10
+"hhsize2","Household size squared",
+"hhsize_ae","Adult equivalent household size",
+"hhage","Age of head",11
+"hhage2","Age of head squared",
+"hhmale","Head is male",12
+"hhmarried","Head is married",13
+"hhmalemarr","Head is male and married",
+"age04","Number of children 0-4",14
+"depratio","Dependency ratio",15
+"eschild","Number of children in elementary school",16
+"jschild","Number of children in junior high school",17
+"sschild","Number of children in senior high school",18
+"hheduc2","Education of head is elementary school",19
+"hheduc3","Education of head is junior high",20
+"hheduc4","Education of head is senior high school or higher",21
+"higheduc2","Highest education in HH is elementary school",22
+"higheduc3","Highest education in HH is junior high",23
+"higheduc4","Highest education in HH is senior high or higher",24
+"formal","Head works in formal sector",25
+"informal","Head works in informal sector",26
+"hhsector1","Head works in agriculture sector",27
+"hhsector2","Head works in industry sector",28
+"hhsector3","Head works in service sector",29
+"ac","Owns AC unit",30
+"computer","Owns computer",31
+"radio","Owns radio/cassette player",32
+"tv","Owns TV",33
+"dvd","Owns DVD player",34
+"satellite","Owns satellite dish",35
+"gas","Owns gas burner",36
+"refrigerator","Owns refrigerator",37
+"bicycle","Owns bicycle",38
+"motorcycle","Owns motorcycle",39
+"auto","Owns car/minibus/truck",40
+"hp","Owns cell phone",41
+"jewelry","Owns jewelry",42
+"chicken","Owns chicken",43
+"cow","Owns caribou/cow",44
+"credit","Has received credit",45
