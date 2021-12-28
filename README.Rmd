@@ -34,8 +34,31 @@ The data files that will be called are "hillebrecht.csv" and "alatas.csv".
 ## Reproduce
 
 - Run `run_simulations.R` to reproduce error rate results and coefficient estimate results. 
+  *  Indonesia Analysis/all_results.csv
+  *  Indonesia Analysis/all_coef.csv
+  *  Indonesia Analysis/coef_total_sample.csv
+  *  Indonesia Analysis/CB_beta_rank_CI_noelite.csv
+  *  Indonesia Analysis/CB_beta_rank_CI.csv
+  *  Burkina Faso Analysis/all_results.csv
+  *  Burkina Faso Analysis/all_coef.csv
+  *  Burkina Faso Analysis/coef_total_sample.csv
+  *  Burkina Faso Analysis/CB_beta_rank_CI_noelite.csv
+  *  Burkina Faso Analysis/CB_beta_rank_CI.csv
+  
+The above files can be used to generate plots found in the manuscript:
+  
 - Run `Burkina Faso Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Burkina Faso data. 
+  *  Burkina Faso Analysis/coef_score_EC_hillebrecht.pdf
+  *  Burkina Faso Analysis/coef_score_hillebrecht.pdf
+  *  Burkina Faso Analysis/ER_hybrid_AI.pdf
+  *  Burkina Faso Analysis/ER_hybrid_DU.pdf
+  *  Burkina Faso Analysis/ER_hybrid.pdf
 - Run `Indonesia Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Indonesia data. 
+  *  Indonesia Analysis/coef_score_EC_hillebrecht.pdf
+  *  Indonesia Analysis/coef_score_hillebrecht.pdf
+  *  Indonesia Analysis/ER_hybrid_AI.pdf
+  *  Indonesia Analysis/ER_hybrid_DU.pdf
+  *  Indonesia Analysis/ER_hybrid.pdf
 
 ## Citations
 
