@@ -1,33 +1,5 @@
 rm(list = ls())
-library(truncnorm)
-library(mvtnorm)
-library(LaplacesDemon)
-library(lme4)
-library(Matrix) #for sparse matrices
-library(MASS)
-library(dplyr)
-library(ggplot2)
-library(Rcpp)
-library(reshape2)
-library(gridExtra)
-library(LaplacesDemon)
-library(caret)
-library(parallel)
 detectCores(logical=FALSE)
-
-doESS <- function(x){
-  
-  if(!is.null(dim(x))){ #if it's a data frame
-    return(apply(x, 2, ESS))
-  }else{
-    return(ESS(x))
-  }
-}
-sourceCpp("functions.cpp")
-source("Bayes Consensus Ranking/functions.R")
-source("Bayes Consensus Ranking/HybridTarget.R")
-source("Bayes Consensus Ranking/CBTarget.R")
-ihs_trans <- function(x){log(x + sqrt(x^2 + 1))}
 
 iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn = 2000   ## Gibbs sampler burn-in iterations 
@@ -242,7 +214,8 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
                             X_PMT_sub)
     form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
     
-    PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
+    PMT_model <- lm(form, data = temp_data)
+    PMT_beta <-coef(PMT_model)%>%as.vector()
     
     #---Save coefficients from models with/without elite connection accounted for
     Hybrid_mu_beta_mean_noelite <- apply(Hybridtemp_noelite$mu_beta, 2, mean)
@@ -295,8 +268,8 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
     
     #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
-    Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
-    predict()
+    Program_data$PMT_prediction <- predict(PMT_model, Program_data)#(X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
+    
     Program_data <- Program_data%>%group_by(community) %>%
       mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(consumption),
              hybrid_rank =rank(hybrid_prediction)/length(consumption),
@@ -362,9 +335,9 @@ for( i in seq(2,4*2, by = 2)){
 all_coef <- do.call("rbind", all_coef_2)
 
 
-write.csv(all_results, "Hillebrecht Analysis/all_results.csv")
+write.csv(all_results, "Burkina Faso Analysis/all_results.csv")
 
-write.csv(all_coef, "Hillebrecht Analysis/all_coef.csv")
+write.csv(all_coef, "Burkina Faso Analysis/all_coef.csv")
 
 #---------------------------------------------
 #RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
@@ -420,9 +393,8 @@ X_PMT_sub <-     cbind(1,X_CBT[,m3]) %>%as.matrix()
 temp_data <- data.frame(Y_micro = Y_micro,
                         X_PMT_sub)
 form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT_sub)[-which_noelite], collapse = "+")))
-
-PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
-
+PMT_model <- lm(form, data = temp_data)
+PMT_beta <-coef(PMT_model)%>%as.vector()
 
 
 CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
@@ -434,18 +406,18 @@ coefs <- data.frame(parameter = m3,
                     CB_beta_rank_mean = CB_beta_rank_mean[-1],
                     PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
 )
-write.csv(coefs, "Hillebrecht Analysis/coef_total_sample.csv", row.names=FALSE)
+write.csv(coefs, "Burkina Faso Analysis/coef_total_sample.csv", row.names=FALSE)
 
 
 data.frame(parameter = m3,
            apply(CBtemp_noelite$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
            mean = CB_beta_rank_mean_noelite[-1]) %>%
-  write.csv( "Hillebrecht Analysis/CB_beta_rank_CI_noelite.csv")
+  write.csv( "Burkina Faso Analysis/CB_beta_rank_CI_noelite.csv")
 
 data.frame(parameter = m3[-(which_noelite-1)],
            apply(CBtemp$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
            mean = CB_beta_rank_mean[-c(1, which_noelite)]) %>%
-  write.csv("Hillebrecht Analysis/CB_beta_rank_CI.csv")
+  write.csv("Burkina Faso Analysis/CB_beta_rank_CI.csv")
 
 apply(CBtemp_noelite$beta_rank, 2, doESS)
 apply(CBtemp$beta_rank, 2, doESS)

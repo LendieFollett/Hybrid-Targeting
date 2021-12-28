@@ -1,4 +1,4 @@
-library(DirichletReg)
+
 #--calculate pair.comp_{ij} = 1{Y_i < Y_j} --------------------------------
 #' Compute Pairwise Comparison Matrix for Full Ranking List of the Entities
 #'
@@ -21,6 +21,17 @@ FullRankToPairComp <- function( rank.vec, n = length(rank.vec) ){
   return(pair.comp)
 }
 
+
+ihs_trans <- function(x){log(x + sqrt(x^2 + 1))}
+
+doESS <- function(x){
+  
+  if(!is.null(dim(x))){ #if it's a data frame
+    return(apply(x, 2, ESS))
+  }else{
+    return(ESS(x))
+  }
+}
 
 ### Gibbs update Z given beta--------------------------
 ### pair.comp.ten[[r]] pairwise rank comparison matrix from rth community###

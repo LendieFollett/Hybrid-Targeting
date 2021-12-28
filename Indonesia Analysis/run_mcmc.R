@@ -1,41 +1,12 @@
 rm(list = ls())
-library(truncnorm)
-library(mvtnorm)
-library(LaplacesDemon)
-library(lme4)
-library(Matrix) #for sparse matrices
-library(MASS)
-library(dplyr)
-library(ggplot2)
-library(Rcpp)
-library(reshape2)
-library(gridExtra)
-library(LaplacesDemon)
-library(caret)
-library(parallel)
 detectCores(logical=FALSE)
-
-doESS <- function(x){
-  
-  if(!is.null(dim(x))){ #if it's a data frame
-    return(apply(x, 2, ESS))
-  }else{
-    return(ESS(x))
-  }
-}
-sourceCpp("functions.cpp")
-source("Bayes Consensus Ranking/functions.R")
-source("Bayes Consensus Ranking/HybridTarget.R")
-source("Bayes Consensus Ranking/CBTarget.R")
 #parameters for simulation
-
-
 iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn =2000   ## Gibbs sampler burn-in iterations 
 print_opt = 500  ## print a message every print.opt steps
 
 
-full_data <- read.csv("Alatas Analysis/alatas.csv") %>%
+full_data <- read.csv("Data/Indonesia/Cleaning/alatas.csv") %>%
   dplyr::select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
   mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
   group_by(village, province, district, subdistrict)%>%
@@ -116,7 +87,6 @@ Y_micro <- as.matrix(log(PMT_data$consumption))
 Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
 
 R2 = CBT2_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
-M = 1  ## just consumption
 
 which_noelite <- which(colnames(X_CBT2) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
@@ -201,12 +171,7 @@ CBtemp <- CBTarget(Tau=Tau2,
                    print_opt = print_opt,
                    initial.list = initial_list)
 
-# ------------------------------------------
-
-#PMT - no elite bias correction - NOTE: SAMPLE SIZE VARIES
-#whats_left <- unique(full_data$community_id[PMT_idx])
-#samps <- sample(whats_left, size = CBT_ncomm, replace=FALSE)
-#PMT_data_sub <- subset(PMT_data, community_id %in% samps)
+# -----PMT-------------------------------------
 Y_micro_sub <- as.matrix(log(CBT2_data$consumption))
 Y_micro_sub <- apply(Y_micro_sub, 2, function(x){(x - mean(x))/sd(x)})
 X_PMT_sub <-     cbind(1,CBT2_data[,m3]) %>%as.matrix()
@@ -214,8 +179,14 @@ temp_data <- data.frame(Y_micro = Y_micro_sub,
                         X_PMT_sub)
 form <- formula(paste0("Y_micro~", paste0(colnames(X_PMT)[-which_noelite], collapse = "+")))
 
-PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
+PMT_model <- lm(form, data = temp_data)
+PMT_beta <-coef(PMT_model)%>%as.vector()
 
+# -----CBT probit-------------------------------------
+
+lr <- glm(prop_rank<=poverty_rate ~ ., 
+          data = CBT2_data[,c("prop_rank","poverty_rate", m3[-which(m3 == "connected")])], 
+          family =binomial(link = "probit"))
 
 #---Save coefficients from models with/without elite connection accounted for
 Hybrid_mu_beta_mean_noelite <- apply(Hybridtemp_noelite$mu_beta, 2, mean)
@@ -247,10 +218,6 @@ c[[i]] <- data.frame(parameter = m3,
 
 
 
-#Fit probit regression for Community Based Targeting
-lr <- glm(prop_rank<=poverty_rate ~ ., 
-          data = CBT2_data[,c("prop_rank","poverty_rate", m3[-which(m3 == "connected")])], 
-          family =binomial(link = "probit"))
 
 #HYBRID-BASED PREDICTION - WITH CORRECTION
 Program_data$hybrid_prediction_noelite <-apply(Hybridtemp_noelite$mu_noelite, 2, mean)
@@ -266,8 +233,7 @@ Program_data$cbt_model_prediction <- apply(CBtemp$mu, 2, mean)
 Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(LRF NEEDS TO CHANGE TO) logistic regression
 
 #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
-Program_data$PMT_prediction <- (X_program[,-c(1, which_noelite)]%*%PMT_beta[-1])#beta_start is the OLS estimate of beta
-
+Program_data$PMT_prediction <- predict(PMT_model, Program_data)
 Program_data <- Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
   mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          hybrid_rank =rank(hybrid_prediction)/length(village),
@@ -391,7 +357,7 @@ coefs <- data.frame(parameter = m3,
                                 CB_beta_rank_mean = CB_beta_rank_mean[-1],
                                 PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
                                 )
-write.csv(coefs, "Alatas Analysis/coef_total_sample.csv", row.names = FALSE)
+write.csv(coefs, "Indonesia Analysis/coef_total_sample.csv", row.names = FALSE)
 
 
 CB_beta_rank_pprob_noelite <- apply(CBtemp_noelite$beta_rank[,-1], 2, function(x){mean(x > 0)})
@@ -401,13 +367,13 @@ data.frame(parameter = m3,
            apply(CBtemp_noelite$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
            mean = CB_beta_rank_mean_noelite[-1],
            pprob0 = CB_beta_rank_pprob_noelite) %>%
-  write.csv( "Alatas Analysis/CB_beta_rank_CI_noelite.csv")
+  write.csv( "Indonesia Analysis/CB_beta_rank_CI_noelite.csv")
 
 data.frame(parameter = m3[-(which_noelite-1)],
            apply(CBtemp$beta_rank[,-1], 2, quantile, c(.025, .975)) %>%t(),
            mean = CB_beta_rank_mean[-c(1, which_noelite)],
            pprob0 = CB_beta_rank_pprob) %>%
-  write.csv("Alatas Analysis/CB_beta_rank_CI.csv")
+  write.csv("Indonesia Analysis/CB_beta_rank_CI.csv")
 
 apply(CBtemp_noelite$beta_rank, 2, doESS)
 apply(CBtemp$beta_rank, 2, doESS)
