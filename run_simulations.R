@@ -3,7 +3,6 @@ library(truncnorm)
 library(mvtnorm)
 library(LaplacesDemon)
 library(lme4)
-library(Matrix) #for sparse matrices
 library(MASS)
 library(dplyr)
 library(ggplot2)
@@ -18,14 +17,27 @@ detectCores(logical=FALSE)
 
 
 sourceCpp("functions.cpp")
-source("Bayes Consensus Ranking/functions.R")
-source("Bayes Consensus Ranking/HybridTarget.R")
-source("Bayes Consensus Ranking/CBTarget.R")
+source("Hybrid Targeting/functions.R")
+source("Hybrid Targeting/HybridTarget.R")
+source("Hybrid Targeting/CBTarget.R")
 
 #Run Indonesia simulation study
-source("Alatas Analysis/run_mcmc.R")
+source("Indonesia Analysis/run_mcmc.R")
+
+#Output: 
+## Indonesia Analysis/all_results.csv
+## Indonesia Analysis/all_coef.csv
+## Indonesia Analysis/coef_total_sample.csv
+## Indonesia Analysis/CB_beta_rank_CI_noelite.csv
+## Indonesia Analysis/CB_beta_rank_CI.csv
+
 #Run Burkina Faso simulation study
-source("Hillebrecht Analysis/run_mcmc.R")
+source("Burkina Faso/run_mcmc.R")
 
-
+#Output: 
+## Burkina Faso Analysis/all_results.csv
+## Burkina Faso Analysis/all_coef.csv
+## Burkina Faso Analysis/coef_total_sample.csv
+## Burkina Faso Analysis/CB_beta_rank_CI_noelite.csv
+## Burkina Faso Analysis/CB_beta_rank_CI.csv
 
