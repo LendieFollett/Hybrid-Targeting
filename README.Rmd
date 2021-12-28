@@ -32,10 +32,7 @@ list.files("Data/Indonesia/Cleaning/")
 The data files that will be called are "hillebrecht.csv" and "alatas.csv".
 
 ## Reproduce
-- Run `Burkina Faso Analysis/run_mcmc_weights.R` to reproduce heterogeneous ranker results. 
-  *  Burkina Faso Analysis/heter_weights_omega.pdf (Figure 4 a)
-  *  Burkina Faso Analysis/heter_weights_corr.pdf (Figure 4 b)
-- Run `run_simulations.R` to reproduce error rate results and coefficient estimate results. 
+1. Run `run_simulations.R` to reproduce error rate results and coefficient estimate results. 
   *  Indonesia Analysis/all_results.csv
   *  Indonesia Analysis/all_coef.csv
   *  Indonesia Analysis/coef_total_sample.csv
@@ -49,19 +46,21 @@ The data files that will be called are "hillebrecht.csv" and "alatas.csv".
   
 The above files can be used to generate plots found in the manuscript:
   
-- Run `Burkina Faso Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Burkina Faso data. 
+2. Run `Burkina Faso Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Burkina Faso data. 
   *  Burkina Faso Analysis/coef_score_EC_hillebrecht.pdf
   *  Burkina Faso Analysis/coef_score_hillebrecht.pdf (Figure 1)
   *  Burkina Faso Analysis/ER_hybrid_AI.pdf (Figure 7 a)
   *  Burkina Faso Analysis/ER_hybrid_DU.pdf (Figure 8)
   *  Burkina Faso Analysis/ER_hybrid.pdf (Figure 3 a)
-- Run `Indonesia Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Indonesia data. 
+3. Run `Indonesia Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Indonesia data. 
   *  Indonesia Analysis/coef_score_EC_hillebrecht.pdf (Figure 5)
   *  Indonesia Analysis/coef_score_hillebrecht.pdf (Figure 2)
   *  Indonesia Analysis/ER_hybrid_AI.pdf (Figure 7 b)
   *  Indonesia Analysis/ER_hybrid_EC.pdf (Figure 6)
   *  Indonesia Analysis/ER_hybrid.pdf (Figure 3 b)
-
+4. Run `Burkina Faso Analysis/run_mcmc_weights.R` to reproduce heterogeneous ranker results. 
+  *  Burkina Faso Analysis/heter_weights_omega.pdf (Figure 4 a)
+  *  Burkina Faso Analysis/heter_weights_corr.pdf (Figure 4 b)
 ## References
 
 Alatas,   V.,   Banerjee,   A.,   Hanna,   R.,   Olken,   B.,   and  Tobias,   J.  (2013).Targeting  the  poor:   Evidence  from  a  field  experiment  in  Indonesia.Harvard  Dataverse,https://doi.org/10.7910/DVN/M7SKQZ, V5.
