@@ -53,19 +53,19 @@ Name,Definition,Order
 "hhsector1","Head works in agriculture sector",27
 "hhsector2","Head works in industry sector",28
 "hhsector3","Head works in service sector",29
-"ac","Owns AC unit",30
-"computer","Owns computer",31
-"radio","Owns radio/cassette player",32
-"tv","Owns TV",33
-"dvd","Owns DVD player",34
-"satellite","Owns satellite dish",35
-"gas","Owns gas burner",36
-"refrigerator","Owns refrigerator",37
-"bicycle","Owns bicycle",38
-"motorcycle","Owns motorcycle",39
-"auto","Owns car/minibus/truck",40
-"hp","Owns cell phone",41
-"jewelry","Owns jewelry",42
-"chicken","Owns chicken",43
-"cow","Owns caribou/cow",44
-"credit","Has received credit",45
+"credit","Has received credit",30
+"ac","Owns AC unit",31
+"computer","Owns computer",32
+"radio","Owns radio/cassette player",33
+"tv","Owns TV",34
+"dvd","Owns DVD player",35
+"satellite","Owns satellite dish",36
+"gas","Owns gas burner",37
+"refrigerator","Owns refrigerator",38
+"bicycle","Owns bicycle",39
+"motorcycle","Owns motorcycle",40
+"auto","Owns car/minibus/truck",41
+"hp","Owns cell phone",42
+"jewelry","Owns jewelry",43
+"chicken","Owns chicken",44
+"cow","Owns caribou/cow",45

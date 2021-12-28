@@ -267,7 +267,7 @@ outsheet using "alatas.csv", comma nolabel replace
 order hhid-diversity connected pcfloor tfloor twall troof toilet water lighting ///
 fcook house hhsize hhsize2 hhsize_ae hhage hhage2 hhmale hhmarried hhmalemarr ///
 age04 depratio eschild jschild sschild hheduc2 hheduc3 hheduc4 higheduc2 ///
-higheduc3 higheduc4 formal informal hhsector1 hhsector2 hhsector3 ///
+higheduc3 higheduc4 formal informal hhsector1 hhsector2 hhsector3 credit ///
 ac-cow
 describe, replace clear
 keep name varlab
