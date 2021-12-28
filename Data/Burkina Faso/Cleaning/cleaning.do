@@ -149,6 +149,7 @@ save "hillebrecht.dta", replace
 outsheet using "hillebrecht.csv", comma nolabel replace
 
 * Save variable names and labels
+order hhid-waste kitchen
 describe, replace clear
 keep name varlab
 rename name Name

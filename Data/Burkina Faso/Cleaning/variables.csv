@@ -16,27 +16,27 @@ Name,Definition,Order
 "well","Running water or good wells",6
 "water","Water is changed at least every other day",7
 "waste","Wastewater by gutters or septic tank",8
-"hhsize","Household size",9
-"male","Head is male",10
-"married","Head is married",11
-"widow","Head is widowed",12
-"age1660","Share of members 16-60 years",13
-"age60","Share of members above 60 years",14
-"minority","HH is ethnic minority",15
-"primary","Any member with primary education",16
-"secondary","Any member with secondary education",17
-"tertiary","Any member with tertiary education",18
-"literacy","Head is literate",19
-"agriculture","Head works in agriculture sector",20
-"cart","Owns cart",21
-"plow","Owns plow",22
-"bike","Owns bike",23
-"motorbike","Owns motorbike",24
-"car","Owns car",25
-"radio","Owns radio",26
-"tv","Owns TV",27
-"fridge","Owns refrigerator",28
-"kitchen","Has kitchen",29
+"kitchen","Has kitchen",9
+"hhsize","Household size",10
+"male","Head is male",11
+"married","Head is married",12
+"widow","Head is widowed",13
+"age1660","Share of members 16-60 years",14
+"age60","Share of members above 60 years",15
+"minority","HH is ethnic minority",16
+"primary","Any member with primary education",17
+"secondary","Any member with secondary education",18
+"tertiary","Any member with tertiary education",19
+"literacy","Head is literate",20
+"agriculture","Head works in agriculture sector",21
+"cart","Owns cart",22
+"plow","Owns plow",23
+"bike","Owns bike",24
+"motorbike","Owns motorbike",25
+"car","Owns car",26
+"radio","Owns radio",27
+"tv","Owns TV",28
+"fridge","Owns refrigerator",29
 "horse","Owns horse/donkey",30
 "goat","Owns goat/sheep",31
 "chicken","Owns chicken",32
