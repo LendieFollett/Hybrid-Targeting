@@ -1,6 +1,6 @@
-* PROJECT: Community revealed preferences and the proxy means test
+* PROJECT: A hybrid approach to targeting social assistance
 * BY: Lendie Follett and Heath Henderson
-* DATE: 8/17/21
+* DATE: 12/28/21
 * LOCATION: /Users/hendersonhl/Documents/Articles/Hybrid-Targeting/Data/Burkina Faso/Cleaning
 * PURPOSE: To clean the Hillebrecht et al. data
 
@@ -153,19 +153,7 @@ describe, replace clear
 keep name varlab
 rename name Name
 rename varlab Definition
-gen Category=""
-foreach x in "rooms" "floor" "walls" "roof" "toilet" "well" "water" ///
-    "waste" "kitchen" {
-    replace Category="Housing" if Name=="`x'"	
-}
-foreach x in "hhsize" "male" "married" "widow" "age1660" "age60" "minority" ///
-    "primary" "secondary" "tertiary" "literacy" "agriculture" {
-    replace Category="Demographic" if Name=="`x'"	
-}
-foreach x in "cart" "plow" "bike" "motorbike" "car" "radio" "tv" "fridge" ///
-    "horse" "goat" "chicken" "bullock" "pig" {
-    replace Category="Assets" if Name=="`x'"	
-}
+gen Order = _n - 9 if _n > 9   // Order variable for coefficient plots
 outsheet using "variables.csv", comma nolabel replace
 clear all
 

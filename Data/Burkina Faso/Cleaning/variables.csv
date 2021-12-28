@@ -1,44 +1,44 @@
-Name,Definition,Category
-"hhid","Household identifier",""
-"year","Year",""
-"community","Community identifier",""
-"rural","HH lives in rural area",""
-"treated","HH eligible for discount",""
-"informant1","Rank given by informant 1",""
-"informant2","Rank given by informant 2",""
-"informant3","Rank given by informant 3",""
-"consumption","Monthly per capita consumption (CFA)",""
-"rooms","Number of rooms","Housing"
-"floor","Floor is cement","Housing"
-"walls","Non-mud walls","Housing"
-"roof","Roof is concrete, metal, or tile","Housing"
-"toilet","Toilet not in open field","Housing"
-"well","Running water or good wells","Housing"
-"water","Water is changed at least every other day","Housing"
-"waste","Wastewater by gutters or septic tank","Housing"
-"hhsize","Household size","Demographic"
-"male","Head is male","Demographic"
-"married","Head is married","Demographic"
-"widow","Head is widowed","Demographic"
-"age1660","Share of members 16-60 years","Demographic"
-"age60","Share of members above 60 years","Demographic"
-"minority","HH is ethnic minority","Demographic"
-"primary","Any member with primary education","Demographic"
-"secondary","Any member with secondary education","Demographic"
-"tertiary","Any member with tertiary education","Demographic"
-"literacy","Head is literate","Demographic"
-"agriculture","Head works in agriculture sector","Demographic"
-"cart","Owns cart","Assets"
-"plow","Owns plow","Assets"
-"bike","Owns bike","Assets"
-"motorbike","Owns motorbike","Assets"
-"car","Owns car","Assets"
-"radio","Owns radio","Assets"
-"tv","Owns TV","Assets"
-"fridge","Owns refrigerator","Assets"
-"kitchen","Has kitchen","Housing"
-"horse","Owns horse/donkey","Assets"
-"goat","Owns goat/sheep","Assets"
-"chicken","Owns chicken","Assets"
-"bullock","Owns bullock","Assets"
-"pig","Owns pig","Assets"
+Name,Definition,Order
+"hhid","Household identifier",
+"year","Year",
+"community","Community identifier",
+"rural","HH lives in rural area",
+"treated","HH eligible for discount",
+"informant1","Rank given by informant 1",
+"informant2","Rank given by informant 2",
+"informant3","Rank given by informant 3",
+"consumption","Monthly per capita consumption (CFA)",
+"rooms","Number of rooms",1
+"floor","Floor is cement",2
+"walls","Non-mud walls",3
+"roof","Roof is concrete, metal, or tile",4
+"toilet","Toilet not in open field",5
+"well","Running water or good wells",6
+"water","Water is changed at least every other day",7
+"waste","Wastewater by gutters or septic tank",8
+"hhsize","Household size",9
+"male","Head is male",10
+"married","Head is married",11
+"widow","Head is widowed",12
+"age1660","Share of members 16-60 years",13
+"age60","Share of members above 60 years",14
+"minority","HH is ethnic minority",15
+"primary","Any member with primary education",16
+"secondary","Any member with secondary education",17
+"tertiary","Any member with tertiary education",18
+"literacy","Head is literate",19
+"agriculture","Head works in agriculture sector",20
+"cart","Owns cart",21
+"plow","Owns plow",22
+"bike","Owns bike",23
+"motorbike","Owns motorbike",24
+"car","Owns car",25
+"radio","Owns radio",26
+"tv","Owns TV",27
+"fridge","Owns refrigerator",28
+"kitchen","Has kitchen",29
+"horse","Owns horse/donkey",30
+"goat","Owns goat/sheep",31
+"chicken","Owns chicken",32
+"bullock","Owns bullock",33
+"pig","Owns pig",34
