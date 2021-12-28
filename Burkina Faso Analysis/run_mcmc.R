@@ -12,26 +12,27 @@ full_data <- read.csv("Data/Burkina Faso/Cleaning/hillebrecht.csv") %>%
          informant2 = ifelse(is.na(informant2), NA, floor(rank(-informant2))),
          informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))),
          treat_rate = sum(treated)/length(treated)) %>% ungroup%>%  arrange(community)
+
 #x variables to include in model
 m_num <- c("rooms", "hhsize","age1660","age60")
-
 m_bin <- colnames(full_data)[which(colnames(full_data)=="floor"):which(colnames(full_data)=="pig")]
 m_bin <- m_bin[!m_bin %in% m_num]
 m3 <- c(m_num, m_bin)
 
-#50% of the full data is surveyed for PMT. get both X and y=consumption
-#set.seed(572319852)
+#standardize numeric covariates
 full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
-PMT_idx <-which(full_data$year == 2008) #training data is all of 2008 data
+#training data is all of 2008 data
+PMT_idx <-which(full_data$year == 2008) 
 full_data_left <- full_data[-PMT_idx,]
-PMT_data <- full_data[PMT_idx,] #%>% subset(community == 0)
+PMT_data <- full_data[PMT_idx,] 
 
 #-----PRELIMINARY: RUN PHASE 1 FOR DYNAMIC UPDATING
 CBT1_data <- PMT_data
 R1 = 3*(CBT1_data %>% group_by(community) %>% summarise(n = length(floor))%>%ungroup() %>%nrow)
 X_CBT1 <-     cbind(1,CBT1_data[,m3]) %>%as.matrix()
 
+#Create Rank matrix in format required for CBTarget()
 Tau1 <- array(NA, dim = c(nrow(CBT1_data), R1))
 j = 0
 for ( idx in unique(CBT1_data$community)){ #loop over columns
@@ -40,6 +41,7 @@ for ( idx in unique(CBT1_data$community)){ #loop over columns
     Tau1[CBT1_data$community == idx,j] <- pull(CBT1_data[CBT1_data$community == idx,], infmt)
   }
 }
+
 CBtemp_P1 <- CBTarget(Tau=Tau1, 
                       X_CBT = X_CBT1[,-which(colnames(X_CBT1) == "minority")],
                       X_program = X_CBT1[,-which(colnames(X_CBT1) == "minority")],
@@ -217,6 +219,12 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     PMT_model <- lm(form, data = temp_data)
     PMT_beta <-coef(PMT_model)%>%as.vector()
     
+    # -----CBT probit-------------------------------------
+
+    lr <- glm(treated ~ ., 
+              data = CBT2_data[,c("treated", m3[-which(m3 == "minority")])], 
+              family =binomial(link = "probit"))
+    
     #---Save coefficients from models with/without elite connection accounted for
     Hybrid_mu_beta_mean_noelite <- apply(Hybridtemp_noelite$mu_beta, 2, mean)
     Hybrid_beta_rank_mean_noelite <- apply(Hybridtemp_noelite$beta_rank, 2, mean)
@@ -247,11 +255,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
                          
                          PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2))
     
-    #Fit probit regression for Community Based Targeting
-    lr <- glm(treated ~ ., 
-              data = CBT2_data[,c("treated", m3[-which(m3 == "minority")])], 
-              family =binomial(link = "probit"))
-    
+
     #HYBRID-BASED PREDICTION - WITH CORRECTION
     Program_data$hybrid_prediction_noelite <-apply(Hybridtemp_noelite$mu_noelite, 2, mean)
     #HYBRID-BASED PREDICTION - WITHOUT CORRECTION

@@ -1,0 +1,44 @@
+---
+title: "Reproducing Results from A Hybrid Approach to Targeting Social Assistance"
+author: "Lendie Follett and Heath Henderson"
+date: "12/28/2021"
+output: html_document
+---
+
+## Introduction
+This repository contains the code and data required to reproduce the results found in "A Hybrid Approach to Targeting Social Assistance". Specifically, to run simulation studies that estimate out of sample error rates using the Hybrid, Hybrid-AI, Hybrid-EC, and Hybrid-DU models on data from Indonesia (Alatas et al. (2012)) and Burkina Faso (Hillebrecht et al. (2020)). 
+
+## Requirements
+To install the required R packages, run the following code in R:
+
+```{r, eval=FALSE}
+
+install.packages(c("truncnorm", "mvtnorm", "LaplacesDemon", "MASS", "dplyr",
+                   "ggplot2", "Rcpp", "reshape2", "caret", "parallel"))
+
+```
+
+## Data
+
+We use two sources of data containing community based rankings, survey information, and consumption/expenditure data. This data can be found in the following sub-directories:
+
+```{r }
+list.files("Data/Burkina Faso/Cleaning/")
+
+list.files("Data/Indonesia/Cleaning/")
+
+```
+
+The data files that will be called are "hillebrecht.csv" and "alatas.csv".
+
+## Reproduce
+
+- Run `run_simulations.R` to reproduce error rate results and coefficient estimate results. 
+- Run `Burkina Faso Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Burkina Faso data. 
+- Run `Indonesia Analysis/make_plots.R` to reproduce error rate plots and coefficient plots for the Indonesia data. 
+
+## Citations
+
+Alatas,   V.,   Banerjee,   A.,   Hanna,   R.,   Olken,   B.,   and  Tobias,   J.  (2013).Targeting  the  poor:   Evidence  from  a  field  experiment  in  Indonesia.Harvard  Dataverse,https://doi.org/10.7910/DVN/M7SKQZ, V5.
+
+Hillebrecht,  M.,  Klonner,  S.,  Pacere,  N.  A.,  and  Souares,  A.  (2020b).   Community-basedversus statistical targeting of anti-poverty programs: Evidence from Burkina Faso.Journalof African Economies, 29(3):271–305

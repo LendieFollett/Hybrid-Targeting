@@ -29,16 +29,10 @@ m_bin <- c("connected","hhmale","hhmarried",
            "formal", "informal")# lrf removed informal for now
 m3 <- c(m_num, m_bin)
 
-#50% of the full data is surveyed for PMT. get both X and y=consumption
-#set.seed(572319852)
-PMT_idx <-which(full_data$pmt == 1)#which(full_data$community_id %in% sample(unique(full_data$community_id), replace=FALSE,  length(unique(full_data$community_id))*.5))
-#Note: the hh index for program is everything else, e.g. , full_data[-PMT_idx,]
-#a subset of the program data is CBT
 
-full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))}) #%>%
-  #mutate(hhage2 = hhage^2,
-  #       hhsize2 = hhsize^2)
+PMT_idx <-which(full_data$pmt == 1)
 
+full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
 
 #parallelized across CBT proportions via mcapply
 CBT_ncomm_list <- c(10, 50, 100, 200) 
@@ -90,6 +84,7 @@ R2 = CBT2_data %>% group_by(village, province, district, subdistrict) %>% summar
 
 which_noelite <- which(colnames(X_CBT2) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
 
+#For initial values
 temp_data <- data.frame(Y_micro = Y_micro,
                         X_PMT[,-1])
 form <- formula(paste0("Y_micro~", paste0(colnames(temp_data[,-1]), collapse = "+")))
@@ -116,8 +111,7 @@ initial_list<- list(
   beta_micro = PMT_beta_start[-which_noelite],
   mu_beta = mu_beta_start[-c(1, which_noelite)])
 
-#create rank matrix: one column per 'ranker' (community)
-
+#Create Rank matrix in format required for CBTarget()
 Tau2 <- array(NA, dim = c(nrow(CBT2_data), R2))
 j = 0
 for ( idx in unique(CBT2_data$community_id)){ #loop over columns
