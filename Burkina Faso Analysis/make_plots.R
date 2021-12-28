@@ -85,21 +85,21 @@ variable_labels <- read.csv("Data/Burkina Faso/Cleaning/variables.csv")
 #variable_labels <- rbind(variable_labels, variable_labels_add)
 
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  dplyr::select(Definition,Category, CB_beta_rank_mean) %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  group_by(Definition, Category,variable) %>%
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(Definition,variable, Order) %>%
   summarise(mean = mean(value)) %>%
-  group_by(Category,variable) %>%
+  group_by(variable, Order) %>%
   mutate(std_mean =mean/mean(abs(mean)),
          mean_abs = mean(abs(mean))) %>%
-  arrange(Category,mean) 
+  arrange(-Order) 
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  dplyr::select(Definition, Category, CB_beta_rank_mean, PMT_beta) %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean, PMT_beta) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  group_by(Definition, Category, variable) %>%
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(Definition, Order, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
   mutate(std_mean = mean/mean(abs(mean))) %>%
@@ -121,10 +121,10 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
 ggsave("Burkina Faso Analysis/coef_score_hillebrecht.pdf", width = 12, height = 12)
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
-  dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  group_by(Definition, Category, variable) %>%
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(Definition, Order, variable) %>%
   summarise(mean = mean(value)) %>% ungroup() %>%
   group_by(variable) %>%
   mutate(std_mean = mean/mean(abs(mean))) %>%

@@ -88,22 +88,19 @@ variable_labels <- read.csv("Data/Indonesia/Cleaning/variables.csv")
 #variable_labels <- rbind(variable_labels, variable_labels_add)
 
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  dplyr::select(Definition,Category, CB_beta_rank_mean) %>%
+  dplyr::select(Definition,Order, CB_beta_rank_mean) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
+  melt(id.vars = c("Definition", "Order")) %>%
   mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
-  group_by(Category,variable) %>%
+  group_by(Order,variable) %>%
   mutate(std_mean =par_est/harmonic.mean(par_est)$harmean) %>%
-  arrange(Category,std_mean) 
+  arrange(-Order) 
 
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
-  dplyr::select(Definition, Category, CB_beta_rank_mean, PMT_beta) %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean, PMT_beta) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
-  #group_by(Definition, Category, variable) %>%
-  #summarise(par_est = mean(value)) %>% ungroup() %>%
+  melt(id.vars = c("Definition", "Order")) %>%
   group_by(variable) %>%
   mutate(std_mean = value/mean(abs(value)),
          mean_abs = mean(abs(value))) %>%
@@ -123,10 +120,9 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
 ggsave("Indonesia Analysis/coef_score_alatas.pdf", width = 12, height = 12)
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
-  dplyr::select(Definition, Category, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
   subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
-  melt(id.vars = c("Definition", "Category")) %>%
-  #group_by(Definition, Category, variable) %>%
+  melt(id.vars = c("Definition", "Order")) %>%
   group_by(variable) %>%
   mutate(std_mean = value/mean(abs(value))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
