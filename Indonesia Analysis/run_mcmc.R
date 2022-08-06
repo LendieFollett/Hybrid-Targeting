@@ -1,4 +1,4 @@
-rm(list = ls())
+
 detectCores(logical=FALSE)
 #parameters for simulation
 iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
@@ -248,6 +248,11 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
   mutate_at(vars(matches("inclusion")), as.factor)
 
 
+Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
+  summarise(sensitivity = confusionMatrix(hybrid_noelite_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1])
+
+
+#lRF: MAYBE DO THIS WITHIN COMMUNITY, TOO? TO GET VARIABILITY 
 
 r[[i]] <- rbind(
 confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
