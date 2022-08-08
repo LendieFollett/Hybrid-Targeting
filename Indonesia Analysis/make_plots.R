@@ -28,22 +28,21 @@ all_coef <- read.csv("Indonesia Analysis/coef_total_sample.csv")
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
 #vary poverty rate .2, .3, .4
-PR <- "varies"
+PR <- 0.2
+#multiplicative constant shifts community-level poverty rate up or down
+multiplicative_constant <- PR/0.2
 
-if (PR != "varies"){
-  all_results_hh$poverty_rate <- 0.3
-}
 
 #calculate inclusions based on chosen poverty rate
 all_results_hh <- all_results_hh %>%
-  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
-         hybrid_inclusion = hybrid_rank <= poverty_rate,
-         pmt_inclusion = pmt_rank <= poverty_rate,
-         consumption_inclusion = consumption_rank<=poverty_rate,
-         cbt_model_inclusion = cbt_model_rank<=poverty_rate,
-         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate,
-         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
-         cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
+  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate*multiplicative_constant,
+         hybrid_inclusion = hybrid_rank <= poverty_rate*multiplicative_constant,
+         pmt_inclusion = pmt_rank <= poverty_rate*multiplicative_constant,
+         consumption_inclusion = consumption_rank<=poverty_rate*multiplicative_constant,
+         cbt_model_inclusion = cbt_model_rank<=poverty_rate*multiplicative_constant,
+         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate*multiplicative_constant,
+         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate*multiplicative_constant,
+         cbt_inclusion = cbt_rank <= poverty_rate*multiplicative_constant) %>%ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 #### --- PREP DATA ----------------------------------
@@ -96,7 +95,8 @@ for (reps in unique(all_results_hh$rep)){
       confusionMatrix(all_results_sub$hybrid_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$cbt_model_noelite_inclusion,all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$cbt_model_inclusion,        all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      #NOTE: PMT being compared to consumption-based truth, not CBT-based truth
+      confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$consumption_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
              rep = reps, 
@@ -185,7 +185,7 @@ plot_data_corr <- all_results %>%  mutate(IER = 1-Precision,
 
 
 plot_data_corr %>%
-  subset( Method %in% c("Hybrid",  "Probit")  )%>%
+  subset( Method %in% c("Hybrid", "PMT", "Probit")  )%>%
   ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
   geom_point(aes(x = CBT_ncomm, y = mean)) +
   #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
@@ -198,6 +198,9 @@ ggsave("Indonesia Analysis/CORR_hybrid.pdf", width = 8, height = 5)
 
 
 #### --- ERROR RATE PLOTS - COMMUNITY VARIABILITY ----------------------------------
+
+#PMT comparison needs to be predicting
+
 plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
                                      EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm", "village", "province", "district", "subdistrict")) %>%
@@ -205,7 +208,7 @@ plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) 
 plot_data %>% subset(variable == "EER") %>%
   ggplot() +
-  geom_violin(aes(x = Method, y = value, colour = CBT_ncomm)) +
+geom_boxplot(aes(x = Method, y = value, colour = CBT_ncomm)) +
   scale_colour_grey()
 
 
