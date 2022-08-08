@@ -53,6 +53,7 @@ r <- list()
 i = 0
 for (rep in unique(all_results_hh$rep)){
   for (CBT_ncomm in unique(all_results_hh$CBT_ncomm)){
+    print(paste0("sample size = ",CBT_ncomm, ", rep = ", rep))
     i = i + 1
     all_results_sub <- subset(all_results_hh, rep == rep & CBT_ncomm == CBT_ncomm)
     r[[i]] <- rbind(
@@ -68,7 +69,7 @@ for (rep in unique(all_results_hh$rep)){
     
     r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
-                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_noelite_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank_noelite, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$pmt_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$CBT_LR_rank, method = 'spearman')$estimate)
@@ -84,6 +85,7 @@ r <- list()
 i = 0
 for (rep in unique(all_results_hh$rep)){
   for (CBT_ncomm in unique(all_results_hh$CBT_ncomm)){
+    print(paste0("sample size = ",CBT_ncomm, ", rep = ", rep))
     for (comm in unique(interaction(all_results_hh$village, all_results_hh$rovince, all_results_hh$district, all_results_hh$subdistrict))){
     i = i + 1
     all_results_sub <- subset(all_results_hh, rep == rep & CBT_ncomm == CBT_ncomm & 
@@ -100,12 +102,12 @@ for (rep in unique(all_results_hh$rep)){
              CBT_ncomm = CBT_ncomm,
              village=all_results_sub$village[1], province=all_results_sub$province[1], district = all_results_sub$district[1], subdistrict = all_results_sub$subdistrict[1])
     
-    r[[i]]$spearman <- c(cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$hybrid_noelite_inclusion, method = 'spearman'),
-                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$hybrid_inclusion, method = 'spearman'),
-                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$cbt_model_noelite_inclusion, method = 'spearman'),
-                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$cbt_model_inclusion, method = 'spearman'),
-                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$pmt_inclusion, method = 'spearman'),
-                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$CBT_LR_inclusion, method = 'spearman'))
+    r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank_noelite, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$pmt_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$CBT_LR_rank, method = 'spearman')$estimate)
     
       }
     }
