@@ -1,8 +1,8 @@
 
 detectCores(logical=FALSE)
 #parameters for simulation
-iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =2000   ## Gibbs sampler burn-in iterations 
+iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =20   ## Gibbs sampler burn-in iterations 
 print_opt = 500  ## print a message every print.opt steps
 
 
@@ -244,7 +244,8 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
 r[[i]] <- Program_data %>% dplyr::select(c(hhid, village, province, district, subdistrict,poverty_rate, 
                                  hybrid_noelite_rank, hybrid_rank,
                                  cbt_model_rank, cbt_model_rank_noelite,
-                                 consumption_rank, cbt_rank,CBT_LR_rank)) %>%
+                                 consumption_rank, cbt_rank,CBT_LR_rank,
+                                 pmt_rank)) %>%
                                     mutate(rep = rep,
                                           CBT_ncomm = CBT_ncomm)
 
