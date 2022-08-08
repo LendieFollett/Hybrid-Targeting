@@ -51,11 +51,11 @@ all_results_hh <- all_results_hh %>%
 #across community analysis
 r <- list()
 i = 0
-for (rep in unique(all_results_hh$rep)){
-  for (CBT_ncomm in unique(all_results_hh$CBT_ncomm)){
-    print(paste0("sample size = ",CBT_ncomm, ", rep = ", rep))
+for (reps in unique(all_results_hh$rep)){
+  for (n in unique(all_results_hh$CBT_ncomm)){
+    print(paste0("sample size = ",n, ", rep = ", reps))
     i = i + 1
-    all_results_sub <- subset(all_results_hh, rep == rep & CBT_ncomm == CBT_ncomm)
+    all_results_sub <- subset(all_results_hh, rep == reps & CBT_ncomm == n)
     r[[i]] <- rbind(
       confusionMatrix(all_results_sub$hybrid_noelite_inclusion,   all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$hybrid_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
@@ -64,8 +64,8 @@ for (rep in unique(all_results_hh$rep)){
       confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
-             rep = rep, 
-             CBT_ncomm = CBT_ncomm)
+             rep = reps, 
+             CBT_ncomm = n)
     
     r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
@@ -83,12 +83,13 @@ all_results <- do.call(rbind, r)
 #within community analysis - get one row per rep per community sampled in test
 r <- list()
 i = 0
-for (rep in unique(all_results_hh$rep)){
-  for (CBT_ncomm in unique(all_results_hh$CBT_ncomm)){
-    print(paste0("sample size = ",CBT_ncomm, ", rep = ", rep))
-    for (comm in unique(interaction(all_results_hh$village, all_results_hh$rovince, all_results_hh$district, all_results_hh$subdistrict))){
+for (reps in unique(all_results_hh$rep)){
+  for (n in unique(all_results_hh$CBT_ncomm)){
+    print(paste0("sample size = ",n, ", rep = ", reps))
+    temp <- subset(all_results_hh, rep == reps & CBT_ncomm == n)
+    for (comm in unique(interaction(temp$village, temp$province, temp$district, temp$subdistrict))){
     i = i + 1
-    all_results_sub <- subset(all_results_hh, rep == rep & CBT_ncomm == CBT_ncomm & 
+    all_results_sub <- subset(all_results_hh, rep == reps & CBT_ncomm == n & 
                                 interaction(all_results_hh$village, all_results_hh$province, all_results_hh$district, all_results_hh$subdistrict) == comm)
     r[[i]] <- rbind(
       confusionMatrix(all_results_sub$hybrid_noelite_inclusion,   all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
@@ -98,8 +99,8 @@ for (rep in unique(all_results_hh$rep)){
       confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
       mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
-             rep = rep, 
-             CBT_ncomm = CBT_ncomm,
+             rep = reps, 
+             CBT_ncomm = n,
              village=all_results_sub$village[1], province=all_results_sub$province[1], district = all_results_sub$district[1], subdistrict = all_results_sub$subdistrict[1])
     
     r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
@@ -170,18 +171,41 @@ ggsave("Indonesia Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
 
 #(no DU for Indonesia)
 
+
+#RANK CORRELATION ANALYSIS
+
+plot_data_corr <- all_results %>%  mutate(IER = 1-Precision,
+                        EER = 1-Sensitivity) %>%
+  melt(id.var = c("Method", "CBT_ncomm")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
+                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
+  group_by(Method, CBT_ncomm, variable) %>%
+  summarise(mean = mean(value ))%>%ungroup %>%
+  subset(variable %in% c( "spearman"))
+
+
+plot_data_corr %>%
+  subset( Method %in% c("Hybrid",  "Probit")  )%>%
+  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
+  geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Rank Correlation")+ 
+  theme(legend.position = c(0.9, 0.8)) +
+  theme(legend.box.background = element_rect(colour = "black"))
+
+ggsave("Indonesia Analysis/CORR_hybrid.pdf", width = 8, height = 5)
+
+
 #### --- ERROR RATE PLOTS - COMMUNITY VARIABILITY ----------------------------------
 plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
                                      EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm", "village", "province", "district", "subdistrict")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
-                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) %>%
-  group_by(Method, CBT_ncomm, variable) %>%
-  summarise(mean = mean(value ))%>%ungroup %>%
-  subset(variable %in% c( "EER"))
-
-ggplot(data = plot_data) +
-  geom_boxplot(aes(x = Method, y = value, colour = CBT_ncomm)) +
+                         labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) 
+plot_data %>% subset(variable == "EER") %>%
+  ggplot() +
+  geom_violin(aes(x = Method, y = value, colour = CBT_ncomm)) +
   scale_colour_grey()
 
 
