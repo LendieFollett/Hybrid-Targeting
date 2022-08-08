@@ -3,6 +3,8 @@ library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(lmomco)
+
+
 all_results <- read.csv("Indonesia Analysis/all_results.csv")
 
 #pmt_corrected <- read.csv("Indonesia Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
@@ -24,6 +26,46 @@ all_coef <- read.csv("Indonesia Analysis/coef_total_sample.csv")
 #"Hybrid-EC" (i.e., hybrid + elite capture adjustment)
 #"Hybrid-AI" (i.e., hybrid + auxiliary information) 
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
+
+%>%
+  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
+         hybrid_inclusion = hybrid_rank <= poverty_rate,
+         pmt_inclusion = pmt_rank <= poverty_rate,
+         consumption_inclusion = consumption_rank<=poverty_rate,
+         cbt_model_inclusion = cbt_model_rank<=poverty_rate,
+         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate,
+         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
+         cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+#Within community
+temp = Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
+  summarise(hybrid_noelite_sens = confusionMatrix(hybrid_noelite_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1],
+            hybrid_noelite_spec = confusionMatrix(hybrid_noelite_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
+            hybrid_sens = confusionMatrix(hybrid_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1],
+            hybrid_spec = confusionMatrix(hybrid_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
+            cbt_model_noelite_sens = confusionMatrix(cbt_model_noelite_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1],
+            cbt_model_noelite_spec = confusionMatrix(cbt_model_noelite_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
+            cbt_model_sens = confusionMatrix(cbt_model_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1],
+            cbt_model_spec = confusionMatrix(cbt_model_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
+            pmt_sens = confusionMatrix(pmt_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1],
+            pmt_spec = confusionMatrix(pmt_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
+            CBT_LR_sens = confusionMatrix(CBT_LR_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1],
+            CBT_LR_spec = confusionMatrix(CBT_LR_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
+  )
+
+#across communities
+r[[i]] <- rbind(
+  confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
+         CBT_ncomm = CBT_ncomm,
+         TD = Sensitivity - (1-Specificity),
+         rep = rep) 
 
 
 #### --- ERROR RATE PLOTS ----------------------------------

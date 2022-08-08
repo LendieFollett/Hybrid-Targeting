@@ -228,6 +228,8 @@ Program_data$CBT_LR_prediction<- -predict(lr, as.data.frame(X_program[,-1])) #(L
 
 #OLS-BASED PMT PREDICTION -  WITHOUT CORRECTION
 Program_data$PMT_prediction <- predict(PMT_model, Program_data)
+
+
 Program_data <- Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
   mutate(hybrid_noelite_rank =rank(hybrid_prediction_noelite)/length(village),
          hybrid_rank =rank(hybrid_prediction)/length(village),
@@ -236,35 +238,16 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village),
-         CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) %>%
-  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
-         hybrid_inclusion = hybrid_rank <= poverty_rate,
-         pmt_inclusion = pmt_rank <= poverty_rate,
-         consumption_inclusion = consumption_rank<=poverty_rate,
-         cbt_model_inclusion = cbt_model_rank<=poverty_rate,
-         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate,
-         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
-         cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
-  mutate_at(vars(matches("inclusion")), as.factor)
+         CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) 
 
+#ith list element contains one row per household, all rank predictions, rep id, and number CBT communities
+r[[i]] <- Program_data %>% dplyr::select(c(hhid, village, province, district, subdistrict,poverty_rate, 
+                                 hybrid_noelite_rank, hybrid_rank,
+                                 cbt_model_rank, cbt_model_rank_noelite,
+                                 consumption_rank, cbt_rank,CBT_LR_rank)) %>%
+                                    mutate(rep = rep,
+                                          CBT_ncomm = CBT_ncomm)
 
-Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
-  summarise(sensitivity = confusionMatrix(hybrid_noelite_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[1])
-
-
-#lRF: MAYBE DO THIS WITHIN COMMUNITY, TOO? TO GET VARIABILITY 
-
-r[[i]] <- rbind(
-confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
-         CBT_ncomm = CBT_ncomm,
-         TD = Sensitivity - (1-Specificity),
-         rep = rep) 
   }
 
    return(list(r=r, c=c))
@@ -286,7 +269,7 @@ confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclus
  }
  all_coef <- do.call("rbind", all_coef_2)
  
-
+#all_results contains all households from each replication
 write.csv(all_results, "Alatas Analysis/all_results.csv")
 
 write.csv(all_coef, "Alatas Analysis/all_coef.csv")

@@ -9,10 +9,11 @@ library(Rcpp)
 library(reshape2)
 library(caret)
 library(parallel)
+library(RcppTN)
 detectCores(logical=FALSE)
 
 
-sourceCpp("functions.cpp")
+sourceCpp("Hybrid Targeting/functions.cpp")
 source("Hybrid Targeting/functions.R")
 source("Hybrid Targeting/HybridTarget.R")
 source("Hybrid Targeting/CBTarget.R")
