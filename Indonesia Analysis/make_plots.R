@@ -27,7 +27,10 @@ all_coef <- read.csv("Indonesia Analysis/coef_total_sample.csv")
 #"Hybrid-AI" (i.e., hybrid + auxiliary information) 
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
-%>%
+#vary poverty rate .2, .3, .4
+#all_results$poverty_rate <- 0.3
+
+all_results <- all_results %>%
   mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate,
          hybrid_inclusion = hybrid_rank <= poverty_rate,
          pmt_inclusion = pmt_rank <= poverty_rate,
@@ -35,8 +38,44 @@ all_coef <- read.csv("Indonesia Analysis/coef_total_sample.csv")
          cbt_model_inclusion = cbt_model_rank<=poverty_rate,
          cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate,
          CBT_LR_inclusion = CBT_LR_rank<=poverty_rate,
-         cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup() %>%
-  mutate_at(vars(matches("inclusion")), as.factor)
+         cbt_inclusion = cbt_rank <= poverty_rate) %>%ungroup()
+  #mutate_at(vars(matches("inclusion")), as.factor) %>%
+
+
+#across communities
+r <- list()
+i = 0
+for (rep in unique(all_results$rep)){
+  for (CBT_ncomm in unique(all_results$CBT_ncomm)){
+    i = i + 1
+    all_results_sub <- subset(all_results, rep == rep & CBT_ncomm == CBT_ncomm)
+    r[[i]] <- rbind(
+      confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+      mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
+             rep = rep, 
+             CBT_ncomm = CBT_ncomm)
+    
+    r[[i]]$spearman <- c(cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$hybrid_noelite_inclusion, method = 'spearman'),
+                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$hybrid_inclusion, method = 'spearman'),
+                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$cbt_model_noelite_inclusion, method = 'spearman'),
+                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$cbt_model_inclusion, method = 'spearman'),
+                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$pmt_inclusion, method = 'spearman'),
+                         cor.test(x=r[[i]]$cbt_inclusion, y=r[[i]]$CBT_LR_inclusion, method = 'spearman'))
+    
+  }
+}
+
+#ac = across communities
+ac <- do.call(rbind, r)
+
+
+
+
 
 #Within community
 temp = Program_data%>%group_by(village, province, district, subdistrict, poverty_rate) %>%
@@ -54,18 +93,7 @@ temp = Program_data%>%group_by(village, province, district, subdistrict, poverty
             CBT_LR_spec = confusionMatrix(CBT_LR_inclusion,   cbt_inclusion,positive = "TRUE")$byClass[2],
   )
 
-#across communities
-r[[i]] <- rbind(
-  confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
-         CBT_ncomm = CBT_ncomm,
-         TD = Sensitivity - (1-Specificity),
-         rep = rep) 
+
 
 
 #### --- ERROR RATE PLOTS ----------------------------------
