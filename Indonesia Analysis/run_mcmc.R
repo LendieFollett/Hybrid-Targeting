@@ -363,7 +363,7 @@ apply(CBtemp$beta_rank, 2, doESS)
 
 
 #-------COEFFICIENT ESTIMATES USING ELITE SUBTREATMENT == 1/0-------------------
-elite_status <- 0
+elite_status <- 1
 esub_idx <- full_data %>% subset(elite == elite_status) %>% dplyr::select(community_id)
 esub_idx <- as.vector(esub_idx$community_id)
 
@@ -423,7 +423,7 @@ CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
 
 coefs <- data.frame(parameter = m3,
-                    #CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
+                    CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
                     CB_beta_rank_mean = CB_beta_rank_mean[-1],
                     PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
 )

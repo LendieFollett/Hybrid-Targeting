@@ -11,6 +11,35 @@ all_results <- read.csv("Burkina Faso Analysis/all_results.csv")
 
 all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
+
+
+%>%
+  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate,
+         hybrid_inclusion = hybrid_rank <= treat_rate,
+         pmt_inclusion = pmt_rank <= treat_rate,
+         consumption_inclusion = consumption_rank<=treat_rate,
+         cbt_model_inclusion = cbt_model_rank<=treat_rate,
+         cbt_DU_model_inclusion = cbt_DU_model_rank<=treat_rate,
+         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate,
+         CBT_LR_inclusion = CBT_LR_rank<=treat_rate,
+         cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
+  mutate_at(vars(matches("inclusion")), as.factor)
+
+
+rbind(
+  confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$cbt_DU_model_inclusion,    Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
+  confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
+         CBT_ncomm = CBT_ncomm,
+         TD = Sensitivity - (1-Specificity),
+         rep = rep)
+
+
 #### --- ERROR RATE PLOTS ----------------------------------
 
 plot_data <- all_results %>%  mutate(IER = 1-Precision,

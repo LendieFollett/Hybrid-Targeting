@@ -11,7 +11,10 @@ full_data <- read.csv("Data/Burkina Faso/Cleaning/hillebrecht.csv") %>%
   mutate(informant1 = ifelse(is.na(informant1), NA, floor(rank(-informant1))),
          informant2 = ifelse(is.na(informant2), NA, floor(rank(-informant2))),
          informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))),
-         treat_rate = sum(treated)/length(treated)) %>% ungroup%>%  arrange(community)
+         treat_rate = sum(treated)/length(treated)) %>% 
+  #aggregation of three rankings for use in poverty rate exercises
+ mutate(informant_agg = floor(rank(mean(informant1, informant2, informant3)))) %>%
+  ungroup%>%  arrange(community)
 
 #x variables to include in model
 m_num <- c("rooms", "hhsize","age1660","age60")
@@ -282,32 +285,21 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
              cbt_DU_model_rank = rank(cbt_DU_model_prediction)/length(consumption),
              cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(consumption),
              consumption_rank = rank(consumption)/length(consumption),
-             CBT_LR_rank = rank(CBT_LR_prediction)/length(consumption)) %>%
-      mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate,
-             hybrid_inclusion = hybrid_rank <= treat_rate,
-             pmt_inclusion = pmt_rank <= treat_rate,
-             consumption_inclusion = consumption_rank<=treat_rate,
-             cbt_model_inclusion = cbt_model_rank<=treat_rate,
-             cbt_DU_model_inclusion = cbt_DU_model_rank<=treat_rate,
-             cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate,
-             CBT_LR_inclusion = CBT_LR_rank<=treat_rate,
-             cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
-      mutate_at(vars(matches("inclusion")), as.factor)
+             CBT_LR_rank = rank(CBT_LR_prediction)/length(consumption)) 
+    
+    
+ 
     
     
     
-    r[[i]] <- rbind(
-      confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$cbt_DU_model_inclusion,    Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-      mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
-             CBT_ncomm = CBT_ncomm,
-             TD = Sensitivity - (1-Specificity),
-             rep = rep)
+    r[[i]] <- Program_data %>% dplyr::select(c(hhid, year,community,treat_rate, 
+                                                         hybrid_noelite_rank, hybrid_rank,
+                                                         cbt_model_rank, cbt_model_rank_noelite,
+                                                        cbt_DU_model_rank,
+                                                         consumption_rank, cbt_rank,CBT_LR_rank,
+                                                         pmt_rank)) %>%
+      mutate(rep = rep,
+             CBT_ncomm = CBT_ncomm)
     
     
   }
