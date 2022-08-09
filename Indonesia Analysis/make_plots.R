@@ -14,6 +14,10 @@ all_results_hh <- read.csv("Indonesia Analysis/all_results.csv")
 
 all_coef <- read.csv("Indonesia Analysis/coef_total_sample.csv")
 
+elite1_coef <- read.csv("Indonesia Analysis/coef_elite1.csv")
+
+elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
+
 #Sensitivity= P(beneficiary | true poor)
 #Specificity= P(non-beneficiary | true non-poor)
 #Precision = P(true poor|beneficiary)
@@ -274,5 +278,98 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
 
 ggsave("Indonesia Analysis/coef_score_EC_alatas.pdf", width = 12, height = 12)
 
+
+
+
+#### COEFFICIENT PLOTS WITH ELITE = 1 -------------
+
+elite1_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
+  dplyr::select(Definition, Order, CB_beta_rank_mean, PMT_beta) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(variable) %>%
+  mutate(std_mean = value/mean(abs(value)),
+         mean_abs = mean(abs(value))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
+                           labels = c("Hybrid", "PMT")))%>%
+  ggplot() + 
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
+
+ggsave("Indonesia Analysis/coef_score_elite1_alatas.pdf", width = 12, height = 12)
+
+elite1_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
+dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(variable) %>%
+  mutate(std_mean = value/mean(abs(value))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
+                           labels = c("Hybrid", "Hybrid-EC")))%>%
+  ggplot() + 
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
+
+ggsave("Indonesia Analysis/coef_score_EC_elite1_alatas.pdf", width = 12, height = 12)
+
+
+#### COEFFICIENT PLOTS WITH ELITE = 0 -------------
+
+elite0_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
+  dplyr::select(Definition, Order, CB_beta_rank_mean, PMT_beta) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(variable) %>%
+  mutate(std_mean = value/mean(abs(value)),
+         mean_abs = mean(abs(value))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "PMT_beta"),
+                           labels = c("Hybrid", "PMT")))%>%
+  ggplot() + 
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
+
+ggsave("Indonesia Analysis/coef_score_elite0_alatas.pdf", width = 12, height = 12)
+
+elite0_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(variable) %>%
+  mutate(std_mean = value/mean(abs(value))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
+                           labels = c("Hybrid", "Hybrid-EC")))%>%
+  ggplot() + 
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
+
+ggsave("Indonesia Analysis/coef_score_EC_elite0_alatas.pdf", width = 12, height = 12)
 
 

@@ -363,7 +363,7 @@ apply(CBtemp$beta_rank, 2, doESS)
 
 
 #-------COEFFICIENT ESTIMATES USING ELITE SUBTREATMENT == 1/0-------------------
-elite_status <- 1
+elite_status <- 0
 esub_idx <- full_data %>% subset(elite == elite_status) %>% dplyr::select(community_id)
 esub_idx <- as.vector(esub_idx$community_id)
 
@@ -398,7 +398,7 @@ CBtemp <- CBTarget(Tau=Tau,
                    X_elite =NULL,
                    iter_keep =iter_keep,
                    iter_burn = iter_burn,
-                   print_opt = 100)
+                   print_opt = print_opt)
 #Run MCMC for Bayesian Community Based Targeting -  WITH CORRECTION
 CBtemp_noelite <- CBTarget(Tau=Tau, 
                            X_CBT = X_CBT,
