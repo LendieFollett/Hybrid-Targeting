@@ -35,7 +35,49 @@ for ( idx in rankers){ #loop over columns
   }
 }
 
+full_data <- read.csv("Data/Indonesia/Cleaning/alatas.csv") %>%
+  dplyr::select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
+  mutate(community_id = as.numeric(factor(interaction(village, province, district, subdistrict))))%>%
+  group_by(village, province, district, subdistrict)%>%
+  mutate(prop_rank = rank,
+         poverty_rate = mean(treated)) %>%
+  mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
+  arrange(hhid)
+
+#x variables to include in model
+m_num <- c("hhsize","hhage",
+           "age04","depratio","pcfloor",
+           "eschild","jschild","sschild")
+
+m_bin <- c("connected","hhmale","hhmarried",
+           "hheduc2","hheduc3","hheduc4",
+           "higheduc2","higheduc3","higheduc4",
+           "tfloor","twall", "toilet","water","lighting", "troof",
+           "fcook","house", "computer","radio","tv", "dvd","satellite", "ac",
+           "gas", "refrigerator", "bicycle", "motorcycle", "auto", "hp", 
+           "jewelry","chicken","cow", "credit","hhsector1", "hhsector2","hhsector3",
+           "formal", "informal")# lrf removed informal for now
+m3 <- c(m_num, m_bin)
 
 
+PMT_idx <-which(full_data$pmt == 1)
 
+full_data <- full_data %>%mutate_at(m_num, function(x){(x - mean(x))/(2*sd(x))})
+
+#RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
+whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
+
+CBT_data <- full_data %>%subset(community_id %in% whats_left)
+
+PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
+
+Program_data <- full_data[1:10,]  
+
+X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
+X_CBT <-     cbind(1,CBT_data[,m3]) %>%as.matrix()
+X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
+
+R = ncol(Tau2)
+
+#run with elite capture variable 
 

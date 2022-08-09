@@ -373,3 +373,39 @@ elite0_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
 ggsave("Indonesia Analysis/coef_score_EC_elite0_alatas.pdf", width = 12, height = 12)
 
 
+#include elite1 and elite0 in same plot instead of hybrid and hybrid ec
+#use hybrid ec for both
+
+score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
+  dplyr::select(Definition,Order, CB_beta_rank_mean) %>%
+  #subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
+  group_by(Order,variable) %>%
+  mutate(std_mean =par_est/harmonic.mean(par_est)$harmean) %>%
+  arrange(-Order) 
+
+
+merge(elite1_coef[,c(1,2)], elite0_coef[,c(1,2)], by = "parameter") %>%
+  merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean_noelite.x, CB_beta_rank_mean_noelite.y) %>%
+  #subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(variable) %>%
+  mutate(std_mean = value/mean(abs(value))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean_noelite.x", "CB_beta_rank_mean_noelite.y"),
+                           labels = c("Hybrid-EC with Elite", "Hybrid-EC without Elite")))%>%
+  ggplot() + 
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
+  
+
+
+
