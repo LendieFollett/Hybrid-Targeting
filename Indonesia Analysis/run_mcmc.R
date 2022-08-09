@@ -1,8 +1,8 @@
 
 detectCores(logical=FALSE)
 #parameters for simulation
-iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn =20   ## Gibbs sampler burn-in iterations 
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn =2000   ## Gibbs sampler burn-in iterations 
 print_opt = 500  ## print a message every print.opt steps
 
 
@@ -361,4 +361,71 @@ data.frame(parameter = m3[-(which_noelite-1)],
 apply(CBtemp_noelite$beta_rank, 2, doESS)
 apply(CBtemp$beta_rank, 2, doESS)
 
+
+#-------COEFFICIENT ESTIMATES USING ELITE SUBTREATMENT == 1/0-------------------
+elite_status <- 1
+esub_idx <- full_data %>% subset(elite == elite_status) %>% dplyr::select(community_id)
+esub_idx <- as.vector(esub_idx$community_id)
+
+#RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
+whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
+
+CBT_data <- full_data %>%subset(community_id %in% whats_left & community_id %in% esub_idx)
+
+PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
+
+Program_data <- full_data[1:10,]  
+
+
+X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
+X_CBT <-     cbind(1,CBT_data[,m3]) %>%as.matrix()
+X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
+
+R = CBT_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
+
+Tau <- array(NA, dim = c(nrow(CBT_data), R))
+j = 0
+for ( idx in unique(CBT_data$community_id)){ #loop over columns
+  j = j + 1
+  Tau[CBT_data$community_id == idx,j] <- CBT_data$rank[CBT_data$community_id == idx]
+}
+
+
+#Run MCMC for Bayesian Community Based Targeting -  WITHOUT CORRECTION
+CBtemp <- CBTarget(Tau=Tau, 
+                   X_CBT = X_CBT[,-which(colnames(X_CBT) == "connected")],
+                   X_program = X_program[,-which(colnames(X_program) == "connected")],
+                   X_elite =NULL,
+                   iter_keep =iter_keep,
+                   iter_burn = iter_burn,
+                   print_opt = 100)
+#Run MCMC for Bayesian Community Based Targeting -  WITH CORRECTION
+CBtemp_noelite <- CBTarget(Tau=Tau, 
+                           X_CBT = X_CBT,
+                           X_program = X_program,
+                           X_elite = "connected",
+                           iter_keep =iter_keep,
+                           iter_burn = iter_burn,
+                           print_opt = print_opt)
+
+which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+
+Y_micro <- as.matrix(log(CBT_data$consumption))
+Y_micro <- apply(Y_micro, 2, function(x){(x - mean(x))/sd(x)})
+X_PMT_sub <-     cbind(1,CBT_data[,m3]) %>%as.matrix()
+temp_data <- data.frame(Y_micro = Y_micro,
+                        X_CBT)
+form <- formula(paste0("Y_micro~", paste0(colnames(X_CBT)[-which_noelite], collapse = "+")))
+
+PMT_beta <-coef(lm(form, data = temp_data))%>%as.vector()
+
+CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
+CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
+
+coefs <- data.frame(parameter = m3,
+                    #CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
+                    CB_beta_rank_mean = CB_beta_rank_mean[-1],
+                    PMT_beta = append(PMT_beta[-1], 0, after = which_noelite-2)
+)
+write.csv(coefs, paste0("Indonesia Analysis/coef_elite", elite_status, ".csv"), row.names = FALSE)
 
