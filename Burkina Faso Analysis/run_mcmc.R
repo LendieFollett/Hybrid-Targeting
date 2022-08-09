@@ -1,8 +1,8 @@
 rm(list = ls())
 detectCores(logical=FALSE)
 
-iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn = 2000   ## Gibbs sampler burn-in iterations 
+iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn = 20   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -13,7 +13,7 @@ full_data <- read.csv("Data/Burkina Faso/Cleaning/hillebrecht.csv") %>%
          informant3 = ifelse(is.na(informant3), NA, floor(rank(-informant3))),
          treat_rate = sum(treated)/length(treated)) %>% 
   #aggregation of three rankings for use in poverty rate exercises
- mutate(informant_agg = floor(rank(mean(informant1, informant2, informant3)))) %>%
+ mutate(informant_agg = floor(rank(informant1/3 + informant2/3 + informant3/3))) %>%
   ungroup%>%  arrange(community)
 
 #x variables to include in model
@@ -285,7 +285,8 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
              cbt_DU_model_rank = rank(cbt_DU_model_prediction)/length(consumption),
              cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(consumption),
              consumption_rank = rank(consumption)/length(consumption),
-             CBT_LR_rank = rank(CBT_LR_prediction)/length(consumption)) 
+             CBT_LR_rank = rank(CBT_LR_prediction)/length(consumption),
+             cbt_rank = informant_agg/length(consumption)) 
     
     
  

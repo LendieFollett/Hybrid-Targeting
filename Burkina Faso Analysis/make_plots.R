@@ -2,7 +2,7 @@ library(dplyr)
 library(ggplot2)
 library(reshape2)
 
-all_results <- read.csv("Burkina Faso Analysis/all_results.csv")
+all_results_hh <- read.csv("Burkina Faso Analysis/all_results.csv")
 
 #pmt_corrected <- read.csv("Burkina Faso Analysis/PMT_nonconverge_corrected_cbt.csv") %>%
 #  mutate(variable = as.factor("EER"), Method = as.factor("PMT")) %>%
@@ -12,32 +12,100 @@ all_results <- read.csv("Burkina Faso Analysis/all_results.csv")
 all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
+#vary poverty rate .2, .3, .4
+PR <- 0.2
+#multiplicative constant shifts community-level poverty rate up or down
+multiplicative_constant <- PR/0.3
 
-%>%
-  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate,
-         hybrid_inclusion = hybrid_rank <= treat_rate,
-         pmt_inclusion = pmt_rank <= treat_rate,
-         consumption_inclusion = consumption_rank<=treat_rate,
-         cbt_model_inclusion = cbt_model_rank<=treat_rate,
-         cbt_DU_model_inclusion = cbt_DU_model_rank<=treat_rate,
-         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate,
-         CBT_LR_inclusion = CBT_LR_rank<=treat_rate,
-         cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) %>%ungroup() %>%
+
+all_results_hh <- all_results_hh %>%
+  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate*multiplicative_constant,
+         hybrid_inclusion = hybrid_rank <= poverty_rate*multiplicative_constant,
+         pmt_inclusion = pmt_rank <= poverty_rate*multiplicative_constant,
+         consumption_inclusion = consumption_rank<=poverty_rate*multiplicative_constant,
+         cbt_model_inclusion = cbt_model_rank<=poverty_rate*multiplicative_constant,
+         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate*multiplicative_constant,
+         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate*multiplicative_constant,
+         cbt_inclusion = cbt_rank <= poverty_rate*multiplicative_constant)%>%#,
+         #cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) 
+  ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
 
 
-rbind(
-  confusionMatrix(Program_data$hybrid_noelite_inclusion,   Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$hybrid_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$cbt_model_noelite_inclusion,Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$cbt_model_inclusion,        Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$cbt_DU_model_inclusion,    Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$pmt_inclusion,              Program_data$cbt_inclusion,positive = "TRUE")$byClass,
-  confusionMatrix(Program_data$CBT_LR_inclusion,           Program_data$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-  mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
-         CBT_ncomm = CBT_ncomm,
-         TD = Sensitivity - (1-Specificity),
-         rep = rep)
+#### --- PREP DATA ----------------------------------
+
+#across community analysis
+r <- list()
+i = 0
+for (reps in unique(all_results_hh$rep)){
+  for (n in unique(all_results_hh$CBT_ncomm)){
+    print(paste0("sample size = ",n, ", rep = ", reps))
+    i = i + 1
+    all_results_sub <- subset(all_results_hh, rep == reps & CBT_ncomm == n)
+    r[[i]] <- rbind(
+      confusionMatrix(all_results_sub$hybrid_noelite_inclusion,   all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(all_results_sub$hybrid_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(all_results_sub$cbt_model_noelite_inclusion,all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(all_results_sub$cbt_model_inclusion,        all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(all_results_sub$cbt_DU_model_inclusion,     all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+      confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass)%>%
+      mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
+             rep = reps, 
+             CBT_ncomm = n)
+    
+    
+    r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank_noelite, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$pmt_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$CBT_LR_rank, method = 'spearman')$estimate)
+    
+  }
+}
+#across communities - get one row per rep
+all_results <- do.call(rbind, r)
+
+
+#within community analysis - get one row per rep per community sampled in test
+r <- list()
+i = 0
+for (reps in unique(all_results_hh$rep)){
+  for (n in unique(all_results_hh$CBT_ncomm)){
+    print(paste0("sample size = ",n, ", rep = ", reps))
+    temp <- subset(all_results_hh, rep == reps & CBT_ncomm == n)
+    for (comm in unique(interaction(temp$village, temp$province, temp$district, temp$subdistrict))){
+      i = i + 1
+      all_results_sub <- subset(all_results_hh, rep == reps & CBT_ncomm == n & 
+                                  interaction(all_results_hh$village, all_results_hh$province, all_results_hh$district, all_results_hh$subdistrict) == comm)
+      r[[i]] <- rbind(
+        confusionMatrix(all_results_sub$hybrid_noelite_inclusion,   all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+        confusionMatrix(all_results_sub$hybrid_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+        confusionMatrix(all_results_sub$cbt_model_noelite_inclusion,all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+        confusionMatrix(all_results_sub$cbt_model_inclusion,        all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
+        #NOTE: PMT being compared to consumption-based truth, not CBT-based truth
+        confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$consumption_inclusion,positive = "TRUE")$byClass,
+        confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
+        mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
+               rep = reps, 
+               CBT_ncomm = n,
+               village=all_results_sub$village[1], province=all_results_sub$province[1], district = all_results_sub$district[1], subdistrict = all_results_sub$subdistrict[1])
+      
+      r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
+                           cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
+                           cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank_noelite, method = 'spearman')$estimate,
+                           cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank, method = 'spearman')$estimate,
+                           cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$pmt_rank, method = 'spearman')$estimate,
+                           cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$CBT_LR_rank, method = 'spearman')$estimate)
+      
+    }
+  }
+}
+#across communities - get one row per rep per community sampled in test
+all_results_comm <- do.call(rbind, r)
+
+
 
 
 #### --- ERROR RATE PLOTS ----------------------------------
