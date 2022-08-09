@@ -12,6 +12,11 @@ library(parallel)
 library(RcppTN)
 detectCores(logical=FALSE)
 
+sourceCpp("Hybrid Targeting/functions.cpp")
+source("Hybrid Targeting/functions.R")
+source("Hybrid Targeting/HybridTarget.R")
+source("Hybrid Targeting/CBTarget.R")
+
 
 iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
 iter_burn = 20   ## Gibbs sampler burn-in iterations 
@@ -21,19 +26,8 @@ print_opt = 100  ## print a message every print.opt steps
 all_ranks <- read.csv("Data/Indonesia/Cleaning/hh_rankings.csv") %>%
   arrange(hhid_ranked)
 
-ranked <- unique(all_ranks$hhid_ranked)
-rankers <- unique(all_ranks$hhid_ranker)
-#Create Rank matrix in format required for CBTarget()
-Tau2 <- array(NA, dim = c(length(unique(all_ranks$hhid_ranked)), length(unique(all_ranks$hhid_ranker))))
-j = 0
-for ( idx in rankers){ #loop over columns
-  all_ranks_sub <- subset(all_ranks, hhid_ranker == idx)
-  j = j + 1
-  for (idx2 in all_ranks_sub$hhid_ranked){
-    Tau2[ranked == idx2, j] <- all_ranks_sub$rank[all_ranks_sub$hhid_ranked == idx2][1] 
-    #the [1] is because some households ranked another household twice... i just took the first for now
-  }
-}
+ranked1 <- unique(all_ranks$hhid_ranked)
+rankers1 <- unique(all_ranks$hhid_ranker)
 
 full_data <- read.csv("Data/Indonesia/Cleaning/alatas.csv") %>%
   dplyr::select(-c("hhsize_ae")) %>% arrange(village, province, district, subdistrict)%>% 
@@ -42,7 +36,10 @@ full_data <- read.csv("Data/Indonesia/Cleaning/alatas.csv") %>%
   mutate(prop_rank = rank,
          poverty_rate = mean(treated)) %>%
   mutate(rank = ifelse(is.na(rank), NA, floor(rank(rank)))) %>%ungroup %>%
-  arrange(hhid)
+  merge(data.frame(ranked1), by.x = "hhid", by.y = "ranked1")%>%
+  arrange(hhid) 
+
+
 
 #x variables to include in model
 m_num <- c("hhsize","hhage",
@@ -71,6 +68,27 @@ CBT_data <- full_data %>%subset(community_id %in% whats_left)
 
 PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
 
+
+all_ranks <- subset(all_ranks, hhid_ranked %in% unique(CBT_data$hhid))
+ranked <- unique(all_ranks$hhid_ranked)
+rankers <- unique(all_ranks$hhid_ranker)
+
+
+#Create Rank matrix in format required for CBTarget()
+Tau2 <- array(NA, dim = c(length(unique(all_ranks$hhid_ranked)), length(unique(all_ranks$hhid_ranker))))
+j = 0
+for ( idx in rankers){ #loop over columns
+  all_ranks_sub <- subset(all_ranks, hhid_ranker == idx)
+  j = j + 1
+  for (idx2 in all_ranks_sub$hhid_ranked){
+    Tau2[ranked == idx2, j] <- all_ranks_sub$rank[all_ranks_sub$hhid_ranked == idx2][1] 
+    #the [1] is because some households ranked another household twice... i just took the first for now
+  }
+}
+
+
+
+
 Program_data <- full_data[1:10,]  
 
 X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%apply(2, function(x){(x - mean(x))/sd(x)})) 
@@ -81,3 +99,10 @@ R = ncol(Tau2)
 
 #run with elite capture variable 
 
+CBtemp <- CBTarget(Tau=Tau2, 
+                      X_CBT = X_CBT,
+                      X_program = X_program,
+                      X_elite ="connected",
+                      iter_keep =iter_keep,
+                      iter_burn = iter_burn,
+                      print_opt = print_opt)

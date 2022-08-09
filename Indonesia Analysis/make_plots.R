@@ -406,6 +406,7 @@ merge(elite1_coef[,c(1,2)], elite0_coef[,c(1,2)], by = "parameter") %>%
   theme(legend.position = c(.9,.9), 
         legend.box.background = element_rect(colour = "black"))
   
+ggsave("Indonesia Analysis/coef_score_EC_elitecomp_alatas.pdf", width = 12, height = 12)
 
 
 
