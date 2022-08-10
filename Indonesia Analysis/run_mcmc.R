@@ -238,7 +238,8 @@ Program_data <- Program_data%>%group_by(village, province, district, subdistrict
          cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(village),
          consumption_rank = rank(consumption)/length(village),
          cbt_rank = rank/length(village),
-         CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) 
+         CBT_LR_rank = rank(CBT_LR_prediction)/length(village)) %>%
+  ungroup()
 
 #ith list element contains one row per household, all rank predictions, rep id, and number CBT communities
 r[[i]] <- Program_data %>% dplyr::select(c(hhid, village, province, district, subdistrict,poverty_rate, 
@@ -271,9 +272,9 @@ r[[i]] <- Program_data %>% dplyr::select(c(hhid, village, province, district, su
  all_coef <- do.call("rbind", all_coef_2)
  
 #all_results contains all households from each replication
-write.csv(all_results, "Alatas Analysis/all_results.csv")
+write.csv(all_results, "Indonesia Analysis/all_results.csv")
 
-write.csv(all_coef, "Alatas Analysis/all_coef.csv")
+write.csv(all_coef, "Indonesia Analysis/all_coef.csv")
 
 
 
