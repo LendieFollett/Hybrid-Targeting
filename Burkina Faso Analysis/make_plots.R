@@ -171,16 +171,16 @@ plot_data %>%
 ggsave("Burkina Faso Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
 
 
-
+#### --- CORRELATION PLOTS - COMMUNITY LEVEL ----------------------------------
 #RANK CORRELATION ANALYSIS
 
-plot_data_corr <- all_results %>%  mutate(IER = 1-Precision,
+plot_data_corr <- all_results_comm %>%  mutate(IER = 1-Precision,
                                           EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                          labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) %>%
   group_by(Method, CBT_ncomm, variable) %>%
-  summarise(mean = mean(value ))%>%ungroup %>%
+  summarise(mean = mean(value))%>%ungroup %>%
   subset(variable %in% c( "spearman"))
 
 
@@ -197,18 +197,6 @@ plot_data_corr %>%
 ggsave("Burkina Faso Analysis/CORR_hybrid.pdf", width = 8, height = 5)
 
 
-all_results %>%  mutate(IER = 1-Precision,
-                        EER = 1-Sensitivity) %>%
-  melt(id.var = c("Method", "CBT_ncomm")) %>%
-  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
-                         labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) %>%
-  subset(variable %in% c( "IER") & Method %in% c("Hybrid", "Hybrid-DU")  )%>%
-  ggplot() + geom_boxplot(aes(x = as.factor(CBT_ncomm), y = value,colour = Method)) +
-  #geom_point(aes(x = CBT_ncomm, y = mean)) +
-  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
-  theme_bw() +
-  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
-  theme(legend.position = c(0.9, 0.9))
 
 
 #### --- ERROR RATE PLOTS - COMMUNITY VARIABILITY ----------------------------------
@@ -242,7 +230,8 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
-            var = var(value, na.rm=TRUE)) %>%
+            var = var(value, na.rm=TRUE),
+            q95 = quantile(value, .75, na.rm = TRUE)) %>%
   write.csv("Burkina Faso Analysis/ER_community_level.csv")
 
 #### --- COEFFICIENT PLOTS ----------------------------------

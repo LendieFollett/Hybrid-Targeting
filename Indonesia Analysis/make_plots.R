@@ -183,10 +183,10 @@ ggsave("Indonesia Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
 
 #(no DU for Indonesia)
 
-
+#### --- CORRELATION PLOTS - COMMUNITY LEVEL ----------------------------------
 #RANK CORRELATION ANALYSIS
 
-plot_data_corr <- all_results %>%  mutate(IER = 1-Precision,
+plot_data_corr <- all_results_comm %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
@@ -234,7 +234,7 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
-  write.csv("Indonesia Analysis/ER_community_level.pdf")
+  write.csv("Indonesia Analysis/ER_community_level.csv")
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
