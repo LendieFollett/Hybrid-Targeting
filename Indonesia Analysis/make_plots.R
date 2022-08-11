@@ -32,7 +32,7 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
 #vary poverty rate .2, .3, .4
-PR <- 0.3
+PR <- 0.4
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.2
 
