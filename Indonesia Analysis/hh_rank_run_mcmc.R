@@ -125,11 +125,11 @@ which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES
 CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
 
-all_coef <- data.frame(parameter = m3,
+all_coef_hh <- data.frame(parameter = m3,
                     CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
                     CB_beta_rank_mean = CB_beta_rank_mean[-1])
 
-
+all_coef_comm <- read.csv("Indonesia Analysis/coef_total_sample.csv")
 
 variable_labels <- read.csv("Data/Indonesia/Cleaning/variables.csv")
 
@@ -139,7 +139,7 @@ variable_labels <- read.csv("Data/Indonesia/Cleaning/variables.csv")
 library(lmomco)
 score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
   dplyr::select(Definition,Order, CB_beta_rank_mean) %>%
-  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  #subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Order")) %>%
   mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
   group_by(Order,variable) %>%
@@ -149,7 +149,7 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
 
 all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
-  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  #subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Order")) %>%
   group_by(variable) %>%
   mutate(std_mean = value/mean(abs(value))) %>%

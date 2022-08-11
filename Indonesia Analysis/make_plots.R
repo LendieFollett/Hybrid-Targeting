@@ -167,7 +167,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-paste0("Indonesia Analysis/ER_hybrid_AI",PR*100,".pdf", width = 8, height = 5)
+ggsave(paste0("Indonesia Analysis/ER_hybrid_AI",PR*100,".pdf"), width = 8, height = 5)
 
 plot_data %>%
   subset( Method %in% c("Hybrid", "Hybrid-EC")  )%>%
