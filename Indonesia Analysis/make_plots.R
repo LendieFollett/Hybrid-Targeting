@@ -51,6 +51,7 @@ all_results_hh <- all_results_hh %>%
 
 #### --- PREP DATA ----------------------------------
 
+
 #across community analysis
 r <- list()
 i = 0
@@ -82,6 +83,11 @@ for (reps in unique(all_results_hh$rep)){
 #across communities - get one row per rep
 all_results <- do.call(rbind, r)
 
+
+
+#the loop below takes a while (maybe an hour or so?)
+#you can read the csv instead:
+all_results_comm <- read.csv("Indonesia Analysis/all_results_community_level.csv")
 
 #within community analysis - get one row per rep per community sampled in test
 r <- list()
@@ -117,9 +123,11 @@ for (reps in unique(all_results_hh$rep)){
       }
     }
 }
+
 #across communities - get one row per rep per community sampled in test
 all_results_comm <- do.call(rbind, r)
 
+write.csv(all_results_comm, "Indonesia Analysis/all_results_community_level.csv")
 #the following plots show overall rep-level variability
 
 #### --- ERROR RATE PLOTS ----------------------------------
@@ -210,11 +218,17 @@ plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
   melt(id.var = c("Method", "CBT_ncomm", "village", "province", "district", "subdistrict")) %>%
   mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) 
-plot_data %>% subset(variable == "EER") %>%
-  ggplot() +
-geom_boxplot(aes(x = Method, y = value, colour = CBT_ncomm)) +
-  scale_colour_grey()
 
+
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
+  ggplot() +
+geom_violin(aes(x = Method,y = value,  colour = as.factor(CBT_ncomm)),draw_quantiles = c(.25, .5, .75)) +
+  scale_colour_grey() 
+
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
+  group_by(CBT_ncomm,Method) %>% 
+  summarise(mean = mean(value, na.rm=TRUE),
+            var = var(value, na.rm=TRUE))
 
 
 #### --- COEFFICIENT PLOTS ----------------------------------

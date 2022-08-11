@@ -1,8 +1,6 @@
-rm(list = ls())
-detectCores(logical=FALSE)
 
-iter_keep = 20   ## Gibbs sampler kept iterations (post burn-in)
-iter_burn = 20   ## Gibbs sampler burn-in iterations 
+iter_keep = 2000   ## Gibbs sampler kept iterations (post burn-in)
+iter_burn = 2000   ## Gibbs sampler burn-in iterations 
 print_opt = 100  ## print a message every print.opt steps
 
 
@@ -286,7 +284,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
              cbt_model_rank_noelite = rank(cbt_model_prediction_noelite)/length(consumption),
              consumption_rank = rank(consumption)/length(consumption),
              CBT_LR_rank = rank(CBT_LR_prediction)/length(consumption),
-             cbt_rank = informant_agg/length(consumption)) 
+             cbt_rank = informant_agg/length(consumption)) %>% ungroup
     
     
  

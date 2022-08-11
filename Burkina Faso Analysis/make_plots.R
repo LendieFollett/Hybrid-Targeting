@@ -13,20 +13,21 @@ all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
 #vary poverty rate .2, .3, .4
-PR <- 0.2
+PR <- 0.3
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.3
 
 
 all_results_hh <- all_results_hh %>%
-  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= poverty_rate*multiplicative_constant,
-         hybrid_inclusion = hybrid_rank <= poverty_rate*multiplicative_constant,
-         pmt_inclusion = pmt_rank <= poverty_rate*multiplicative_constant,
-         consumption_inclusion = consumption_rank<=poverty_rate*multiplicative_constant,
-         cbt_model_inclusion = cbt_model_rank<=poverty_rate*multiplicative_constant,
-         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=poverty_rate*multiplicative_constant,
-         CBT_LR_inclusion = CBT_LR_rank<=poverty_rate*multiplicative_constant,
-         cbt_inclusion = cbt_rank <= poverty_rate*multiplicative_constant)%>%#,
+  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate*multiplicative_constant,
+         hybrid_inclusion = hybrid_rank <= treat_rate*multiplicative_constant,
+         pmt_inclusion = pmt_rank <= treat_rate*multiplicative_constant,
+         consumption_inclusion = consumption_rank<=treat_rate*multiplicative_constant,
+         cbt_model_inclusion = cbt_model_rank<=treat_rate*multiplicative_constant,
+         cbt_DU_model_inclusion = cbt_DU_model_rank <= treat_rate*multiplicative_constant,
+         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate*multiplicative_constant,
+         CBT_LR_inclusion = CBT_LR_rank<=treat_rate*multiplicative_constant,
+         cbt_inclusion = cbt_rank <= treat_rate*multiplicative_constant)%>%#,
          #cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) 
   ungroup() %>%
   mutate_at(vars(matches("inclusion")), as.factor)
@@ -49,8 +50,11 @@ for (reps in unique(all_results_hh$rep)){
       confusionMatrix(all_results_sub$cbt_model_inclusion,        all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$cbt_DU_model_inclusion,     all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
       confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
-      confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass)%>%
-      mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
+      confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass)%>%as.data.frame%>%
+      mutate(Method = c( "Hybrid Score (corrected)",
+                         "Hybrid Score",
+                         "CBT Score (corrected)", 
+                         "CBT Score","CBT DU", "PMT OLS", "CBT Logit"),
              rep = reps, 
              CBT_ncomm = n)
     
@@ -59,6 +63,7 @@ for (reps in unique(all_results_hh$rep)){
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank_noelite, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank, method = 'spearman')$estimate,
+                         cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_DU_model_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$pmt_rank, method = 'spearman')$estimate,
                          cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$CBT_LR_rank, method = 'spearman')$estimate)
     
@@ -69,33 +74,39 @@ all_results <- do.call(rbind, r)
 
 
 #within community analysis - get one row per rep per community sampled in test
+
+#some communities are too small to compute error rates: 122 and 4, in particular
+all_results_hh <- subset(all_results_hh, !community %in% c(4, 122))
+
 r <- list()
 i = 0
 for (reps in unique(all_results_hh$rep)){
   for (n in unique(all_results_hh$CBT_ncomm)){
     print(paste0("sample size = ",n, ", rep = ", reps))
     temp <- subset(all_results_hh, rep == reps & CBT_ncomm == n)
-    for (comm in unique(interaction(temp$village, temp$province, temp$district, temp$subdistrict))){
+    for (comm in unique(temp$community)){
       i = i + 1
       all_results_sub <- subset(all_results_hh, rep == reps & CBT_ncomm == n & 
-                                  interaction(all_results_hh$village, all_results_hh$province, all_results_hh$district, all_results_hh$subdistrict) == comm)
+                                  all_results_hh$community == comm)
       r[[i]] <- rbind(
         confusionMatrix(all_results_sub$hybrid_noelite_inclusion,   all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$hybrid_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$cbt_model_noelite_inclusion,all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$cbt_model_inclusion,        all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
         #NOTE: PMT being compared to consumption-based truth, not CBT-based truth
+        confusionMatrix(all_results_sub$cbt_DU_model_inclusion,     all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$consumption_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-        mutate(Method = c( "Hybrid Score (corrected)","Hybrid Score","CBT Score (corrected)", "CBT Score", "PMT OLS", "CBT Logit"),
+        mutate(Method = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
                rep = reps, 
                CBT_ncomm = n,
-               village=all_results_sub$village[1], province=all_results_sub$province[1], district = all_results_sub$district[1], subdistrict = all_results_sub$subdistrict[1])
+               community = all_results_sub$community[1])
       
       r[[i]]$spearman <- c(cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_noelite_rank, method = 'spearman')$estimate,
                            cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$hybrid_rank, method = 'spearman')$estimate,
                            cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank_noelite, method = 'spearman')$estimate,
                            cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_model_rank, method = 'spearman')$estimate,
+                           cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$cbt_DU_model_rank, method = 'spearman')$estimate,
                            cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$pmt_rank, method = 'spearman')$estimate,
                            cor.test(x=all_results_sub$cbt_rank, y=all_results_sub$CBT_LR_rank, method = 'spearman')$estimate)
       
@@ -161,6 +172,31 @@ ggsave("Burkina Faso Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
 
 
 
+#RANK CORRELATION ANALYSIS
+
+plot_data_corr <- all_results %>%  mutate(IER = 1-Precision,
+                                          EER = 1-Sensitivity) %>%
+  melt(id.var = c("Method", "CBT_ncomm")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
+                         labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) %>%
+  group_by(Method, CBT_ncomm, variable) %>%
+  summarise(mean = mean(value ))%>%ungroup %>%
+  subset(variable %in% c( "spearman"))
+
+
+plot_data_corr %>%
+  subset( Method %in% c("Hybrid", "PMT", "Probit")  )%>%
+  ggplot() + geom_line(aes(x = CBT_ncomm, y = mean, linetype = Method)) +
+  geom_point(aes(x = CBT_ncomm, y = mean)) +
+  #geom_linerange(aes(x = CBT_ncomm, ymin = min,ymax=max, linetype = Method))+
+  theme_bw() +
+  labs(x = "Number of Ranking Communities", y = "Average Rank Correlation")+ 
+  theme(legend.position = c(0.9, 0.8)) +
+  theme(legend.box.background = element_rect(colour = "black"))
+
+ggsave("Burkina Faso Analysis/CORR_hybrid.pdf", width = 8, height = 5)
+
+
 all_results %>%  mutate(IER = 1-Precision,
                         EER = 1-Sensitivity) %>%
   melt(id.var = c("Method", "CBT_ncomm")) %>%
@@ -173,6 +209,40 @@ all_results %>%  mutate(IER = 1-Precision,
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.9))
+
+
+#### --- ERROR RATE PLOTS - COMMUNITY VARIABILITY ----------------------------------
+
+#PMT comparison needs to be predicting
+
+plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
+                                          EER = 1-Sensitivity) %>%
+  melt(id.var = c("Method", "CBT_ncomm", "community")) %>%
+  mutate(Method = factor(Method, levels = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
+                         labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) 
+
+
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
+  ggplot() +
+  geom_boxplot(aes(x = Method,y = value,  colour = as.factor(CBT_ncomm)),draw_quantiles = c(.25, .5, .75)) +
+  scale_colour_grey("Number of\nRanking\nCommunities") +
+  theme_bw() +
+  labs(x = "Method", y = "Community-level Error Rate")
+
+ggsave("Burkina Faso Analysis/ER_community_level.pdf", width = 8, height = 5)
+
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
+  ggplot() +
+  geom_density(aes(x = value,  colour = as.factor(Method)),draw_quantiles = c(.25, .5, .75)) +
+  scale_colour_grey() +
+  theme_bw() +
+  labs(x = "Method", y = "Community-level Error Rate")
+
+
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25)) %>%
+  group_by(CBT_ncomm,Method) %>% 
+  summarise(mean = mean(value, na.rm=TRUE),
+            var = var(value, na.rm=TRUE))
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 

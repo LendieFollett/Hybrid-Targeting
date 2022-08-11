@@ -92,6 +92,13 @@ for ( idx in rankers){ #loop over columns
   }
 }
 
+
+for (idx in ranked){
+  for (idx2 in who_ranked_them){
+    
+  }
+}
+
 apply(Tau2, 1, mean, na.rm=TRUE)
 
 
