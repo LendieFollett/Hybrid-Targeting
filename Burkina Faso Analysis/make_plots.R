@@ -97,7 +97,7 @@ for (reps in unique(all_results_hh$rep)){
         confusionMatrix(all_results_sub$cbt_DU_model_inclusion,     all_results_sub$cbt_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$pmt_inclusion,              all_results_sub$consumption_inclusion,positive = "TRUE")$byClass,
         confusionMatrix(all_results_sub$CBT_LR_inclusion,           all_results_sub$cbt_inclusion,positive = "TRUE")$byClass) %>%as.data.frame%>%
-        mutate(Method = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU", "CBT Logit", "PMT OLS"),
+        mutate(Method = c("Hybrid Score (corrected)","Hybrid Score","CBT Score", "CBT Score (corrected)","CBT DU","PMT OLS", "CBT Logit"),
                rep = reps, 
                CBT_ncomm = n,
                community = all_results_sub$community[1])
@@ -230,8 +230,7 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
-            var = var(value, na.rm=TRUE),
-            q95 = quantile(value, .75, na.rm = TRUE)) %>%
+            var = var(value, na.rm=TRUE)) %>%
   write.csv("Burkina Faso Analysis/ER_community_level.csv")
 
 #### --- COEFFICIENT PLOTS ----------------------------------
