@@ -101,7 +101,6 @@ X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
 R = ncol(Tau)
 
 #run with elite capture variable 
-
 CBtemp <- CBTarget(Tau=Tau, 
                       X_CBT = X_CBT,
                       X_program = X_program,
@@ -111,6 +110,63 @@ CBtemp <- CBTarget(Tau=Tau,
                       print_opt = print_opt)
 
 
+#run without it
+CBtemp <- CBTarget(Tau=Tau, 
+                   X_CBT = X_CBT[,-which(colnames(X_CBT) == "connected")],
+                   X_program = X_program[,-which(colnames(X_program) == "connected")],
+                   X_elite =NULL,
+                   iter_keep =iter_keep,
+                   iter_burn = iter_burn,
+                   print_opt = print_opt)
 
+
+which_noelite <- which(colnames(X_CBT) == "connected") #NOTE THIS INDEX INCLUDES THE FIRST POSITION OF INTERCEPT
+
+CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
+CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
+
+all_coef <- data.frame(parameter = m3,
+                    CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
+                    CB_beta_rank_mean = CB_beta_rank_mean[-1])
+
+
+
+variable_labels <- read.csv("Data/Indonesia/Cleaning/variables.csv")
+
+#variable_labels_add <- data.frame(Name = "connected", Definition = "Elite connection")
+
+#variable_labels <- rbind(variable_labels, variable_labels_add)
+library(lmomco)
+score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "Name") %>% 
+  dplyr::select(Definition,Order, CB_beta_rank_mean) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  mutate(par_est = ifelse(abs(value) < 0.01, 0, value)) %>%
+  group_by(Order,variable) %>%
+  mutate(std_mean =par_est/harmonic.mean(par_est)$harmean) %>%
+  arrange(-Order) 
+
+
+all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+  subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
+  melt(id.vars = c("Definition", "Order")) %>%
+  group_by(variable) %>%
+  mutate(std_mean = value/mean(abs(value))) %>%
+  mutate(Definition = factor(Definition, levels = score_order$Definition),
+         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
+                           labels = c("Hybrid", "Hybrid-EC")))%>%
+  ggplot() + 
+  geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
+  #facet_grid(Category~., scales = "free_y")+
+  coord_flip() + 
+  theme_bw() +
+  labs(x = "", y = "Standardized Coefficient Estimate") +
+  scale_fill_grey("Method")+
+  theme(legend.position = c(.9,.9), 
+        legend.box.background = element_rect(colour = "black"))
+
+
+ggsave("Indonesia Analysis/coef_score_HH_rankings.pdf", width = 12, height = 12)
 
 
