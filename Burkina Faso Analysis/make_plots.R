@@ -242,7 +242,8 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
-            var = var(value, na.rm=TRUE))
+            var = var(value, na.rm=TRUE)) %>%
+  write.csv("Burkina Faso Analysis/ER_community_level.csv")
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 

@@ -233,8 +233,8 @@ ggsave("Indonesia Analysis/ER_community_level.pdf", width = 8, height = 5)
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
-            var = var(value, na.rm=TRUE))
-
+            var = var(value, na.rm=TRUE)) %>%
+  write.csv("Indonesia Analysis/ER_community_level.pdf")
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
