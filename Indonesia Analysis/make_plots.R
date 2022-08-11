@@ -220,10 +220,15 @@ plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) 
 
 
-plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
+
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
   ggplot() +
-geom_violin(aes(x = Method,y = value,  colour = as.factor(CBT_ncomm)),draw_quantiles = c(.25, .5, .75)) +
-  scale_colour_grey() 
+  geom_boxplot(aes(x = Method,y = value,  colour = as.factor(CBT_ncomm)),draw_quantiles = c(.25, .5, .75)) +
+  scale_colour_grey("Number of\nRanking\nCommunities") +
+  theme_bw() +
+  labs(x = "Method", y = "Community-level Error Rate")
+
+ggsave("Indonesia Analysis/ER_community_level.pdf", width = 8, height = 5)
 
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
   group_by(CBT_ncomm,Method) %>% 
