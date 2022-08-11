@@ -117,13 +117,13 @@ Tau3 <- data.frame(mean_rank = apply(Tau2[,1:(ncol(Tau2)-3)], 1, mean, na.rm=TRU
   group_by(group) %>%
   mutate(rank = floor(rank(mean_rank))) %>% ungroup()
 
-Tau <- array(NA, dim = rep(length(ranked), 2))
+Tau <- array(NA, dim = c(length(ranked),max(Tau3$group)))
 for (i in unique(Tau3$group)){
   Tau[Tau3$group == i,i] <- Tau3$rank[Tau3$group == i]
 }
 
 
-
+rm(Tau2, Tau3)
 
 Program_data <- full_data[1:10,]  
 
@@ -131,7 +131,7 @@ X_PMT <-     cbind(1,PMT_data[,m3]) %>%as.matrix()#cbind(1, PMT_data[,m3]%>%appl
 X_CBT <-     cbind(1,CBT_data[,m3]) %>%as.matrix()
 X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
 
-R = ncol(Tau2)
+R = ncol(Tau)
 
 #run with elite capture variable 
 
