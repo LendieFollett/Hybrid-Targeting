@@ -126,7 +126,7 @@ CB_beta_rank_mean_noelite <- apply(CBtemp_noelite$beta_rank, 2, mean)
 CB_beta_rank_mean <- append(apply(CBtemp$beta_rank, 2, mean), 0, after = which_noelite-1)
 
 all_coef_hh <- data.frame(parameter = m3,
-                    CB_beta_rank_mean_noelite = CB_beta_rank_mean_noelite[-1],
+                    CB_beta_rank_mean_noelite_hh = CB_beta_rank_mean_noelite[-1],
                     CB_beta_rank_mean = CB_beta_rank_mean[-1])
 
 all_coef_comm <- read.csv("Indonesia Analysis/coef_total_sample.csv")
@@ -147,15 +147,16 @@ score_order <- all_coef %>% merge(variable_labels, by.x = "parameter", by.y = "N
   arrange(-Order) 
 
 
-all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
-  dplyr::select(Definition, Order, CB_beta_rank_mean, CB_beta_rank_mean_noelite) %>%
+all_coef_hh[,c(1,2)] %>% merge(all_coef_comm[,c(1,4)], by = "parameter") %>%
+  merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
+  dplyr::select(Definition, Order, CB_beta_rank_mean_noelite_hh, CB_beta_rank_mean_noelite) %>%
   #subset(CB_beta_rank_mean != 0)%>% #remove elite connection 0
   melt(id.vars = c("Definition", "Order")) %>%
   group_by(variable) %>%
   mutate(std_mean = value/mean(abs(value))) %>%
   mutate(Definition = factor(Definition, levels = score_order$Definition),
-         variable = factor(variable, levels = c("CB_beta_rank_mean", "CB_beta_rank_mean_noelite"),
-                           labels = c("Hybrid", "Hybrid-EC")))%>%
+         variable = factor(variable, levels = c("CB_beta_rank_mean_noelite_hh", "CB_beta_rank_mean_noelite"),
+                           labels = c("Household Ranking", "Community Ranking")))%>%
   ggplot() + 
   geom_col(aes(x = Definition, y = std_mean, fill = variable ), position = position_dodge(width = 0.5)) +
   #facet_grid(Category~., scales = "free_y")+
