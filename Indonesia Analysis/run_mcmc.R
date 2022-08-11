@@ -305,6 +305,9 @@ for ( idx in unique(CBT_data$community_id)){ #loop over columns
 }
 
 
+
+
+
 #Run MCMC for Bayesian Community Based Targeting -  WITHOUT CORRECTION
 CBtemp <- CBTarget(Tau=Tau, 
                    X_CBT = X_CBT[,-which(colnames(X_CBT) == "connected")],
