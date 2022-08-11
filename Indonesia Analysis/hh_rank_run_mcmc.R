@@ -75,55 +75,22 @@ ranked <- unique(all_ranks$hhid_ranked)
 rankers <- unique(all_ranks$hhid_ranker)
 
 
-all_ranks_sum <- all_ranks %>% group_by(hhid_ranked) %>%
-  summarise(rank = mean(rank, na.rm=TRUE))
+all_ranks_sum <- all_ranks %>% group_by(hhid_ranked, hhea) %>%
+  summarise(rank = mean(rank, na.rm=TRUE)) %>%
+  group_by(hhea) %>%
+  mutate(rank = floor(rank(rank))) %>%
+  arrange(hhid_ranked) 
 
 
 #Create Rank matrix in format required for CBTarget()
-Tau2 <- array(NA, dim = c(length(unique(all_ranks$hhid_ranked)), length(unique(all_ranks$hhid_ranker)))) %>%as.data.frame()
-Tau2$they_ranked <- NA
-j = 0
-for ( idx in rankers){ #loop over columns
-  all_ranks_sub <- subset(all_ranks, hhid_ranker == idx)
-  who_they_ranked <- all_ranks_sub$hhid_ranked
-  Tau2$they_ranked[ranked == idx] <- paste0(paste0("h",who_they_ranked), collapse = "")
-  j = j + 1
-  colnames(Tau2)[j] <- paste0("h", idx)
-  for (idx2 in who_they_ranked){
-    Tau2[ranked == idx2, j] <- all_ranks_sub$rank[all_ranks_sub$hhid_ranked == idx2][1] 
-    #the [1] is because some households ranked another household twice... i just took the first for now
-  }
-}
+Tau <- array(NA, dim = c(length(unique(all_ranks$hhid_ranked)), length(unique(all_ranks$hhid_ranker)))) %>%as.data.frame()
 
-Tau2$ranked_them <- apply(Tau2, 1, function(x){paste0(colnames(Tau2)[!is.na(x)], collapse = "")})
-Tau2$group <- rnorm(nrow(Tau2))
-Tau2$group[1] <- 1
-for (i in 2:nrow(Tau2)){
-  if (any(c(
-    grepl(as.character(ranked[i]), Tau2$ranked_them[Tau2$group == Tau2$group[i-1] ] ),
-    grepl(as.character(ranked[i]), Tau2$they_ranked[Tau2$group == Tau2$group[i-1] ] )))){
-    Tau2$group[i] <- Tau2$group[i-1] 
-  }else{
-    Tau2$group[i] <- Tau2$group[i-1] +1
-  }
-}
-
-head(Tau2$group, 8)
-head(Tau2$ranked_them, 8)
-head(ranked, 8)
-
-
-Tau3 <- data.frame(mean_rank = apply(Tau2[,1:(ncol(Tau2)-3)], 1, mean, na.rm=TRUE), group = Tau2$group) %>%
-  group_by(group) %>%
-  mutate(rank = floor(rank(mean_rank))) %>% ungroup()
-
-Tau <- array(NA, dim = c(length(ranked),max(Tau3$group)))
-for (i in unique(Tau3$group)){
-  Tau[Tau3$group == i,i] <- Tau3$rank[Tau3$group == i]
+for (i in 1:length(unique(all_ranks_sum$hhea))){
+  hhea <- unique(all_ranks_sum$hhea)[i]
+  Tau[CBT_data$hhid %in% all_ranks_sum$hhid_ranked[all_ranks_sum$hhea == hhea],i]<-all_ranks_sum$rank[all_ranks_sum$hhea == hhea]
 }
 
 
-rm(Tau2, Tau3)
 
 Program_data <- full_data[1:10,]  
 

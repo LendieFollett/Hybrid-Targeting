@@ -32,7 +32,7 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
 #vary poverty rate .2, .3, .4
-PR <- 0.2
+PR <- 0.3
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.2
 
@@ -87,7 +87,7 @@ all_results <- do.call(rbind, r)
 
 #the loop below takes a while (maybe an hour or so?)
 #you can read the csv instead:
-all_results_comm <- read.csv("Indonesia Analysis/all_results_community_level.csv")
+all_results_comm <- read.csv(paste0("Indonesia Analysis/all_results_community_level",PR*100,".csv"))
 
 #within community analysis - get one row per rep per community sampled in test
 r <- list()
@@ -127,7 +127,7 @@ for (reps in unique(all_results_hh$rep)){
 #across communities - get one row per rep per community sampled in test
 all_results_comm <- do.call(rbind, r)
 
-write.csv(all_results_comm, "Indonesia Analysis/all_results_community_level.csv")
+write.csv(all_results_comm, paste0("Indonesia Analysis/all_results_community_level",PR*100,".csv"))
 #the following plots show overall rep-level variability
 
 #### --- ERROR RATE PLOTS ----------------------------------
@@ -154,7 +154,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8)) +
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Indonesia Analysis/ER_hybrid.pdf", width = 8, height = 5)
+ggsave(paste0("Indonesia Analysis/ER_hybrid",PR*100,".pdf"), width = 8, height = 5)
 
 
 plot_data %>%
@@ -167,7 +167,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Indonesia Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
+paste0("Indonesia Analysis/ER_hybrid_AI",PR*100,".pdf", width = 8, height = 5)
 
 plot_data %>%
   subset( Method %in% c("Hybrid", "Hybrid-EC")  )%>%
@@ -179,7 +179,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Indonesia Analysis/ER_hybrid_EC.pdf", width = 8, height = 5)
+ggsave(paste0("Indonesia Analysis/ER_hybrid_EC",PR*100,".pdf"), width = 8, height = 5)
 
 #(no DU for Indonesia)
 
@@ -228,13 +228,13 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200) & Method %in%
   theme_bw() +
   labs(x = "Method", y = "Community-level Error Rate")
 
-ggsave("Indonesia Analysis/ER_community_level.pdf", width = 8, height = 5)
+ggsave(paste0("Indonesia Analysis/ER_community_level",PR*100,".pdf"), width = 8, height = 5)
 
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
-  write.csv("Indonesia Analysis/ER_community_level.csv")
+  write.csv(paste0("Indonesia Analysis/ER_community_level",PR*100,"csv"))
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
