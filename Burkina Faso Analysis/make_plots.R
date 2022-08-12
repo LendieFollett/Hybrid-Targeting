@@ -13,7 +13,7 @@ all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
 #vary poverty rate .2, .3, .4
-PR <- 0.2
+PR <- 0.4
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.3
 
