@@ -13,7 +13,7 @@ all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
 #vary poverty rate .2, .3, .4
-PR <- 0.3
+PR <- 0.2
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.3
 
@@ -143,7 +143,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.65))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Burkina Faso Analysis/ER_hybrid.pdf", width = 8, height = 5)
+ggsave(paste0("Burkina Faso Analysis/ER_hybrid",PR*100,".pdf"), width = 8, height = 5)
 
 
 plot_data %>%
@@ -156,7 +156,7 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Burkina Faso Analysis/ER_hybrid_AI.pdf", width = 8, height = 5)
+ggsave(paste0("Burkina Faso Analysis/ER_hybrid_AI",PR*100,".pdf"), width = 8, height = 5)
 
 plot_data %>%
   subset( Method %in% c("Hybrid", "Hybrid-DU")  )%>%
@@ -168,7 +168,8 @@ plot_data %>%
   theme(legend.position = c(0.9, 0.8))+
   theme(legend.box.background = element_rect(colour = "black"))
 
-ggsave("Burkina Faso Analysis/ER_hybrid_DU.pdf", width = 8, height = 5)
+
+ggsave(paste0("Burkina Faso Analysis/ER_hybrid_DU",PR*100,".pdf"), width = 8, height = 5)
 
 
 #### --- CORRELATION PLOTS - COMMUNITY LEVEL ----------------------------------
@@ -217,7 +218,7 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c
   theme_bw() +
   labs(x = "Method", y = "Community-level Error Rate")
 
-ggsave("Burkina Faso Analysis/ER_community_level.pdf", width = 8, height = 5)
+ggsave(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"), width = 8, height = 5)
 
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
   ggplot() +
@@ -231,7 +232,7 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
-  write.csv("Burkina Faso Analysis/ER_community_level.csv")
+  write.csv(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"))
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
