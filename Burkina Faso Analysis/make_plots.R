@@ -13,7 +13,7 @@ all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
 #vary poverty rate .2, .3, .4
-PR <- 0.4
+PR <- 0.3
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.3
 
@@ -220,19 +220,26 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c
 
 ggsave(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"), width = 8, height = 5)
 
-plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
-  ggplot() +
-  geom_density(aes(x = value,  colour = as.factor(Method)),draw_quantiles = c(.25, .5, .75)) +
-  scale_colour_grey() +
-  theme_bw() +
-  labs(x = "Method", y = "Community-level Error Rate")
 
 
-plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25)) %>%
+plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) ) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
   write.csv(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"))
+
+
+plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
+  group_by(CBT_ncomm,Method) %>% 
+  summarise(mean = mean(value, na.rm=TRUE),
+            var = var(value, na.rm=TRUE)) %>%
+  ggplot() +
+  geom_point(aes(x = CBT_ncomm, y = var))+
+  geom_line(aes(x = CBT_ncomm, y = var, linetype = Method)) +
+  theme_bw()  +
+  labs(x = "Number of Ranking Communities", y = "Variance of Community-Level Error Rates")
+ggsave(paste0("Indonesia Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
+
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
