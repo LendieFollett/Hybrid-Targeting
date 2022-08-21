@@ -238,8 +238,23 @@ plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
   geom_line(aes(x = CBT_ncomm, y = var, linetype = Method)) +
   theme_bw()  +
   labs(x = "Number of Ranking Communities", y = "Variance of Community-Level Error Rates")
-ggsave(paste0("Indonesia Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
+#ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
 
+
+
+plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
+  group_by(CBT_ncomm,Method) %>% 
+  summarise(mean = mean(value, na.rm=TRUE),
+            sd = sd(value, na.rm=TRUE)) %>%
+  ggplot() +
+  geom_col(aes(x = CBT_ncomm, y = mean, fill = Method), position = "dodge") +
+  geom_errorbar(aes(x = CBT_ncomm, ymin = mean - sd, ymax = mean + sd, colour = Method), position = "dodge", width = 5) +
+  scale_colour_grey(start = .1, end = .12) +
+  scale_fill_grey(start = .3, end = .8) +
+  scale_x_continuous(breaks = c(unique(plot_data$CBT_ncomm)))+
+  theme_bw()+
+  labs(x = "Number of Ranking Communities", y = "Community-Level Error Rates")
+ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
