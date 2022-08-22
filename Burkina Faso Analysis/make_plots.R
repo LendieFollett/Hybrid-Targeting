@@ -241,20 +241,26 @@ plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
 #ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
 
 
-
+#treat number of ranking communities as a factor
+dodge <- position_dodge(width=.9)
 plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             sd = sd(value, na.rm=TRUE)) %>%
-  ggplot() +
-  geom_col(aes(x = CBT_ncomm, y = mean, fill = Method), position = "dodge") +
-  geom_errorbar(aes(x = CBT_ncomm, ymin = mean - sd, ymax = mean + sd, colour = Method), position = "dodge", width = 5) +
+  mutate(CBT_ncomm  = as.factor(CBT_ncomm)) %>%
+  ggplot(aes(x = CBT_ncomm)) +
+  geom_col(aes( y = mean, fill = Method), position = dodge) +
+  geom_errorbar(aes( ymin = mean - sd, ymax = mean + sd, colour = Method),position = dodge, width = 0.25) +
   scale_colour_grey(start = .1, end = .12) +
   scale_fill_grey(start = .3, end = .8) +
-  scale_x_continuous(breaks = c(unique(plot_data$CBT_ncomm)))+
   theme_bw()+
   labs(x = "Number of Ranking Communities", y = "Community-Level Error Rates")
 ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
+
+
+#hybrid vs hybrid DU - get numbers, don't need figure
+
+
 
 #### --- COEFFICIENT PLOTS ----------------------------------
 
