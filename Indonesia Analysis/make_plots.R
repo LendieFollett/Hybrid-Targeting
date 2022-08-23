@@ -32,7 +32,7 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
 #vary poverty rate .2, .3, .4
-PR <- 0.2
+PR <- 0.4
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.3
 
@@ -88,7 +88,6 @@ all_results <- do.call(rbind, r)
 #the loop below takes a while (maybe an hour or so?)
 #you can read the csv instead:
 all_results_comm <- read.csv(paste0("Indonesia Analysis/all_results_community_level",PR*100,".csv"))
-all_results_comm <- read.csv(paste0("Indonesia Analysis/all_results_community_level.csv"))
 
 #within community analysis - get one row per rep per community sampled in test
 r <- list()
@@ -236,18 +235,6 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
   write.csv(paste0("Indonesia Analysis/ER_community_level",PR*100,"csv"))
-
-plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
-  group_by(CBT_ncomm,Method) %>% 
-  summarise(mean = mean(value, na.rm=TRUE),
-            var = var(value, na.rm=TRUE)) %>%
-  ggplot() +
-  geom_point(aes(x = CBT_ncomm, y = var))+
-  geom_line(aes(x = CBT_ncomm, y = var, linetype = Method)) +
-  theme_bw()  +
-  labs(x = "Number of Ranking Communities", y = "Variance of Community-Level Error Rates")
-#ggsave(paste0("Indonesia Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
-
 
 dodge <- position_dodge(width=.9)
 plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
