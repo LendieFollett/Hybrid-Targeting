@@ -34,7 +34,7 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #vary poverty rate .2, .3, .4
 PR <- 0.2
 #multiplicative constant shifts community-level poverty rate up or down
-multiplicative_constant <- PR/0.2
+multiplicative_constant <- PR/0.3
 
 
 #calculate inclusions based on chosen poverty rate

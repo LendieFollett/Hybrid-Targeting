@@ -13,9 +13,9 @@ all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
 #vary poverty rate .2, .3, .4
-PR <- 0.3
+PR <- 0.4
 #multiplicative constant shifts community-level poverty rate up or down
-multiplicative_constant <- PR/0.3
+multiplicative_constant <- PR/0.2
 
 
 all_results_hh <- all_results_hh %>%
@@ -300,7 +300,8 @@ all_coef %>%merge(variable_labels, by.x = "parameter", by.y = "Name") %>%
   labs(x = "", y = "Standardized Coefficient Estimate") +
   scale_fill_grey("Method") +
   theme(legend.position = c(.9,.9), 
-        legend.box.background = element_rect(colour = "black"))
+        legend.box.background = element_rect(colour = "black"))+
+  scale_y_continuous(breaks = c(-20:60)/10)
 
 
 ggsave("Burkina Faso Analysis/coef_score_hillebrecht.pdf", width = 12, height = 12)
