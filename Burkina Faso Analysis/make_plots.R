@@ -13,24 +13,40 @@ all_coef <- read.csv("Burkina Faso Analysis/coef_total_sample.csv")
 
 
 #vary poverty rate .2, .3, .4
-PR <- 0.4
+PR <- 0.2
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.2
 
+if(PR == 0.2){
+  all_results_hh <- all_results_hh %>%
+    mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate*multiplicative_constant,
+           hybrid_inclusion = hybrid_rank <= treat_rate*multiplicative_constant,
+           pmt_inclusion = pmt_rank <= treat_rate*multiplicative_constant,
+           consumption_inclusion = consumption_rank<=treat_rate*multiplicative_constant,
+           cbt_model_inclusion = cbt_model_rank<=treat_rate*multiplicative_constant,
+           cbt_DU_model_inclusion = cbt_DU_model_rank <= treat_rate*multiplicative_constant,
+           cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate*multiplicative_constant,
+           CBT_LR_inclusion = CBT_LR_rank<=treat_rate*multiplicative_constant) %>%
+    ungroup() %>%
+      merge(read.csv("Data/Burkina Faso/Cleaning/hillebrecht.csv")[,c("hhid", "year", "treated")], by = c("hhid", "year"), all.y = FALSE) %>%
+      mutate(cbt_inclusion = ifelse(treated == 1, TRUE, FALSE))%>%
+    mutate_at(vars(matches("inclusion")), as.factor) %>%
+    arrange(CBT_ncomm,rep)
+}else{
+  all_results_hh <- all_results_hh %>%
+    mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate*multiplicative_constant,
+           hybrid_inclusion = hybrid_rank <= treat_rate*multiplicative_constant,
+           pmt_inclusion = pmt_rank <= treat_rate*multiplicative_constant,
+           consumption_inclusion = consumption_rank<=treat_rate*multiplicative_constant,
+           cbt_model_inclusion = cbt_model_rank<=treat_rate*multiplicative_constant,
+           cbt_DU_model_inclusion = cbt_DU_model_rank <= treat_rate*multiplicative_constant,
+           cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate*multiplicative_constant,
+           CBT_LR_inclusion = CBT_LR_rank<=treat_rate*multiplicative_constant,
+           cbt_inclusion = cbt_rank <= treat_rate*multiplicative_constant)%>%
+    ungroup() %>%
+    mutate_at(vars(matches("inclusion")), as.factor)
+}
 
-all_results_hh <- all_results_hh %>%
-  mutate(hybrid_noelite_inclusion = hybrid_noelite_rank <= treat_rate*multiplicative_constant,
-         hybrid_inclusion = hybrid_rank <= treat_rate*multiplicative_constant,
-         pmt_inclusion = pmt_rank <= treat_rate*multiplicative_constant,
-         consumption_inclusion = consumption_rank<=treat_rate*multiplicative_constant,
-         cbt_model_inclusion = cbt_model_rank<=treat_rate*multiplicative_constant,
-         cbt_DU_model_inclusion = cbt_DU_model_rank <= treat_rate*multiplicative_constant,
-         cbt_model_noelite_inclusion = cbt_model_rank_noelite<=treat_rate*multiplicative_constant,
-         CBT_LR_inclusion = CBT_LR_rank<=treat_rate*multiplicative_constant,
-         cbt_inclusion = cbt_rank <= treat_rate*multiplicative_constant)%>%#,
-         #cbt_inclusion = ifelse(treated == 1, TRUE, FALSE)) 
-  ungroup() %>%
-  mutate_at(vars(matches("inclusion")), as.factor)
 
 
 #### --- PREP DATA ----------------------------------
@@ -229,16 +245,6 @@ plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) ) %>%
   write.csv(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"))
 
 
-plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
-  group_by(CBT_ncomm,Method) %>% 
-  summarise(mean = mean(value, na.rm=TRUE),
-            var = var(value, na.rm=TRUE)) %>%
-  ggplot() +
-  geom_point(aes(x = CBT_ncomm, y = var))+
-  geom_line(aes(x = CBT_ncomm, y = var, linetype = Method)) +
-  theme_bw()  +
-  labs(x = "Number of Ranking Communities", y = "Variance of Community-Level Error Rates")
-#ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
 
 
 #treat number of ranking communities as a factor

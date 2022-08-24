@@ -291,7 +291,7 @@ results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
     
     
     
-    r[[i]] <- Program_data %>% dplyr::select(c(hhid, year,community,treat_rate, 
+    r[[i]] <- Program_data %>% dplyr::select(c(hhid, year,community,treat_rate, treated,
                                                          hybrid_noelite_rank, hybrid_rank,
                                                          cbt_model_rank, cbt_model_rank_noelite,
                                                         cbt_DU_model_rank,
