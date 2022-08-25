@@ -32,7 +32,7 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
 #vary poverty rate .2, .3, .4
-PR <- 0.2
+PR <- 0.3
 #multiplicative constant shifts community-level poverty rate up or down
 multiplicative_constant <- PR/0.3
 
@@ -235,21 +235,11 @@ plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
                          labels = c("Hybrid-AI-EC","Hybrid-AI","Hybrid","Hybrid-EC","Hybrid-DU", "Probit", "PMT"))) 
 
 
-
-plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
-  ggplot() +
-  geom_boxplot(aes(x = Method,y = value,  colour = as.factor(CBT_ncomm)),draw_quantiles = c(.25, .5, .75)) +
-  scale_colour_grey("Number of\nRanking\nCommunities") +
-  theme_bw() +
-  labs(x = "Method", y = "Community-level Error Rate")
-
-ggsave(paste0("Indonesia Analysis/ER_community_level",PR*100,".pdf"), width = 8, height = 5)
-
 plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(10, 200)) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
-  write.csv(paste0("Indonesia Analysis/ER_community_level",PR*100,"csv"))
+  write.csv(paste0("Indonesia Analysis/ER_community_level",PR*100,".csv"))
 
 dodge <- position_dodge(width=.9)
 plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
@@ -265,7 +255,6 @@ plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
   theme_bw()+
   labs(x = "Number of Ranking Communities", y = "Community-Level Error Rates")
 ggsave(paste0("Indonesia Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
-
 
 
 #### --- COEFFICIENT PLOTS ----------------------------------
