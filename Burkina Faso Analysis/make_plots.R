@@ -227,24 +227,12 @@ plot_data <- all_results_comm %>%  mutate(IER = 1-Precision,
                          labels = c(        "Hybrid-AI-EC",            "Hybrid-AI",    "Hybrid",   "Hybrid-EC",           "Hybrid-DU", "Probit", "PMT"))) 
 
 
-plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) & Method %in% c("Hybrid", "Probit", "PMT" )) %>%
-  ggplot() +
-  geom_boxplot(aes(x = Method,y = value,  colour = as.factor(CBT_ncomm)),draw_quantiles = c(.25, .5, .75)) +
-  scale_colour_grey("Number of\nRanking\nCommunities") +
-  theme_bw() +
-  labs(x = "Method", y = "Community-level Error Rate")
 
-ggsave(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"), width = 8, height = 5)
-
-
-
-plot_data %>% subset(variable == "EER" & CBT_ncomm %in% c(5, 25) ) %>%
+plot_data %>% subset(variable == "EER"  ) %>%
   group_by(CBT_ncomm,Method) %>% 
   summarise(mean = mean(value, na.rm=TRUE),
             var = var(value, na.rm=TRUE)) %>%
-  write.csv(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".pdf"))
-
-
+  write.csv(paste0("Burkina Faso Analysis/ER_community_level",PR*100,".csv"))
 
 
 #treat number of ranking communities as a factor
@@ -265,6 +253,22 @@ ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, he
 
 
 #hybrid vs hybrid DU - get numbers, don't need figure
+
+#treat number of ranking communities as a factor
+dodge <- position_dodge(width=.9)
+plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "Hybrid-DU")) %>%
+  group_by(CBT_ncomm,Method) %>% 
+  summarise(mean = mean(value, na.rm=TRUE),
+            sd = sd(value, na.rm=TRUE)) %>%
+  mutate(CBT_ncomm  = as.factor(CBT_ncomm)) %>%
+  ggplot(aes(x = CBT_ncomm)) +
+  geom_col(aes( y = mean, fill = Method), position = dodge) +
+  geom_errorbar(aes( ymin = mean - sd, ymax = mean + sd, colour = Method),position = dodge, width = 0.25) +
+  scale_colour_grey(start = .1, end = .12) +
+  scale_fill_grey(start = .3, end = .8) +
+  theme_bw()+
+  labs(x = "Number of Ranking Communities", y = "Community-Level Error Rates")
+ggsave(paste0("Burkina Faso Analysis/ER_commlevel_DU",PR*100,".pdf"), width = 8, height = 5)
 
 
 
