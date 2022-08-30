@@ -156,8 +156,7 @@ plot_data <- all_results %>%  mutate(IER = 1-Precision,
   summarise(mean = mean(value ))%>%ungroup %>%
   subset(variable %in% c( "EER"))
 
-#plot_data[plot_data$Method == "PMT",] <- pmt_corrected
-
+plot_data %>% subset(Method == "Hybrid")
 
 plot_data %>%
   subset( Method %in% c("Hybrid", "PMT", "Probit")  )%>%
