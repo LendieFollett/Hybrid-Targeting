@@ -50,7 +50,7 @@ m3 <- c(m_num, m_bin)
 
 #parallelized across CBT proportions via mcapply
 CBT_ncomm_list <- c(10, 25, 75, 100) 
-nrep <- 3
+nrep <- 30
 
 do_ploops <- function(full_data){
 results <-  mclapply(CBT_ncomm_list, function(CBT_ncomm){
@@ -143,14 +143,57 @@ r_day1 <- do_ploops(full_data_day1)
 r_day0 <- do_ploops(full_data_day0)
 
 
-all_results_1 <- unlist(results, recursive = FALSE)
 #collect accuracies
+collect_results <- function(r, subsample_name){
 all_results_2 <- list()
-for( i in seq(1,4*2-1, by = 2)){
-  all_results_2[[i]] <- do.call("rbind", all_results_1[[i]])
+for( i in 1:4){
+ temp <- do.call("rbind", r[[i]]) %>%
+      mutate( cbt_model_inclusion = cbt_model_rank<=poverty_rate,
+              cbt_inclusion = cbt_rank <= poverty_rate
+              ) %>%
+   mutate_at(vars(matches("inclusion")), as.factor)
+  all_results_2[[i]] <- rbind(
+    confusionMatrix(temp$cbt_model_inclusion,        temp$cbt_inclusion,positive = "TRUE")$byClass) %>%
+    as.data.frame %>%
+    mutate(Method = c("Hybrid Score"),
+           rep = temp$rep[1], 
+           CBT_ncomm = temp$CBT_ncomm[1]) %>%
+    mutate( EER = 1-Sensitivity,
+            subsample = subsample_name)%>%
+    dplyr::select(c("EER", "rep", "CBT_ncomm", "subsample"))
 }
 all_results <- do.call("rbind", all_results_2)
 
+}
 
 
+all_results_elite1 <- collect_results(r_elite1, "Elite")
+all_results_elite0 <- collect_results(r_elite0, "No Elite")
+all_results_day1 <- collect_results(r_day1, "Day Meeting")
+all_results_day0 <- collect_results(r_day0, "Night Meeting")
 
+p1 <- rbind(all_results_elite1,
+      all_results_elite0) %>%
+  mutate(subsample = factor(subsample, levels = c("Elite", "No Elite", "Day Meeting", "Night Meeting"))) %>%
+  ggplot() + 
+  geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
+  theme_bw() +
+  scale_linetype_discrete("Subsample")+
+  scale_colour_grey("Subsample")+
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+
+theme(legend.position = c(0.8, 0.65)) 
+  
+
+p2 <- rbind(all_results_day1, 
+      all_results_day0) %>%
+  mutate(subsample = factor(subsample, levels = c("Elite", "No Elite", "Day Meeting", "Night Meeting"))) %>%
+  ggplot() + 
+  geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
+  theme_bw() +
+  scale_linetype_discrete("Subsample")+
+  scale_colour_grey("Subsample")+
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+
+theme(legend.position = c(0.8, 0.65)) 
+library(gridExtra)
+grid.arrange(p1, p2, ncol = 2)
+  
