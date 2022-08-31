@@ -445,7 +445,7 @@ PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
 Program_data <- full_data[1:10,]  
 
 X_CBT <-     cbind(1,CBT_data[,m3], CBT_data[,"elite"],CBT_data[, "connected"]*CBT_data[, "elite"]) %>%as.matrix()
-X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
+X_program <- cbind(1,Program_data[,m3], Program_data[,"elite"],Program_data[, "connected"]*Program_data[, "elite"]) %>%as.matrix()
 
 R = CBT_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
 
@@ -465,4 +465,11 @@ CBtemp_wint <- CBTarget(Tau=Tau,
                            iter_burn = iter_burn,
                            print_opt = print_opt)
 
-
+  ggplot() +
+  geom_histogram(aes(x = CBtemp_wint$beta_rank[,49])) +
+    theme_bw() +
+    labs(x = "Interaction Coefficient", y = "Count")
+ggsave("Indonesia Analysis/interaction_posterior.pdf")
+  
+mean(CBtemp_wint$beta_rank[,49] > 0)
+  
