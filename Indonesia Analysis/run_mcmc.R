@@ -433,3 +433,36 @@ coefs <- data.frame(parameter = m3,
 )
 write.csv(coefs, paste0("Indonesia Analysis/coef_elite", elite_status, ".csv"), row.names = FALSE)
 
+#-------INTERACTION BETWEEN ELITE AND CONNECTED-------------------
+
+#RANDOM SAMPLES OF CBT DATA, PMT DATA, AND PROGRAM (testing) DATA
+whats_left <- unique(full_data$community_id[-PMT_idx]) #communities not in PMT
+
+CBT_data <- full_data %>%subset(community_id %in% whats_left)
+
+PMT_data <- CBT_data#full_data[PMT_idx,] #%>% subset(community == 0)
+
+Program_data <- full_data[1:10,]  
+
+X_CBT <-     cbind(1,CBT_data[,m3], CBT_data[,"elite"],CBT_data[, "connected"]*CBT_data[, "elite"]) %>%as.matrix()
+X_program <- cbind(1,Program_data[,m3]) %>%as.matrix()
+
+R = CBT_data %>% group_by(village, province, district, subdistrict) %>% summarise(n = length(cow))%>%ungroup() %>%nrow
+
+Tau <- array(NA, dim = c(nrow(CBT_data), R))
+j = 0
+for ( idx in unique(CBT_data$community_id)){ #loop over columns
+  j = j + 1
+  Tau[CBT_data$community_id == idx,j] <- CBT_data$rank[CBT_data$community_id == idx]
+}
+
+#Run MCMC for Bayesian Community Based Targeting -  WITH CORRECTION
+CBtemp_wint <- CBTarget(Tau=Tau, 
+                           X_CBT = X_CBT,
+                           X_program = X_program,
+                           X_elite = "connected",
+                           iter_keep =iter_keep,
+                           iter_burn = iter_burn,
+                           print_opt = print_opt)
+
+

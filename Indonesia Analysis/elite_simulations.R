@@ -172,28 +172,53 @@ all_results_elite0 <- collect_results(r_elite0, "No Elite")
 all_results_day1 <- collect_results(r_day1, "Day Meeting")
 all_results_day0 <- collect_results(r_day0, "Night Meeting")
 
-p1 <- rbind(all_results_elite1,
-      all_results_elite0) %>%
-  mutate(subsample = factor(subsample, levels = c("Elite", "No Elite", "Day Meeting", "Night Meeting"))) %>%
-  ggplot() + 
-  geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
-  theme_bw() +
-  scale_linetype_discrete("Subsample")+
-  scale_colour_grey("Subsample")+
-  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+
-theme(legend.position = c(0.8, 0.65)) 
-  
+write.csv(all_results_elite1, "Indonesia Analysis/all_results_elite1.csv")
+write.csv(all_results_elite0, "Indonesia Analysis/all_results_elite0.csv")
+write.csv(all_results_day1, "Indonesia Analysis/all_results_day1.csv")
+write.csv(all_results_day0, "Indonesia Analysis/all_results_day0.csv")
 
-p2 <- rbind(all_results_day1, 
-      all_results_day0) %>%
-  mutate(subsample = factor(subsample, levels = c("Elite", "No Elite", "Day Meeting", "Night Meeting"))) %>%
-  ggplot() + 
+
+all_results_elite1 <- read.csv("Indonesia Analysis/all_results_elite1.csv")
+all_results_elite0 <- read.csv("Indonesia Analysis/all_results_elite0.csv")
+all_results_day1 <- read.csv("Indonesia Analysis/all_results_day1.csv")
+all_results_day0 <- read.csv("Indonesia Analysis/all_results_day0.csv")
+
+d1 <- rbind(all_results_elite1,
+      all_results_elite0) %>%
+  mutate(subsample = factor(subsample, levels = c("Elite", "No Elite", "Day Meeting", "Night Meeting"))) 
+
+
+  p1 <- ggplot(data = d1) + 
   geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
   theme_bw() +
   scale_linetype_discrete("Subsample")+
   scale_colour_grey("Subsample")+
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+
-theme(legend.position = c(0.8, 0.65)) 
+  scale_x_continuous(breaks = c(10, 25, 75, 100))+ 
+  theme(legend.position = c(0.89, 0.6)) +
+  theme(legend.box.background = element_rect(colour = "black", size = 1))
+  
+p1
+ggsave("Indonesia Analysis/ER_elite_subsample.pdf", width = 8, height = 5)
+
+
+d2 <- rbind(all_results_day1, 
+      all_results_day0) %>%
+  mutate(subsample = factor(subsample, levels = c("Elite", "No Elite", "Day Meeting", "Night Meeting"))) 
+
+p2 <-   ggplot(data = d2) + 
+  geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
+  theme_bw() +
+  scale_linetype_discrete("Subsample")+
+  scale_colour_grey("Subsample")+
+  scale_x_continuous(breaks = c(10, 25, 75, 100))+
+  labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
+  theme(legend.position = c(0.89, 0.6)) +
+  theme(legend.box.background = element_rect(colour = "black", size = 1))
+p2
+ggsave("Indonesia Analysis/ER_day_subsample.pdf", width = 8, height = 5)
+
+
 library(gridExtra)
 grid.arrange(p1, p2, ncol = 2)
   
