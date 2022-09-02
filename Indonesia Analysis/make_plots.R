@@ -34,7 +34,7 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #vary poverty rate .2, .3, .4
 PR <- 0.2
 #multiplicative constant shifts community-level poverty rate up or down
-multiplicative_constant <- PR/0.2
+multiplicative_constant <- PR/0.3
 
 
 if (PR == 0.3){
@@ -166,7 +166,7 @@ plot_data %>%
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.6)) +
-  theme(legend.box.background = element_rect(colour = "black")) +
+  theme(legend.box.background = element_rect(colour = "black", size = 1)) +
   scale_x_continuous(breaks = unique(plot_data$CBT_ncomm))
 
 ggsave(paste0("Indonesia Analysis/ER_hybrid",PR*100,".pdf"), width = 8, height = 5)
@@ -180,7 +180,7 @@ plot_data %>%
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.8))+
-  theme(legend.box.background = element_rect(colour = "black")) +
+  theme(legend.box.background = element_rect(colour = "black", size = 1)) +
   scale_x_continuous(breaks = unique(plot_data$CBT_ncomm))
 
 ggsave(paste0("Indonesia Analysis/ER_hybrid_AI",PR*100,".pdf"), width = 8, height = 5)
@@ -193,7 +193,7 @@ plot_data %>%
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.8))+
-  theme(legend.box.background = element_rect(colour = "black")) +
+  theme(legend.box.background = element_rect(colour = "black", size = 1)) +
   scale_x_continuous(breaks = unique(plot_data$CBT_ncomm))
 
 ggsave(paste0("Indonesia Analysis/ER_hybrid_EC",PR*100,".pdf"), width = 8, height = 5)
