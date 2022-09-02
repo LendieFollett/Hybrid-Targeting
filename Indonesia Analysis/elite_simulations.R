@@ -190,6 +190,7 @@ d1 <- rbind(all_results_elite1,
 
   p1 <- ggplot(data = d1) + 
   geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
+    geom_point(aes(x = CBT_ncomm, y = EER)) +
   theme_bw() +
   scale_linetype_discrete("Subsample")+
   scale_colour_grey("Subsample")+
@@ -208,6 +209,7 @@ d2 <- rbind(all_results_day1,
 
 p2 <-   ggplot(data = d2) + 
   geom_line(aes(x = CBT_ncomm, y = EER, linetype = subsample)) +
+  geom_point(aes(x = CBT_ncomm, y = EER)) +
   theme_bw() +
   scale_linetype_discrete("Subsample")+
   scale_colour_grey("Subsample")+

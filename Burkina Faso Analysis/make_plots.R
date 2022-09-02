@@ -246,7 +246,7 @@ plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
   geom_col(aes( y = mean, fill = Method), position = dodge) +
   geom_errorbar(aes( ymin = mean - sd, ymax = mean + sd, colour = Method),position = dodge, width = 0.25) +
   scale_colour_grey(start = .1, end = .12) +
-  scale_fill_grey(start = .3, end = .8) +
+  scale_fill_grey(start = .4, end = .8) +
   theme_bw()+
   labs(x = "Number of Ranking Communities", y = "Community-Level Error Rates")
 ggsave(paste0("Burkina Faso Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)

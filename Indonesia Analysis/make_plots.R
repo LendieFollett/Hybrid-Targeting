@@ -32,9 +32,9 @@ elite0_coef <- read.csv("Indonesia Analysis/coef_elite0.csv")
 #"Hybrid-DU" (i.e., hybrid + dynamic updating)
 
 #vary poverty rate .2, .3, .4
-PR <- 0.3
+PR <- 0.2
 #multiplicative constant shifts community-level poverty rate up or down
-multiplicative_constant <- PR/0.3
+multiplicative_constant <- PR/0.2
 
 
 if (PR == 0.3){
@@ -166,7 +166,8 @@ plot_data %>%
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.6)) +
-  theme(legend.box.background = element_rect(colour = "black"))
+  theme(legend.box.background = element_rect(colour = "black")) +
+  scale_x_continuous(breaks = unique(plot_data$CBT_ncomm))
 
 ggsave(paste0("Indonesia Analysis/ER_hybrid",PR*100,".pdf"), width = 8, height = 5)
 
@@ -179,7 +180,8 @@ plot_data %>%
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.8))+
-  theme(legend.box.background = element_rect(colour = "black"))
+  theme(legend.box.background = element_rect(colour = "black")) +
+  scale_x_continuous(breaks = unique(plot_data$CBT_ncomm))
 
 ggsave(paste0("Indonesia Analysis/ER_hybrid_AI",PR*100,".pdf"), width = 8, height = 5)
 
@@ -191,7 +193,8 @@ plot_data %>%
   theme_bw() +
   labs(x = "Number of Ranking Communities", y = "Average Error Rate")+ 
   theme(legend.position = c(0.9, 0.8))+
-  theme(legend.box.background = element_rect(colour = "black"))
+  theme(legend.box.background = element_rect(colour = "black")) +
+  scale_x_continuous(breaks = unique(plot_data$CBT_ncomm))
 
 ggsave(paste0("Indonesia Analysis/ER_hybrid_EC",PR*100,".pdf"), width = 8, height = 5)
 
@@ -250,7 +253,7 @@ plot_data %>% subset(variable == "EER" & Method %in% c("Hybrid", "PMT")) %>%
   geom_col(aes( y = mean, fill = Method), position = dodge) +
   geom_errorbar(aes( ymin = mean - sd, ymax = mean + sd, colour = Method),position = dodge, width = 0.25) +
   scale_colour_grey(start = .1, end = .12) +
-  scale_fill_grey(start = .3, end = .8) +
+  scale_fill_grey(start = .45, end = .8) +
   theme_bw()+
   labs(x = "Number of Ranking Communities", y = "Community-Level Error Rates")
 ggsave(paste0("Indonesia Analysis/ER_commlevel",PR*100,".pdf"), width = 8, height = 5)
